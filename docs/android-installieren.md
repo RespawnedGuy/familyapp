@@ -2,10 +2,12 @@
 
 Gilt für Android 8.0 und neuer. Einmal eingerichtet, gehen Updates genauso.
 
+Die erste Installation geht von Hand. Danach aktualisiert sich die App selbst (siehe unten).
+
 ## Weg A: über GitHub (Browser)
 
-1. Am Handy im Browser (Chrome) bei GitHub anmelden. Das Repo ist privat, ohne Anmeldung gibt es „404“.
-2. Releases öffnen: `github.com/RespawnedGuy/familyapp/releases`. Das oberste Release **ohne** „Pre-release“ nehmen (Name „FamilyApp 0.1.x“). „CI-Testbuild“-Einträge nie installieren.
+1. Releases öffnen: `github.com/RespawnedGuy/familyapp-releases/releases` (öffentlich, keine Anmeldung nötig). Das oberste Release nehmen (Name „FamilyApp 0.1.x“). „CI-Testbuild“-Einträge im privaten Repo nie installieren.
+2. Weiter mit Schritt 3.
 3. Unter „Assets“ auf `familyapp-0.1.x.apk` tippen. Falls Chrome warnt („Datei kann schädlich sein“): „Trotzdem herunterladen“.
 4. Download antippen. Beim ersten Mal fragt Android, ob Chrome Apps installieren darf: „Einstellungen“ → „Dieser Quelle vertrauen“ einschalten → zurück.
 5. „Installieren“. Falls Google Play Protect fragt („Unbekannte App“): „Weitere Details“ → „Trotzdem installieren“. Einen Scan anzubieten ist in Ordnung.
@@ -14,6 +16,14 @@ Gilt für Android 8.0 und neuer. Einmal eingerichtet, gehen Updates genauso.
 ## Weg B: über Synology Drive
 
 Liegt die APK im Ordner `FamilyApp/_apk` deines Synology Drive: in der Synology-Drive-App öffnen, herunterladen, antippen, weiter ab Schritt 4.
+
+## Updates
+
+- Die App fragt beim Start höchstens einmal am Tag `github.com` nach einer neuen Version. Abschaltbar unter „Täglich automatisch prüfen“, jederzeit von Hand mit „Nach Updates suchen“.
+- Gibt es eine neue Version: „Installieren“ tippen. Beim ersten Mal fragt Android, ob FamilyApp Apps installieren darf: „Erlauben“ → „Dieser Quelle vertrauen“ → zurück → „Erneut versuchen“.
+- Android zeigt dann „Möchtest du diese App aktualisieren?“ → „Aktualisieren“. Danach FamilyApp neu öffnen. Deine Daten bleiben erhalten.
+- Die App prüft vorher Prüfsumme und Signatur. Meldet sie „Prüfsumme stimmt nicht“ oder „Signatur passt nicht“, wurde nichts installiert. Dann nicht von Hand installieren, sondern melden.
+- Alternative ohne die eingebaute Funktion: die App [Obtainium](https://github.com/ImranR98/Obtainium) mit `https://github.com/RespawnedGuy/familyapp-releases` einrichten.
 
 ## Prüfen, ob die Datei echt ist (optional)
 
