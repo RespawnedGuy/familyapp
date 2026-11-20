@@ -1,6 +1,6 @@
 # Optik, Haptik und Klickwege
 
-- Status: Entwurf zum Sparring. Entschieden: D1 Navigation A (20.11.2026). D2–D8 offen.
+- Status: Entwurf zum Sparring. Entschieden: D1 Navigation A, keine Vibration (20.11.2026). D2–D8 offen.
 - Datum: 2026-11-20
 - Klickbare Skizze: https://claude.ai/artifact/D46DuTRTcBt5pky1nVV32g (Variante A mit Tap-Zähler, Varianten B und C, Pairing, Benachrichtigungen)
 - Grundlage: [KONZEPT.md](../KONZEPT.md), [ADR 0003](../entscheidungen/0003-p2p-sync-im-selben-netz.md)
@@ -8,7 +8,7 @@
 Was dieses Dokument anders macht als ein Moodboard:
 
 - Jeder Klickweg ist **gezählt** (Taps und Wischgesten) und für das Erfassen zusätzlich als Zeit nach dem Keystroke-Level-Model geschätzt. Die Skizze zählt mit, damit wir Zahlen an echten Händen prüfen statt zu glauben.
-- Haptik, Bewegung und Benachrichtigungen sind auf **konkrete Plattform-APIs** (Android, iOS, Compose) abgebildet, damit die Umsetzung nichts mehr erfinden muss.
+- Bewegung und Benachrichtigungen sind auf **konkrete Plattform-APIs** (Android, iOS, Compose) abgebildet, damit die Umsetzung nichts mehr erfinden muss. Vibration ist bewusst gestrichen (Abschnitt Haptik).
 - Farben sind auf **Kontrast nach WCAG 2.2** nachgerechnet, und am Ende steht ein **Testskript** mit prüfbaren Zielwerten.
 
 ## Kernaufgaben und wie oft sie vorkommen
@@ -139,21 +139,9 @@ Alle Werte erfüllen WCAG 2.2 AA für Text (4,5:1), nachgerechnet mit der Formel
 
 ## Haptik
 
-Grundsatz: Vibration nur als Antwort auf eine eigene Handlung oder für echte Eskalation. Kurz und knackig statt brummend, keine Vibration beim Scrollen. Die System-Einstellung „Vibration bei Berührung“ wird respektiert (beide Plattformen tun das bei den Standard-APIs von selbst).
+**Entschieden (Nils, 20.11.2026): Die App vibriert nicht.** Keine haptische Rückmeldung bei Gesten, Bestätigen, Aufnahme oder Pairing, keine eigenen Vibrationsmuster für Benachrichtigungen. Rückmeldung kommt nur sichtbar: Bewegung der Karte, Farbwechsel an der Wisch-Schwelle, Hinweis unten mit Rückgängig. Benachrichtigungen folgen den Ton- und Vibrations-Einstellungen, die die Person im System für die App bzw. den Kanal festlegt; die App setzt dort nichts zusätzlich.
 
-| Moment | Compose (`LocalHapticFeedback`) | Android View (`HapticFeedbackConstants`) | iOS |
-| --- | --- | --- | --- |
-| Wischgeste überschreitet die Schwelle | `GestureThresholdActivate` | `GESTURE_THRESHOLD_ACTIVATE` (API 34), darunter `CLOCK_TICK` | `UIImpactFeedbackGenerator(.light)` |
-| Bestätigt, erledigt, übernommen | `Confirm` | `CONFIRM` (API 30) | `UINotificationFeedbackGenerator` `.success` |
-| Irrelevant markiert | `SegmentTick` (leicht, kein „Fehler“) | `SEGMENT_TICK` (API 34) bzw. `CLOCK_TICK` | `UISelectionFeedbackGenerator` |
-| Rückgängig | `Reject` | `REJECT` (API 30) | `.warning` |
-| Aufnahme startet und stoppt | `ToggleOn` / `ToggleOff` | `TOGGLE_ON` / `TOGGLE_OFF` (API 34) | `UIImpactFeedbackGenerator(.medium)` |
-| Pairing-Code auf beiden Seiten bestätigt | `Confirm` | `CONFIRM` | `.success` |
-| Überfällig-Benachrichtigung | Kanal-Vibrationsmuster, kein Code | Kanal „Überfällig“ | Systemton und -haptik |
-
-Zu prüfen: Welche `HapticFeedbackType`-Werte Compose Multiplatform auf iOS auf UIKit-Generatoren abbildet (sonst kleine `expect/actual`-Schicht). Quellen: Android Developers „Haptics design principles“, Apple HIG „Playing haptics“.
-
-Die Skizze vibriert auf Android-Browsern an der Schwelle und beim Bestätigen über `navigator.vibrate`, sofern der Browser es im eingebetteten Rahmen zulässt.
+Für die Umsetzung heißt das: kein `LocalHapticFeedback`, keine `HapticFeedbackConstants`, keine `UIFeedbackGenerator`. Android-Benachrichtigungskanäle bekommen kein eigenes Vibrationsmuster (kein `setVibrationPattern`); ob es vibriert, entscheidet die System-Einstellung der Person. Haptik, die das System selbst auslöst (z. B. die Tastatur), bleibt unberührt.
 
 ## Bewegung
 
@@ -170,7 +158,7 @@ Die Skizze vibriert auf Android-Browsern an der Schwelle und beim Bestätigen ü
 
 ## Benachrichtigungen und Eskalation
 
-| Kanal (Android) / Stufe (iOS) | Inhalt | Ton/Vibration | Zeitpunkt |
+| Kanal (Android) / Stufe (iOS) | Inhalt | Ton (Vibration nach System-Einstellung, keine eigene) | Zeitpunkt |
 | --- | --- | --- | --- |
 | Überfällig · an dich | Frist verpasst, eigene Aufgabe. Aktionen „Erledigt“, „Abgeben“ | ja | gesammelt 7:30 |
 | Überfällig · an alle | +1 Tag, Aufgabe einer anderen Person. Aktionen „Übernehme ich“, „Ansehen“. Text neutral: „Stand prüfen“, weil das Gerät nicht wissen kann, ob schon erledigt (ADR 0003) | ja | gesammelt 7:30 |
@@ -231,8 +219,8 @@ Schnell rein: Die erste Person legt die Familie an, indem sie die App öffnet un
 ## Quellen
 
 - Material Design 3: Navigation bar, FAB, Bottom sheets, Motion (Easing and duration tokens), Color roles; m3.material.io
-- Apple Human Interface Guidelines: Tab bars, Playing haptics, Notifications, Accessibility; developer.apple.com/design/human-interface-guidelines
-- Android Developers: Haptics design principles, `HapticFeedbackConstants`, Notification channels, `TileService`, Jetpack Glance; developer.android.com
+- Apple Human Interface Guidelines: Tab bars, Notifications, Accessibility; developer.apple.com/design/human-interface-guidelines
+- Android Developers: Notification channels, `TileService`, Jetpack Glance; developer.android.com
 - WCAG 2.2: 1.4.3 Kontrast, 2.5.1 Zeigergesten, 2.5.8 Zielgröße (Minimum); w3.org/TR/WCAG22
 - Card, Moran & Newell (1983): The Psychology of Human-Computer Interaction (Keystroke-Level-Model)
 - Cowan (2001), Masicampo & Baumeister (2011), Mark, Gudith & Klocke (2008), Hoober (2013), Raskin (2000), Nielsen & Landauer (1993): wie im Text vermerkt, aus dem Gedächtnis zitiert und vor einer Veröffentlichung zu prüfen. Konkrete Seiten der Plattform-Richtlinien wurden in dieser Sitzung nicht abgerufen; API-Namen und Level stammen aus dem Gedächtnis und werden beim ersten Code geprüft.
