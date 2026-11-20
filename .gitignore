@@ -13,3 +13,6 @@ local.properties
 **/samples-private/
 **/expected-private.csv
 **/rules-private.txt
+
+# Relay spike local data
+*.db
