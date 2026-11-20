@@ -27,11 +27,19 @@ sealed interface Condition {
     }
 }
 
-/** All conditions must match (logical AND). */
+/** AUTO assigns directly; SUGGEST leaves the item open with a pre-filled proposal (HITL). */
+enum class RuleMode { AUTO, SUGGEST }
+
+/**
+ * All conditions must match (logical AND).
+ * Default mode: a rule that names a person only suggests; it assigns directly only when marked AUTO,
+ * which is meant for hard features such as "Eltern der Klasse 1" or the child's name.
+ */
 data class Rule(
     val id: String,
     val conditions: List<Condition>,
     val assignment: Assignment,
+    val mode: RuleMode = if (assignment.person == null) RuleMode.AUTO else RuleMode.SUGGEST,
 ) {
     init {
         require(conditions.isNotEmpty()) { "Rule $id needs at least one condition" }

@@ -18,4 +18,4 @@ gradle run --args="examples/samples examples/rules.txt examples/expected.csv tod
 3. Erwartung je Datei in `expected-private.csv` (`file;expected(assigned|open);person;type`).
 4. `gradle run --args="samples-private rules-private.txt expected-private.csv"`
 
-Logik: Alle Bedingungen einer Regel müssen passen. Die spezifischste Regel gewinnt (Absender 2, Domain 1, Stichwort je 1). Gleich spezifische Regeln mit unterschiedlichem Ergebnis oder kein Treffer: Eintrag bleibt offen (HITL). Ein Fälligkeitsdatum wird nur gesetzt, wenn genau ein Datum gefunden wurde.
+Logik: Alle Bedingungen einer Regel müssen passen. Regeln, die eine Person nennen, machen standardmäßig nur einen Vorschlag (`mode=suggest`); direkt zugewiesen wird nur mit `mode=auto`, gedacht für harte Merkmale wie „Eltern der Klasse 1“ oder den Kindnamen. Stimmt eine harte Regel mit den anderen gleich spezifischen Regeln überein, wird zugewiesen. Die spezifischste Regel gewinnt (Absender 2, Domain 1, Stichwort je 1). Gleich spezifische Regeln mit unterschiedlichem Ergebnis oder kein Treffer: Eintrag bleibt offen (HITL). Ein Fälligkeitsdatum wird nur gesetzt, wenn genau ein Datum gefunden wurde.

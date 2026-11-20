@@ -17,6 +17,7 @@ class RuleEngineTest {
         "doctor-mia",
         listOf(Condition.ContainsAll(listOf("Mia", "Lindenstraße 4"))),
         Assignment(person = "Mia", area = "Gesundheit Kinder", type = ItemType.APPOINTMENT),
+        RuleMode.AUTO, // child's name plus the practice address is a hard feature
     )
     private val teacher = Rule(
         "teacher",
@@ -55,7 +56,8 @@ class RuleEngineTest {
 
     @Test
     fun `more specific rule wins`() {
-        val outcome = RuleEngine(listOf(school, teacher)).evaluate(item(sender = "frau.weber@schulederkinder.de"), today)
+        val outcome = RuleEngine(listOf(school, teacher.copy(mode = RuleMode.AUTO)))
+            .evaluate(item(sender = "frau.weber@schulederkinder.de"), today)
         assertIs<Outcome.Assigned>(outcome)
         assertEquals("teacher", outcome.rule.id)
     }
@@ -91,5 +93,36 @@ class RuleEngineTest {
         val outcome = RuleEngine(listOf(school))
             .evaluate(Item("x", "a@schulederkinder.de", "", "ab Montag, dem 14.09.", written), today)
         assertEquals(listOf(LocalDate.of(2026, 9, 14)), outcome.dates)
+    }
+
+    @Test
+    fun `rule naming a person only suggests by default`() {
+        val outcome = RuleEngine(listOf(teacher)).evaluate(item(sender = "frau.weber@schulederkinder.de"), today)
+        assertIs<Outcome.Open>(outcome)
+        assertEquals(Outcome.Reason.SUGGESTION, outcome.reason)
+        assertEquals("teacher", outcome.candidates.single().id)
+    }
+
+    @Test
+    fun `person rule marked auto assigns directly`() {
+        val hard = Rule(
+            "class1",
+            listOf(Condition.SenderDomain("schulederkinder.de"), Condition.ContainsAll(listOf("Eltern der Klasse 1"))),
+            Assignment(person = "Kind A", area = "Schule"),
+            RuleMode.AUTO,
+        )
+        assertIs<Outcome.Assigned>(
+            RuleEngine(listOf(school, hard)).evaluate(item(sender = "a@schulederkinder.de", body = "Liebe Eltern der Klasse 1"), today),
+        )
+    }
+
+    @Test
+    fun `tie between auto and suggest with same assignment assigns via the hard feature`() {
+        val a = Assignment(person = "Kind A")
+        val auto = Rule("auto", listOf(Condition.SenderAddress("x@y.de")), a, RuleMode.AUTO)
+        val suggest = Rule("suggest", listOf(Condition.ContainsAll(listOf("foo", "bar"))), a, RuleMode.SUGGEST)
+        val outcome = RuleEngine(listOf(suggest, auto)).evaluate(item(sender = "x@y.de", body = "foo bar"), today)
+        assertIs<Outcome.Assigned>(outcome)
+        assertEquals("auto", outcome.rule.id)
     }
 }

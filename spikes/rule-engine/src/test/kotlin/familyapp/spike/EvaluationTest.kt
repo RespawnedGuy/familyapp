@@ -43,4 +43,16 @@ class EvaluationTest {
         val score = Evaluation.score(outcomes, listOf(Expected("1", true, NO_PERSON, null)))
         assertEquals(1, score.wronglyAssigned)
     }
+
+    @Test
+    fun `correct suggestion counts as correct, wrong suggestion is not a false assignment`() {
+        val open = { r: Rule -> Outcome.Open(Outcome.Reason.SUGGESTION, listOf(r), emptyList()) }
+        val score = Evaluation.score(
+            mapOf("1" to open(rule), "2" to open(rule)),
+            listOf(Expected("1", true, "Mia", null), Expected("2", true, NO_PERSON, null)),
+        )
+        assertEquals(1, score.correctlySuggested)
+        assertEquals(1, score.wronglySuggested)
+        assertEquals(0, score.wronglyAssigned)
+    }
 }

@@ -14,8 +14,12 @@ data class Score(
     val wronglyAssigned: Int,
     val correctlyOpen: Int,
     val openButAssignable: Int,
+    val correctlySuggested: Int = 0,
+    val wronglySuggested: Int = 0,
 ) {
-    val correctShare: Double get() = if (total == 0) 0.0 else (correctlyAssigned + correctlyOpen).toDouble() / total
+    /** A correct suggestion counts as correct: it is open, and one click confirms it. */
+    val correctShare: Double
+        get() = if (total == 0) 0.0 else (correctlyAssigned + correctlyOpen + correctlySuggested).toDouble() / total
     val passes: Boolean get() = correctShare >= 0.8 && wronglyAssigned == 0
 }
 
@@ -40,19 +44,25 @@ object Evaluation {
         var wronglyAssigned = 0
         var correctlyOpen = 0
         var openButAssignable = 0
+        var correctlySuggested = 0
+        var wronglySuggested = 0
+        fun fits(e: Expected, a: Assignment) = e.assigned &&
+            (e.person == null || e.person == (a.person ?: NO_PERSON)) &&
+            (e.type == null || e.type == a.type)
         expected.forEach { e ->
             when (val o = outcomes[e.file]) {
                 is Outcome.Assigned -> {
-                    val a = o.rule.assignment
-                    val ok = e.assigned &&
-                        (e.person == null || e.person == (a.person ?: NO_PERSON)) &&
-                        (e.type == null || e.type == a.type)
-                    if (ok) correctlyAssigned++ else wronglyAssigned++
+                    if (fits(e, o.rule.assignment)) correctlyAssigned++ else wronglyAssigned++
                 }
-                is Outcome.Open -> if (e.assigned) openButAssignable++ else correctlyOpen++
+                is Outcome.Open -> when {
+                    o.reason == Outcome.Reason.SUGGESTION && fits(e, o.candidates.single().assignment) -> correctlySuggested++
+                    o.reason == Outcome.Reason.SUGGESTION -> wronglySuggested++
+                    e.assigned -> openButAssignable++
+                    else -> correctlyOpen++
+                }
                 null -> throw IllegalArgumentException("No sample for expected entry '${e.file}'")
             }
         }
-        return Score(expected.size, correctlyAssigned, wronglyAssigned, correctlyOpen, openButAssignable)
+        return Score(expected.size, correctlyAssigned, wronglyAssigned, correctlyOpen, openButAssignable, correctlySuggested, wronglySuggested)
     }
 }

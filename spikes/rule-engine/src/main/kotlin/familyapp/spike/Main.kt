@@ -24,7 +24,11 @@ fun main(args: Array<String>) {
             is Outcome.Assigned -> with(outcome.rule.assignment) {
                 listOf(file.name, "assigned", outcome.rule.id, person, owner, type, area, dates)
             }
-            is Outcome.Open -> listOf(file.name, "open", outcome.reason, "", "", "", "", dates)
+            is Outcome.Open -> {
+                val proposal = outcome.candidates.singleOrNull()?.takeIf { outcome.reason == Outcome.Reason.SUGGESTION }
+                val a = proposal?.assignment
+                listOf(file.name, "open", outcome.reason.name + (proposal?.let { ":" + it.id } ?: ""), a?.person, a?.owner, a?.type, a?.area, dates)
+            }
         }
         println(row.joinToString(";") { it?.toString() ?: "" })
         file.name to outcome
@@ -34,7 +38,8 @@ fun main(args: Array<String>) {
         val score = Evaluation.score(outcomes, Evaluation.parseExpected(File(expectedFile).readText()))
         println()
         println("total=${score.total} correctlyAssigned=${score.correctlyAssigned} correctlyOpen=${score.correctlyOpen} " +
-            "openButAssignable=${score.openButAssignable} wronglyAssigned=${score.wronglyAssigned}")
+            "openButAssignable=${score.openButAssignable} correctlySuggested=${score.correctlySuggested} " +
+            "wronglySuggested=${score.wronglySuggested} wronglyAssigned=${score.wronglyAssigned}")
         println("correctShare=${"%.0f".format(score.correctShare * 100)}% passes=${score.passes}")
     }
 }

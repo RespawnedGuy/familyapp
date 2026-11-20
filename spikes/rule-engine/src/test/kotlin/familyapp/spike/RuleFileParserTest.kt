@@ -31,4 +31,10 @@ class RuleFileParserTest {
     fun `rejects rule without condition`() {
         assertFailsWith<IllegalArgumentException> { RuleFileParser.parse("x |  | person=Mia") }
     }
+
+    @Test
+    fun `mode defaults to suggest for person rules and can be set`() {
+        val rules = RuleFileParser.parse("a | domain=x.de | person=Kind A\nb | domain=x.de | person=Kind A; mode=auto\nc | domain=x.de | area=Schule")
+        assertEquals(listOf(RuleMode.SUGGEST, RuleMode.AUTO, RuleMode.AUTO), rules.map { it.mode })
+    }
 }

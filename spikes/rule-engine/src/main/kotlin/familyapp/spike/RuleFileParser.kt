@@ -2,7 +2,8 @@ package familyapp.spike
 
 /**
  * Plain-text rule format, one rule per line:
- *   id | domain=schulederkinder.de; sender=a@b.de; contains=Mia,Kinderarzt | person=Mia; owner=Lisa; type=APPOINTMENT; area=Schule
+ *   id | domain=schulederkinder.de; sender=a@b.de; contains=Mia,Kinderarzt | person=Mia; owner=Lisa; type=APPOINTMENT; area=Schule; mode=auto
+ * mode is optional (auto|suggest); without it, rules naming a person only suggest.
  * Lines starting with '#' and blank lines are ignored.
  */
 object RuleFileParser {
@@ -16,7 +17,11 @@ object RuleFileParser {
         val parts = line.split("|").map { it.trim() }
         require(parts.size == 3) { "Line $lineNo: expected 'id | conditions | assignment'" }
         val (id, conditionPart, assignmentPart) = parts
-        return Rule(id, parseConditions(conditionPart, lineNo), parseAssignment(assignmentPart, lineNo))
+        val assignmentPairs = pairs(assignmentPart, lineNo).toMap()
+        val assignment = parseAssignment(assignmentPairs - "mode", lineNo)
+        val conditions = parseConditions(conditionPart, lineNo)
+        val mode = assignmentPairs["mode"]?.let { RuleMode.valueOf(it.uppercase()) }
+        return if (mode == null) Rule(id, conditions, assignment) else Rule(id, conditions, assignment, mode)
     }
 
     private fun pairs(part: String, lineNo: Int): List<Pair<String, String>> = part.split(";")
@@ -37,8 +42,7 @@ object RuleFileParser {
         }
     }
 
-    private fun parseAssignment(part: String, lineNo: Int): Assignment {
-        val map = pairs(part, lineNo).toMap()
+    private fun parseAssignment(map: Map<String, String>, lineNo: Int): Assignment {
         val unknown = map.keys - setOf("person", "owner", "type", "area")
         require(unknown.isEmpty()) { "Line $lineNo: unknown assignment keys $unknown" }
         return Assignment(
