@@ -1,0 +1,61 @@
+# Runs a whitelisted relay-deploy action on the test VPS.
+# The runner joins the tailnet as an ephemeral node tagged tag:ci (Tailscale policy
+# allows tag:ci only tcp:22 to tag:familyapp-vps), then SSHes in as "deploy", whose
+# key is bound to /usr/local/bin/relay-deploy. See ops/test-vps/README.md.
+name: test-vps
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: relay-deploy action
+        type: choice
+        options: [ping, status, logs, up]
+        default: ping
+
+permissions:
+  contents: read
+  id-token: write # OIDC token for Tailscale workload identity federation, no stored Tailscale secret
+
+concurrency:
+  group: test-vps
+  cancel-in-progress: false
+
+jobs:
+  run:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Join tailnet
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ vars.TS_FEDERATED_CLIENT_ID }}
+          audience: ${{ vars.TS_FEDERATED_AUDIENCE }}
+          tags: tag:ci
+          ping: ${{ vars.TEST_VPS_HOST }}
+
+      - name: Prepare SSH
+        env:
+          SSH_KEY: ${{ secrets.TEST_VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ vars.TEST_VPS_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: relay-deploy ${{ inputs.action }}
+        env:
+          HOST: ${{ vars.TEST_VPS_HOST }}
+          ACTION: ${{ inputs.action }}
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+              -o IdentitiesOnly=yes \
+              -o StrictHostKeyChecking=yes \
+              -o ConnectTimeout=20 \
+              "deploy@$HOST" "$ACTION"
+
+      - name: Remove key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
