@@ -19,7 +19,7 @@ Spike `spikes/p2p-sync/`: `gradle test`, `gradle build`, CLI per `gradle install
 
 ## Ordner
 
-- `docs/` Konzept, `docs/entscheidungen/` ADRs
+- `docs/` Konzept, `docs/entscheidungen/` ADRs, `docs/gestaltung/` Optik, Haptik, Klickwege
 - `spikes/rule-engine/` Spike: deterministische Regel-Engine + deutscher Datums-Parser
 - `spikes/sync/` Spike: Local-first-Sync über blindes Relay (ADR 0002)
 - `spikes/p2p-sync/` Spike: Gerätesync ohne Server (WLAN/Tailscale, optional geteilter Ordner), ADR 0003
