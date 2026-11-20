@@ -226,7 +226,7 @@ jobs:
           fi
 
           REL="$(gh api "repos/$REPO/releases" -f tag_name="$TAG" -f target_commitish="${{ github.sha }}" \
-            -f name="$NAME" -f body="$BODY" -F prerelease=$PRERELEASE -F make_latest=$([ "$PRERELEASE" = false ] && echo true || echo false))"
+            -f name="$NAME" -f body="$BODY" -F prerelease=$PRERELEASE -f make_latest=$([ "$PRERELEASE" = false ] && echo true || echo false))"
           UPLOAD_URL="$(echo "$REL" | jq -r .upload_url | sed 's/{.*}//')"
 
           for f in out/*; do
