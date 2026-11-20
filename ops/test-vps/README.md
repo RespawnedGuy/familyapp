@@ -17,7 +17,7 @@ Claude (Cloud) stößt den Workflow an und liest die Logs
 - **Cloud-Sessions von Claude können kein SSH.** Sie haben nur ausgehendes HTTPS über einen Proxy. Deshalb geht jeder Zugriff aus der Cloud über den Workflow `test-vps` (Actions → test-vps → Run workflow), jede Ausführung steht im Actions-Verlauf.
 - **SSH ist nur über das Tailnet erreichbar.** ufw lässt Port 22 nur auf `tailscale0` zu, öffentlich offen sind nur 80/443 (Caddy) und 41641/udp (Tailscale).
 - **Zwei Benutzer, root-Login aus, nur Schlüssel:**
-  - `nils`: Admin mit sudo, Schlüssel von root übernommen.
+  - `nils`: Admin mit sudo. Behält eigene Schlüssel, die von root kommen dazu.
   - `deploy`: in der Docker-Gruppe, aber sein Schlüssel ist per `restrict,command=` an [`relay-deploy`](relay-deploy) gebunden. Erlaubt sind nur `ping`, `status`, `logs [dienst]`, `load` (Image über stdin), `up`. Keine Shell, keine Weiterleitungen.
 - **`/opt/familyapp/compose.yaml` und `Caddyfile` gehören root.** Der Deploy-Schlüssel kann Images laden und den Stack neu starten, aber nicht ändern, was der Stack einbindet oder öffnet. Änderungen daran macht der Admin.
 - **Tailscale-Zugang ohne gespeichertes Geheimnis:** Der Workflow meldet sich per Workload Identity Federation (GitHub-OIDC) an, nur vom Branch `main`. Die Tailscale-Policy erlaubt `tag:ci` nur `tcp:22` auf `tag:familyapp-vps`.
@@ -53,6 +53,8 @@ Auf dem VPS:
 ```bash
 bash /root/bootstrap.sh --admin-user nils --deploy-key "ssh-ed25519 AAAA... familyapp-ci-deploy"
 ```
+
+Wer nicht als root, sondern als normaler Benutzer per Schlüssel hereinkommt, kopiert nach `~/` und startet mit `sudo bash ~/bootstrap.sh …`.
 
 Das Skript bricht ab, wenn die Sitzung nicht über Tailscale kommt, Tailscale nicht läuft oder root keine Schlüssel hat. **Diese root-Sitzung offen lassen** und in einem zweiten Fenster `ssh nils@<vps>` und `sudo -v` testen. Notfalls hilft die Remote-Konsole im IONOS-Panel.
 
