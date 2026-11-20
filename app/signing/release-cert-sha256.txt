@@ -1,0 +1,4 @@
+# SHA-256 fingerprint of the release signing certificate (public, not a secret).
+# CI refuses a release-key build whose certificate differs, because Android would
+# then reject it as an update ("App nicht installiert").
+7a60979dca242d96d9913203e887e895f56ec9019a1e734604e9da38bbd6ac4a

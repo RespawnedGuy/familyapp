@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# Checks an APK for the usual sideloading pitfalls and prints a report.
+# Usage: verify-apk.sh <apk> <expected-version-code> [expected-cert-sha256-file]
+# Exit code != 0 if any check fails.
+set -uo pipefail
+
+APK="$1"
+EXPECTED_VC="$2"
+CERT_FILE="${3:-}"
+PKG="io.github.respawnedguy.familyapp"
+MIN_SDK="26"
+TARGET_SDK="36"
+
+BT="${ANDROID_HOME:?ANDROID_HOME not set}/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+FAILED=0
+pass() { echo "OK    $1"; }
+fail() { echo "FEHLER $1"; FAILED=1; }
+
+echo "== Datei"
+echo "Datei: $(basename "$APK")  Größe: $(stat -c %s "$APK") Bytes"
+echo "SHA-256: $(sha256sum "$APK" | cut -d' ' -f1)"
+echo "Build-Tools: $BT"
+[ "$(head -c 2 "$APK")" = "PK" ] && pass "ZIP-Signatur (PK) vorhanden" || fail "Datei ist kein ZIP/APK"
+unzip -tq "$APK" >/dev/null 2>&1 && pass "ZIP vollständig und unbeschädigt" || fail "ZIP beschädigt oder abgeschnitten"
+unzip -l "$APK" AndroidManifest.xml classes.dex >/dev/null 2>&1 && pass "AndroidManifest.xml und classes.dex enthalten" || fail "Manifest oder classes.dex fehlt"
+
+echo
+echo "== Signatur (apksigner)"
+SIG="$("$BT/apksigner" verify --verbose --print-certs "$APK" 2>&1)"; SIG_RC=$?
+echo "$SIG" | grep -vE '^WARNING: META-INF' 
+[ $SIG_RC -eq 0 ] && pass "apksigner verify erfolgreich" || fail "apksigner verify fehlgeschlagen"
+echo "$SIG" | grep -q "Verified using v2 scheme (APK Signature Scheme v2): true" && pass "Signaturschema v2" || fail "Signaturschema v2 fehlt"
+echo "$SIG" | grep -q "Verified using v3 scheme (APK Signature Scheme v3): true" && pass "Signaturschema v3" || fail "Signaturschema v3 fehlt"
+CERT="$(echo "$SIG" | grep -m1 'certificate SHA-256 digest' | awk '{print $NF}')"
+echo "Zertifikat SHA-256: $CERT"
+echo "$SIG" | grep -q "CN=Android Debug" && fail "mit Android-Debug-Schlüssel signiert" || pass "kein Android-Debug-Schlüssel"
+if [ -n "$CERT_FILE" ]; then
+  EXPECTED_CERT="$(grep -vE '^\s*(#|$)' "$CERT_FILE" | head -1 | tr -d '[:space:]:' | tr 'A-F' 'a-f')"
+  [ "$CERT" = "$EXPECTED_CERT" ] && pass "Zertifikat = fester Release-Schlüssel (Updates möglich)" || fail "Zertifikat weicht vom Release-Schlüssel ab ($EXPECTED_CERT)"
+fi
+
+echo
+echo "== Ausrichtung (zipalign, 16-KB-Seiten)"
+"$BT/zipalign" -c -P 16 4 "$APK" && pass "zipalign 4 / 16 KB" || fail "zipalign-Prüfung fehlgeschlagen"
+
+echo
+echo "== Manifest (aapt2 dump badging)"
+BADGING="$("$BT/aapt2" dump badging "$APK" 2>&1)"
+echo "$BADGING" | grep -vE "^application-label-|^locales:|^densities:"
+echo "$BADGING" | grep -q "^package: name='$PKG'" && pass "Paketname $PKG" || fail "Paketname ist nicht $PKG"
+echo "$BADGING" | grep -q "versionCode='$EXPECTED_VC'" && pass "versionCode $EXPECTED_VC" || fail "versionCode ist nicht $EXPECTED_VC"
+echo "$BADGING" | grep -qE "^(min)?[sS]dkVersion:'$MIN_SDK'" && pass "minSdk $MIN_SDK (Android 8.0)" || fail "minSdk ist nicht $MIN_SDK"
+echo "$BADGING" | grep -q "^targetSdkVersion:'$TARGET_SDK'" && pass "targetSdk $TARGET_SDK" || fail "targetSdk ist nicht $TARGET_SDK"
+echo "$BADGING" | grep -q "^launchable-activity:" && pass "startbare Activity vorhanden (App-Symbol erscheint)" || fail "keine startbare Activity"
+echo "$BADGING" | grep -q "application-debuggable" && fail "APK ist debuggable" || pass "nicht debuggable"
+echo "$BADGING" | grep -qi "testOnly" && fail "APK ist testOnly (Installation wird abgelehnt)" || pass "nicht testOnly"
+if echo "$BADGING" | grep -q "^native-code:"; then
+  echo "$BADGING" | grep "^native-code:" | grep -q "arm64-v8a" && pass "native Bibliotheken enthalten arm64-v8a" || fail "native Bibliotheken ohne arm64-v8a"
+else
+  pass "keine nativen Bibliotheken (läuft auf jeder CPU-Architektur)"
+fi
+
+echo
+[ $FAILED -eq 0 ] && echo "ERGEBNIS: alle Prüfungen bestanden" || echo "ERGEBNIS: mindestens eine Prüfung fehlgeschlagen"
+exit $FAILED

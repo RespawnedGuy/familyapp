@@ -16,3 +16,9 @@ local.properties
 
 # Relay spike local data
 *.db
+
+# Android signing material never goes into the repo
+*.jks
+*.keystore
+*.p12
+/_signing/
