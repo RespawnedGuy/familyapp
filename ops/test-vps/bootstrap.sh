@@ -131,6 +131,12 @@ usermod -aG sudo "$ADMIN_USER"
 echo "$ADMIN_USER ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/90-$ADMIN_USER"
 chmod 0440 "/etc/sudoers.d/90-$ADMIN_USER"
 visudo -cf "/etc/sudoers.d/90-$ADMIN_USER" >/dev/null
+# A distro or panel may ship a sudoers without "@includedir /etc/sudoers.d"; then the
+# file above is silently ignored. Verify before root login is switched off.
+# Captured first: with pipefail an early-exiting "grep -q" would fail the pipeline.
+ADMIN_SUDO="$(sudo -n -l -U "$ADMIN_USER" 2>/dev/null || true)"
+grep -q 'NOPASSWD: ALL' <<<"$ADMIN_SUDO" \
+  || die "sudo rule for $ADMIN_USER is not effective (check @includedir in /etc/sudoers)"
 install -d -m 0700 -o "$ADMIN_USER" -g "$ADMIN_USER" "/home/$ADMIN_USER/.ssh"
 # Either file may be missing (new user, or root without keys); with pipefail a failing
 # cat would abort the script, so read each one tolerantly.

@@ -42,6 +42,16 @@ Get-Content "$env:USERPROFILE\.ssh\familyapp_ci_deploy.pub"
 
 ### 2. VPS härten (per Tailscale als root verbinden)
 
+**Frischer Server** (z. B. IONOS-Neuinstallation „Debian 13 ohne Plesk“ mit hinterlegtem SSH-Schlüssel): zuerst einmal über die öffentliche IP als root anmelden und Tailscale einrichten. Vorher in der Tailscale-Konsole einen alten Eintrag gleichen Namens entfernen und die Policy aus Schritt 4.1 eintragen, damit der Tag erlaubt ist.
+
+```bash
+apt-get update && apt-get install -y curl
+curl -fsSL https://tailscale.com/install.sh | sh
+tailscale up --hostname=<vps> --advertise-tags=tag:familyapp-vps
+```
+
+Auf dem PC alte Host-Schlüssel entfernen: `ssh-keygen -R <vps>` (auch für Tailnet- und öffentliche IP).
+
 Skripte vom PC auf den VPS kopieren (im Repo-Klon, `<vps>` = Tailnet-Name des VPS):
 
 ```powershell
