@@ -1,6 +1,6 @@
 # Optik, Haptik und Klickwege
 
-- Status: Entwurf zum Sparring, Entscheidungen trifft Nils (Abschnitt „Offene Entscheidungen“)
+- Status: Entwurf zum Sparring. Entschieden: D1 Navigation A (20.11.2026). D2–D8 offen.
 - Datum: 2026-11-20
 - Klickbare Skizze: https://claude.ai/artifact/D46DuTRTcBt5pky1nVV32g (Variante A mit Tap-Zähler, Varianten B und C, Pairing, Benachrichtigungen)
 - Grundlage: [KONZEPT.md](../KONZEPT.md), [ADR 0003](../entscheidungen/0003-p2p-sync-im-selben-netz.md)
@@ -211,7 +211,7 @@ Schnell rein: Die erste Person legt die Familie an, indem sie die App öffnet un
 
 | # | Frage | Empfehlung | Alternative |
 | --- | --- | --- | --- |
-| D1 | Navigation | **A** (Heute, Familie, Erfassen, Demnächst, Suchen), Tablet mit Spalten aus C | B (ein Strom) oder C (Spalten) |
+| D1 | Navigation | **Entschieden (Nils, 20.11.2026): A** (Heute, Familie, Erfassen, Demnächst, Suchen), Tablet mit Spalten aus C | – |
 | D2 | Wo sitzt Erfassen? | **Mitte der Leiste**, beidhändig erreichbar | FAB unten rechts (Material-3-Standard) |
 | D3 | Was macht der Erfassen-Knopf? | **Tippen startet sofort Sprache, langes Drücken öffnet die Kamera** (Foto dann 2 Taps), Text einen Tap entfernt | Erst Auswahl (je 1 Tap mehr) |
 | D4 | Bestätigt das Wählen einer fehlenden Person die Karte? | **Ja**, 2 Taps statt 3 | Immer zusätzlich „Passt“ (einheitlicher) |
