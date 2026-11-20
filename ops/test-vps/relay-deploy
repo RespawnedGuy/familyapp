@@ -1,0 +1,62 @@
+#!/bin/sh
+# Forced command for the CI deploy key (see authorized_keys of user "deploy").
+# sshd ignores the command the client asked for and runs this script instead;
+# the requested command arrives in SSH_ORIGINAL_COMMAND and is checked here.
+#
+# Allowed actions:
+#   ping            connectivity check, prints versions
+#   status          docker compose ps
+#   logs [service]  last 200 log lines
+#   load            docker load (image tar, optionally gzipped, on stdin)
+#   up              docker compose up -d with the root-owned compose.yaml
+set -eu
+set -f # no globbing when splitting the request below
+
+APP_DIR="${RELAY_APP_DIR:-/opt/familyapp}"
+REQUEST="${SSH_ORIGINAL_COMMAND:-ping}"
+
+case "$REQUEST" in
+  *[!a-z0-9\ -]*) echo "rejected: only [a-z0-9 -] allowed" >&2; exit 2 ;;
+esac
+
+# shellcheck disable=SC2086 # intentional word splitting of the validated request
+set -- $REQUEST
+ACTION="${1:-ping}"
+[ $# -gt 0 ] && shift
+
+logger -t relay-deploy "action=$ACTION args=$* client=${SSH_CLIENT%% *}" 2>/dev/null || true
+
+compose() {
+  [ -f "$APP_DIR/compose.yaml" ] || { echo "no $APP_DIR/compose.yaml yet" >&2; exit 3; }
+  docker compose --project-directory "$APP_DIR" -f "$APP_DIR/compose.yaml" "$@"
+}
+
+case "$ACTION" in
+  ping)
+    [ $# -eq 0 ] || exit 2
+    echo "ok $(hostname) $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    echo "docker $(docker version --format '{{.Server.Version}}')"
+    echo "compose $(docker compose version --short)"
+    ;;
+  status)
+    [ $# -eq 0 ] || exit 2
+    compose ps
+    ;;
+  logs)
+    [ $# -le 1 ] || exit 2
+    compose logs --no-color --tail 200 "$@"
+    ;;
+  load)
+    [ $# -eq 0 ] || exit 2
+    docker load
+    ;;
+  up)
+    [ $# -eq 0 ] || exit 2
+    compose up -d --remove-orphans
+    compose ps
+    ;;
+  *)
+    echo "unknown action: $ACTION (allowed: ping status logs load up)" >&2
+    exit 2
+    ;;
+esac
