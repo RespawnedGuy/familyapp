@@ -1,6 +1,6 @@
 # ADR 0002: Local-first mit E2E-Verschlüsselung und blindem Relay
 
-- Status: Vorgeschlagen (wartet auf OK von Nils)
+- Status: Akzeptiert (OK von Nils am 2026-11-20)
 - Datum: 2026-11-20
 - Ändert: [ADR 0001](0001-tech-stack.md), Abschnitt „Server“ (siehe „Folgen für ADR 0001“)
 
@@ -57,7 +57,7 @@ Diese Fakten entscheiden den Vergleich. Wo nicht selbst nachgelesen, steht „pr
 
 Keine fertige Lösung erfüllt gleichzeitig KMP, E2E, Selfhost und keine Lizenzkosten pro Gerät.
 
-## Entscheidung (Vorschlag)
+## Entscheidung
 
 **V6: Local-first-Apps, die über ein blindes Relay synchronisieren. Das Relay kann bei uns (Abo) oder bei der Familie (Selfhost) laufen. Ein Hausgerät ist optional, nie Pflicht.**
 
@@ -86,6 +86,23 @@ Damit niemand doppelt benachrichtigt wird, ersetzt ein angekommener Push die lok
 
 **Ohne jedes Relay (reines P2P) ist A1 nicht erfüllbar**: Lokale Notifications allein können nicht abgesagt werden, wenn auf einem anderen Gerät erledigt wurde, und neue Fristen erreichen das andere Handy nicht.
 
+### Relay im Detail
+
+Ein Ktor-Dienst mit SQLite als ein Docker-Image, identisch für Abo und Selfhost. Geschätzt ca. 1.500 Zeilen Kotlin.
+
+| Baustein | Umsetzung | Was das Relay dabei sieht |
+| --- | --- | --- |
+| Geräte-Identität | Jedes Gerät hat ein Ed25519-Schlüsselpaar und signiert jede Anfrage (Zeitstempel + Nonce gegen Wiederholung). Neues Gerät wird von einem vorhandenen bestätigt (QR-Code). | Öffentliche Schlüssel, zufällige Familien-ID |
+| Briefkasten | Verschlüsselte Operationen ablegen und ab Cursor abholen; WebSocket für Live-Sync bei offener App. Löschen, sobald alle Geräte bestätigt haben. Anhänge als verschlüsselte Blobs, adressiert über Hash, Größenlimit. Größen auf feste Stufen aufgefüllt. | Größe, Zeitpunkt, Absender-Gerät |
+| Blinder Wecker | Eintrag: Zeitpunkt T, Empfänger-Geräte, Chiffrat, Hash des Absage-Codes. Absage mit dem Code löscht ihn. Zeitgeber prüft alle 30 s; mindestens einmal zustellen, Handy filtert Doppelte über feste ID. | T, Empfänger, dass abgesagt wurde |
+| Push anstoßen | Meldet dem Gateway nur „Gerät mit Kennung X wecken“. | – |
+
+**Push-Gateway (nur von uns betrieben):** hält APNs-Schlüssel und FCM-Zugang, ordnet Kennungen Push-Tokens zu, nimmt nur Anfragen registrierter Relays an, begrenzt die Rate. Muster wie ntfy.
+
+**Betrieb:** Abo auf einem EU-VPS, Sicherung per Litestream (SQLite nach S3); da alles verschlüsselt ist, darf die Sicherung extern liegen. Selfhost per `docker compose up`. Der eigentliche Selfhost-Aufwand ist die Erreichbarkeit per HTTPS von unterwegs: DDNS + Let's Encrypt + Portfreigabe (bei Synology in DSM enthalten) oder Tailscale/Cloudflare Tunnel. Für die meisten Familien bleibt das Abo Standard.
+
+**Prüfung:** Das Protokoll (Datentypen, Signaturen, Verschlüsselung) ist ein gemeinsames Kotlin-Modul für App und Relay. Tests: Gerät eine Woche offline, Operationen doppelt und in falscher Reihenfolge, Relay-Neustart mit fälligen Weckern (kein Wecker geht verloren). Ein Auszug der Relay-Datenbank zeigt nur Chiffrate.
+
 ### Betriebsarten
 
 | Betriebsart | Familie braucht | Wir betreiben | Daten bei uns |
@@ -106,7 +123,7 @@ Ganz ohne uns geht iOS-Push technisch nicht (Plattformgrenze 1). Die Familie ver
 
 ## Folgen
 
-### Für ADR 0001 (erst nach OK von Nils ändern)
+### Für ADR 0001 (umgesetzt am 2026-11-20)
 
 - **Server:** „Ktor + PostgreSQL mit Regeln, IMAP-Abruf und Eskalation“ wird zu „Ktor-Relay mit SQLite, nur Briefkasten, blinder Wecker und Push“. PostgreSQL entfällt.
 - **Mail-Eingang:** IMAP-Abruf wandert vom Server auf die Geräte (und optional auf das Hausgerät).
