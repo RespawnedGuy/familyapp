@@ -1,6 +1,6 @@
 # Optik, Haptik und Klickwege
 
-- Status: Entwurf zum Sparring. Entschieden: D1 Navigation A (20.11.2026). D2–D8 offen.
+- Status: Alle Fragen D1–D8 entschieden (Nils, 20.11.2026), dazu: keine Vibration.
 - Datum: 2026-11-20
 - Klickbare Skizze: https://claude.ai/artifact/D46DuTRTcBt5pky1nVV32g (Variante A mit Tap-Zähler, Varianten B und C, Pairing, Benachrichtigungen)
 - Grundlage: [KONZEPT.md](../KONZEPT.md), [ADR 0003](../entscheidungen/0003-p2p-sync-im-selben-netz.md)
@@ -8,7 +8,7 @@
 Was dieses Dokument anders macht als ein Moodboard:
 
 - Jeder Klickweg ist **gezählt** (Taps und Wischgesten) und für das Erfassen zusätzlich als Zeit nach dem Keystroke-Level-Model geschätzt. Die Skizze zählt mit, damit wir Zahlen an echten Händen prüfen statt zu glauben.
-- Haptik, Bewegung und Benachrichtigungen sind auf **konkrete Plattform-APIs** (Android, iOS, Compose) abgebildet, damit die Umsetzung nichts mehr erfinden muss.
+- Bewegung und Benachrichtigungen sind auf **konkrete Plattform-APIs** (Android, iOS, Compose) abgebildet, damit die Umsetzung nichts mehr erfinden muss. Vibration ist bewusst gestrichen (Abschnitt Haptik).
 - Farben sind auf **Kontrast nach WCAG 2.2** nachgerechnet, und am Ende steht ein **Testskript** mit prüfbaren Zielwerten.
 
 ## Kernaufgaben und wie oft sie vorkommen
@@ -50,9 +50,9 @@ Gezählt wird jeder Tap und jede Wischgeste, ab geöffneter App auf dem Startbil
 | **B** | Wenigste Taps, ein einziger Bildschirm, Erfassen-Leiste wie in einem Messenger. | Entscheidungen, eigene und fremde Aufgaben und Termine mischen sich. Mehr gleichzeitig sichtbare Elemente heißt mehr Last im Arbeitsgedächtnis. Die Stapel der anderen verschwinden hinter einem Filter. |
 | **C** | Stärkste Transparenz: Jede Person hat sichtbar ihren Stapel. Auf dem Tablet hervorragend, weil Spalten nebeneinander passen. | Auf dem Handy passt nur eine Spalte; ab drei Erwachsenen (Getrennterziehende, Großeltern) wird viel gewischt. Kein guter Ort für Termine und Suche. |
 
-**Empfehlung:** A auf dem Handy, obwohl B ein paar Taps spart: Die Trennung von Entscheidung und Aufgabe und der feste Ort für die Stapel der anderen sind Kern des Konzepts, die Taps lassen sich in A beim Foto zurückholen. Die Spaltenansicht aus C wird die Ansicht „Familie“ auf dem Tablet. Von B übernehmen wir die Idee, dass der Startbildschirm Eingang und eigene Aufgaben zusammen zeigt („Heute“).
+**Entschieden (D1):** A auf dem Handy, obwohl B ein paar Taps spart: Die Trennung von Entscheidung und Aufgabe und der feste Ort für die Stapel der anderen sind Kern des Konzepts. Beim Foto bleibt A einen Tap hinter B (entschieden, D3). Die Spaltenansicht aus C wird die Ansicht „Familie“ auf dem Tablet. Von B übernehmen wir die Idee, dass der Startbildschirm Eingang und eigene Aufgaben zusammen zeigt („Heute“).
 
-Rechnung (Mittelwert der Häufigkeit × Taps): K1 22,5 × (Sprache + Foto)/2 = 45 / 34 / 45; K2 22,5 × 1,2 (jede fünfte Karte braucht eine Ergänzung) = 27, bei C plus 7 Spaltenwechsel bei geschätzt 7 Sitzungen; K3 15; K4 5 × Taps; K5 5 × Taps; K7 2 × Taps. Ergebnis A 104, B 90, C 113. B spart gegenüber A etwa 14 Taps pro Woche, fast alle beim Foto. Den Unterschied holt A zurück, wenn Foto in A ebenfalls zwei Taps braucht (siehe D3: langes Drücken auf Erfassen öffnet direkt die Kamera, oder ein Foto-Widget). Die Häufigkeiten sind Schätzungen und gehören nach zwei Wochen Nutzung durch gemessene ersetzt.
+Rechnung (Mittelwert der Häufigkeit × Taps): K1 22,5 × (Sprache + Foto)/2 = 45 / 34 / 45; K2 22,5 × 1,2 (jede fünfte Karte braucht eine Ergänzung) = 27, bei C plus 7 Spaltenwechsel bei geschätzt 7 Sitzungen; K3 15; K4 5 × Taps; K5 5 × Taps; K7 2 × Taps. Ergebnis A 104, B 90, C 113. B spart gegenüber A etwa 14 Taps pro Woche, fast alle beim Foto. Wer vor allem fotografiert, stellt in den Einstellungen Foto als Standard für den Erfassen-Knopf ein (D3); dann kehrt sich der Unterschied für Sprache um. Ein Foto-Widget außerhalb der App spart ebenfalls einen Tap. Die Häufigkeiten sind Schätzungen und gehören nach zwei Wochen Nutzung durch gemessene ersetzt.
 
 ## Erfassen: schneller als die App zu öffnen
 
@@ -69,7 +69,7 @@ Ziel aus dem Konzept: „Erfassen in unter 5 s ab Entsperren.“ Nachgerechnet m
 
 Regeln fürs Erfassen:
 
-1. Der Erfassen-Knopf **startet sofort die Spracheingabe**. Foto und Tippen sind im selben Blatt einen Tap entfernt. Abbrechen durch Wischen nach unten oder Tippen daneben.
+1. Der Erfassen-Knopf **startet sofort die Spracheingabe** und öffnet das Erfassen-Blatt. Im Blatt liegt „Foto“ **an derselben Stelle wie der Erfassen-Knopf**, also zweimal auf dieselbe Stelle tippen = Kamera, der Daumen muss nicht wandern. „Tippen“ liegt daneben. Welche Aktion der erste Tap auslöst (Sprache, Foto, Text), ist in den Einstellungen umstellbar, Standard ist Sprache. Abbrechen durch Wischen nach unten oder Tippen daneben.
 2. **Speichern ohne Knopf:** Nach Sprechende speichert die App selbst und zeigt „Gespeichert. Liegt oben im Eingang.“ mit Rückgängig.
 3. Was Regeln sicher erkennen (Kindname, Datum), steht danach schon an der Karte. Alles andere bleibt offen.
 4. Einstiege außerhalb der App sind Plattformcode und **nicht Compose Multiplatform**: Android `TileService` (Schnellkachel), App-Shortcuts (`ShortcutManager`, langes Drücken aufs Symbol), Widget (Jetpack Glance), Teilen-Ziel. iOS: Steuerelement für Kontrollzentrum und Sperrbildschirm (`ControlWidget`, ab iOS 18), Action Button und Siri über App Intents, Widget (WidgetKit), Share Extension. Im Modulplan als eigene `androidMain`- und Swift-Bausteine vorsehen.
@@ -90,8 +90,9 @@ Verhalten:
 | Situation | Weg | Taps |
 | --- | --- | --- |
 | Vorschlag stimmt | „Passt“ oder nach rechts wischen | 1 |
-| Person fehlt oder ist falsch | Chip antippen, Person wählen. Die Wahl ist die Bestätigung. | 2 |
-| Datum ändern | Chip antippen, Schnellwahl (Heute, Morgen, Freitag, Nächste Woche, Kein Datum) | 2, dann „Passt“ |
+| Person fehlt oder ist falsch | Chip antippen, Person wählen. Die Wahl ist die Bestätigung, sobald auch ein Datum (oder „Kein Datum“) feststeht. | 2 |
+| Datum fehlt oder ist falsch | Chip antippen, Schnellwahl (Heute, Morgen, Freitag, Nächste Woche, Kein Datum). Die Wahl ist die Bestätigung, sobald auch eine Person feststeht. | 2 |
+| Person und Datum fehlen | Erst das eine, dann das andere wählen; die zweite Wahl bestätigt | 4 |
 | Unwichtig | „Irrelevant“ oder nach links wischen | 1 |
 | Daraus eine Regel machen | In der Rückmeldung nach dem Ändern: „Künftig immer so“ | +1, freiwillig |
 
@@ -133,27 +134,15 @@ Alle Werte erfüllen WCAG 2.2 AA für Text (4,5:1), nachgerechnet mit der Formel
 
 - **Schrift:** Systemschrift (Roboto bzw. SF Pro), weil beide mit der Schriftgrößen-Einstellung des Systems skalieren. Fließtext 15–16 sp, Metazeilen 12 sp, nichts unter 11 sp. Layout muss bei 200 % Schriftgröße funktionieren.
 - **Formen:** Karten mit 16 dp Radius, Chips 16 dp hoch-rund, Bottom Sheet 28 dp oben (Material-3-Werte).
-- **Dynamische Farbe (Material You):** nur für die Oberfläche denkbar, nie für Personenfarben, weil Lisas Orange auf allen Geräten Lisas Orange bleiben muss. Empfehlung: aus (D6), dann sehen Android und iPhone gleich aus.
+- **Dynamische Farbe (Material You):** nur für die Oberfläche denkbar, nie für Personenfarben, weil Lisas Orange auf allen Geräten Lisas Orange bleiben muss. Entschieden: aus (D6), dann sehen Android und iPhone gleich aus.
 - **Dunkelmodus** von Anfang an, Werte oben.
 - **Keine Gamification:** keine Punkte, Ranglisten oder Konfetti. Sichtbar ist, was offen und was überfällig ist.
 
 ## Haptik
 
-Grundsatz: Vibration nur als Antwort auf eine eigene Handlung oder für echte Eskalation. Kurz und knackig statt brummend, keine Vibration beim Scrollen. Die System-Einstellung „Vibration bei Berührung“ wird respektiert (beide Plattformen tun das bei den Standard-APIs von selbst).
+**Entschieden (Nils, 20.11.2026): Die App vibriert nicht.** Keine haptische Rückmeldung bei Gesten, Bestätigen, Aufnahme oder Pairing, keine eigenen Vibrationsmuster für Benachrichtigungen. Rückmeldung kommt nur sichtbar: Bewegung der Karte, Farbwechsel an der Wisch-Schwelle, Hinweis unten mit Rückgängig. Benachrichtigungen folgen den Ton- und Vibrations-Einstellungen, die die Person im System für die App bzw. den Kanal festlegt; die App setzt dort nichts zusätzlich.
 
-| Moment | Compose (`LocalHapticFeedback`) | Android View (`HapticFeedbackConstants`) | iOS |
-| --- | --- | --- | --- |
-| Wischgeste überschreitet die Schwelle | `GestureThresholdActivate` | `GESTURE_THRESHOLD_ACTIVATE` (API 34), darunter `CLOCK_TICK` | `UIImpactFeedbackGenerator(.light)` |
-| Bestätigt, erledigt, übernommen | `Confirm` | `CONFIRM` (API 30) | `UINotificationFeedbackGenerator` `.success` |
-| Irrelevant markiert | `SegmentTick` (leicht, kein „Fehler“) | `SEGMENT_TICK` (API 34) bzw. `CLOCK_TICK` | `UISelectionFeedbackGenerator` |
-| Rückgängig | `Reject` | `REJECT` (API 30) | `.warning` |
-| Aufnahme startet und stoppt | `ToggleOn` / `ToggleOff` | `TOGGLE_ON` / `TOGGLE_OFF` (API 34) | `UIImpactFeedbackGenerator(.medium)` |
-| Pairing-Code auf beiden Seiten bestätigt | `Confirm` | `CONFIRM` | `.success` |
-| Überfällig-Benachrichtigung | Kanal-Vibrationsmuster, kein Code | Kanal „Überfällig“ | Systemton und -haptik |
-
-Zu prüfen: Welche `HapticFeedbackType`-Werte Compose Multiplatform auf iOS auf UIKit-Generatoren abbildet (sonst kleine `expect/actual`-Schicht). Quellen: Android Developers „Haptics design principles“, Apple HIG „Playing haptics“.
-
-Die Skizze vibriert auf Android-Browsern an der Schwelle und beim Bestätigen über `navigator.vibrate`, sofern der Browser es im eingebetteten Rahmen zulässt.
+Für die Umsetzung heißt das: kein `LocalHapticFeedback`, keine `HapticFeedbackConstants`, keine `UIFeedbackGenerator`. Android-Benachrichtigungskanäle bekommen kein eigenes Vibrationsmuster (kein `setVibrationPattern`); ob es vibriert, entscheidet die System-Einstellung der Person. Haptik, die das System selbst auslöst (z. B. die Tastatur), bleibt unberührt.
 
 ## Bewegung
 
@@ -170,7 +159,7 @@ Die Skizze vibriert auf Android-Browsern an der Schwelle und beim Bestätigen ü
 
 ## Benachrichtigungen und Eskalation
 
-| Kanal (Android) / Stufe (iOS) | Inhalt | Ton/Vibration | Zeitpunkt |
+| Kanal (Android) / Stufe (iOS) | Inhalt | Ton (Vibration nach System-Einstellung, keine eigene) | Zeitpunkt |
 | --- | --- | --- | --- |
 | Überfällig · an dich | Frist verpasst, eigene Aufgabe. Aktionen „Erledigt“, „Abgeben“ | ja | gesammelt 7:30 |
 | Überfällig · an alle | +1 Tag, Aufgabe einer anderen Person. Aktionen „Übernehme ich“, „Ansehen“. Text neutral: „Stand prüfen“, weil das Gerät nicht wissen kann, ob schon erledigt (ADR 0003) | ja | gesammelt 7:30 |
@@ -207,14 +196,16 @@ Schnell rein: Die erste Person legt die Familie an, indem sie die App öffnet un
 - **Jede Wischgeste hat einen Knopf** (WCAG 2.5.1, Zeigergesten). Für TalkBack und VoiceOver werden „Passt“, „Irrelevant“ und „Erledigt“ zusätzlich als eigene Aktionen angeboten (Compose `semantics { customActions }`, iOS `accessibilityCustomActions`).
 - Status nie nur über Farbe: „überfällig seit gestern“ als Text, Initialen in Personen-Punkten.
 
-## Offene Entscheidungen für Nils
+## Entscheidungen (Nils, 20.11.2026)
 
-| # | Frage | Empfehlung | Alternative |
+Nils: „Was nicht kommentiert wird, nehmen wir so.“ D2 und D5–D8 sind damit wie empfohlen entschieden, D3 und D4 mit Nils' Änderungen.
+
+| # | Frage | Entscheidung | Verworfen |
 | --- | --- | --- | --- |
-| D1 | Navigation | **Entschieden (Nils, 20.11.2026): A** (Heute, Familie, Erfassen, Demnächst, Suchen), Tablet mit Spalten aus C | – |
+| D1 | Navigation | **A** (Heute, Familie, Erfassen, Demnächst, Suchen), Tablet mit Spalten aus C | B (ein Strom), C (Spalten) |
 | D2 | Wo sitzt Erfassen? | **Mitte der Leiste**, beidhändig erreichbar | FAB unten rechts (Material-3-Standard) |
-| D3 | Was macht der Erfassen-Knopf? | **Tippen startet sofort Sprache, langes Drücken öffnet die Kamera** (Foto dann 2 Taps), Text einen Tap entfernt | Erst Auswahl (je 1 Tap mehr) |
-| D4 | Bestätigt das Wählen einer fehlenden Person die Karte? | **Ja**, 2 Taps statt 3 | Immer zusätzlich „Passt“ (einheitlicher) |
+| D3 | Was macht der Erfassen-Knopf? | **Tippen startet sofort Sprache; „Foto“ liegt im Blatt an derselben Stelle** (zweimal tippen = Kamera), Text daneben. Erste Aktion in den Einstellungen umstellbar | Langes Drücken für Kamera; erst Auswahl |
+| D4 | Bestätigt das Wählen im Chip die Karte? | **Ja, bei Person und bei Datum**, sobald beides feststeht (2 Taps statt 3) | Immer zusätzlich „Passt“ |
 | D5 | Wischgesten | **Rechts Passt/erledigt, links irrelevant**, immer mit Knopf und Rückgängig | Keine Gesten |
 | D6 | Farbschema | **Feste App- und Personenfarben** | Material You auf Android |
 | D7 | Wiederherstellungscode | **Nach erstem Pairing bzw. 10 Einträgen anbieten** | Beim ersten Start |
@@ -231,8 +222,8 @@ Schnell rein: Die erste Person legt die Familie an, indem sie die App öffnet un
 ## Quellen
 
 - Material Design 3: Navigation bar, FAB, Bottom sheets, Motion (Easing and duration tokens), Color roles; m3.material.io
-- Apple Human Interface Guidelines: Tab bars, Playing haptics, Notifications, Accessibility; developer.apple.com/design/human-interface-guidelines
-- Android Developers: Haptics design principles, `HapticFeedbackConstants`, Notification channels, `TileService`, Jetpack Glance; developer.android.com
+- Apple Human Interface Guidelines: Tab bars, Notifications, Accessibility; developer.apple.com/design/human-interface-guidelines
+- Android Developers: Notification channels, `TileService`, Jetpack Glance; developer.android.com
 - WCAG 2.2: 1.4.3 Kontrast, 2.5.1 Zeigergesten, 2.5.8 Zielgröße (Minimum); w3.org/TR/WCAG22
 - Card, Moran & Newell (1983): The Psychology of Human-Computer Interaction (Keystroke-Level-Model)
 - Cowan (2001), Masicampo & Baumeister (2011), Mark, Gudith & Klocke (2008), Hoober (2013), Raskin (2000), Nielsen & Landauer (1993): wie im Text vermerkt, aus dem Gedächtnis zitiert und vor einer Veröffentlichung zu prüfen. Konkrete Seiten der Plattform-Richtlinien wurden in dieser Sitzung nicht abgerufen; API-Namen und Level stammen aus dem Gedächtnis und werden beim ersten Code geprüft.
