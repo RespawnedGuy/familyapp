@@ -1,0 +1,14 @@
+# Build
+.gradle/
+build/
+*.class
+.idea/
+*.iml
+local.properties
+
+# Secrets
+.env
+
+# Real family data never goes into the repo
+**/samples-private/
+**/expected-private.csv
