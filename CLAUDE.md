@@ -13,10 +13,13 @@ Die allgemeinen Regeln stehen in der übergeordneten CLAUDE.md von Nils. Chat un
 | build | `gradle build` |
 | Spike ausführen | `gradle run --args="<samples-dir> <rules-file> [expected.csv]"` |
 
+Sync-Spike (in `spikes/sync/`): `gradle test`, `gradle build`, `gradle run` (Relay auf Port 8080), `docker compose up -d --build` (vorher `.env` aus `.env.example`). Umgebungsvariablen: `RELAY_PORT`, `RELAY_DB_PATH`, `RELAY_TIMER_INTERVAL_SECONDS`, `RELAY_PUBLIC_PORT`.
+
 ## Ordner
 
 - `docs/` Konzept, `docs/entscheidungen/` ADRs
 - `spikes/rule-engine/` Spike: deterministische Regel-Engine + deutscher Datums-Parser
+- `spikes/sync/` Spike: Local-first-Sync über blindes Relay (ADR 0002)
 
 ## Datenschutz
 
