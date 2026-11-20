@@ -157,7 +157,8 @@ jobs:
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
-          script: bash app/scripts/emulator-smoke.sh "dist/familyapp-${{ env.VERSION_NAME }}.apk" probe/update-probe.apk emulator-out "$(ls probe/previous/*.apk 2>/dev/null | head -1)" 2>&1 | tee emulator-out-report.txt; exit ${PIPESTATUS[0]}
+          # The runner executes each line with sh, so pipefail needs an explicit bash.
+          script: bash -c 'set -o pipefail; bash app/scripts/emulator-smoke.sh "dist/familyapp-${{ env.VERSION_NAME }}.apk" probe/update-probe.apk emulator-out "$(ls probe/previous/*.apk 2>/dev/null | head -1)" 2>&1 | tee emulator-out-report.txt'
 
       - name: Collect report
         if: always()
