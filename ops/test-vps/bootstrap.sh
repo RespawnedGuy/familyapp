@@ -1,20 +1,18 @@
 #!/usr/bin/env bash
 # Hardens a Debian 13 VPS for the FamilyApp relay.
 #
-# Run once as root, from a session that comes in over Tailscale:
+# Run once as root on a freshly installed Debian 13 (no Plesk), from a session that
+# comes in over Tailscale:
 #   bash bootstrap.sh --admin-user nils --deploy-key "ssh-ed25519 AAAA... familyapp-ci-deploy"
 #
-# Two modes, chosen automatically:
-#   fresh   plain server: full upgrade, unattended-upgrades, Docker install, ufw
-#           (SSH only on tailscale0, public 80/443), sshd AllowUsers
-#   shared  server already in use (Plesk or Docker present): touches no packages,
-#           no running containers, no firewall and no 80/443. Public SSH is closed in
-#           the IONOS cloud firewall instead. sshd gets no AllowUsers, so Plesk
-#           system users keep working.
-# Both modes (idempotent, safe to re-run):
-#   - admin user (sudo, keeps its own SSH keys and adds root's) and deploy user
-#     (docker group, key restricted to the relay-deploy forced command)
-#   - sshd: keys only, no root login
+# What it does (idempotent, safe to re-run):
+#   - full upgrade, unattended-upgrades, sudo, Docker Engine + Compose plugin
+#   - admin user (passwordless sudo, keeps its own SSH keys and adds root's).
+#     sudo is verified as that user BEFORE root login is switched off, so a broken
+#     sudo can no longer lock the admin out.
+#   - deploy user (docker group, key restricted to the relay-deploy forced command)
+#   - sshd: keys only, no root login, AllowUsers admin + deploy
+#   - ufw: SSH only on tailscale0, public 80/443 for Caddy
 set -euo pipefail
 
 ADMIN_USER=""
@@ -70,18 +68,12 @@ if ! grep -qsEv '^[[:space:]]*(#|$)' /root/.ssh/authorized_keys "$ADMIN_KEYS_FIL
   die "no SSH keys in /root/.ssh/authorized_keys or $ADMIN_KEYS_FILE; $ADMIN_USER could not log in"
 fi
 
-MODE="fresh"
-if [[ -d /usr/local/psa ]] || command -v docker >/dev/null; then
-  MODE="shared"
-fi
-log "Mode: $MODE"
-if [[ "$MODE" == "shared" ]]; then
-  docker compose version >/dev/null 2>&1 || die "shared mode needs a working 'docker compose' plugin"
-fi
+# This script owns the whole server. A control panel would fight it over sshd,
+# firewall and ports 80/443, so refuse instead of half-configuring.
+[[ ! -d /usr/local/psa ]] || die "Plesk found. Reinstall the server with plain Debian 13 (no Plesk) first."
 
 export DEBIAN_FRONTEND=noninteractive
 
-if [[ "$MODE" == "fresh" ]]; then
 # --- System updates -----------------------------------------------------------
 log "Updating system"
 apt-get update -q
@@ -119,9 +111,6 @@ CONF
   systemctl restart docker
 fi
 systemctl enable --now docker
-fi # fresh
-
-command -v sudo >/dev/null || die "sudo is not installed (apt-get install sudo)"
 
 # --- Users --------------------------------------------------------------------
 log "Admin user $ADMIN_USER"
@@ -142,6 +131,16 @@ MERGED_KEYS="$(
 printf '%s\n' "$MERGED_KEYS" > "$ADMIN_KEYS_FILE.new"
 install -m 0600 -o "$ADMIN_USER" -g "$ADMIN_USER" "$ADMIN_KEYS_FILE.new" "$ADMIN_KEYS_FILE"
 rm -f "$ADMIN_KEYS_FILE.new"
+
+# Prove that the admin can really become root, as that user, before the SSH section
+# below switches root login off. -n: fail instead of asking for a password.
+log "Checking sudo for $ADMIN_USER"
+grep -Eq '^[@#]includedir[[:space:]]+/etc/sudoers.d' /etc/sudoers \
+  || die "/etc/sudoers does not include /etc/sudoers.d"
+visudo -c >/dev/null || die "sudoers configuration is invalid"
+[[ "$(runuser -u "$ADMIN_USER" -- sudo -n id -u 2>&1)" == "0" ]] \
+  || die "sudo does not work for $ADMIN_USER; root login stays enabled, nothing else was changed in sshd"
+echo "sudo for $ADMIN_USER: ok"
 
 log "Deploy user $DEPLOY_USER (forced command only)"
 # A real shell is required: sshd runs the forced command via the user's shell.
@@ -168,10 +167,8 @@ KbdInteractiveAuthentication no
 PermitRootLogin no
 MaxAuthTries 3
 X11Forwarding no
+AllowUsers $ADMIN_USER $DEPLOY_USER
 CONF
-if [[ "$MODE" == "fresh" ]]; then
-  echo "AllowUsers $ADMIN_USER $DEPLOY_USER" >> /etc/ssh/sshd_config.d/10-familyapp.conf
-fi
 sshd -t
 # Capture once: "sshd -T | grep -q" would let grep exit early, sshd dies of SIGPIPE
 # and pipefail turns a match into a failure.
@@ -181,7 +178,6 @@ for check in "passwordauthentication no" "permitrootlogin no" "kbdinteractiveaut
 done
 
 # --- Firewall -----------------------------------------------------------------
-if [[ "$MODE" == "fresh" ]]; then
 log "Configuring ufw"
 ufw default deny incoming
 ufw default allow outgoing
@@ -191,7 +187,6 @@ ufw allow 443/tcp comment 'Caddy HTTPS (relay)'
 ufw allow 443/udp comment 'Caddy HTTP/3'
 ufw allow 41641/udp comment 'tailscale direct connections'
 ufw --force enable
-fi # fresh
 
 systemctl reload ssh
 
@@ -204,11 +199,8 @@ echo
 echo "Test NOW in a second window, before closing this one:"
 echo "  ssh $ADMIN_USER@${TS_NAME:-$TS_IP}"
 echo
-if [[ "$MODE" == "shared" ]]; then
-  echo "Shared mode: no firewall changes were made. Close public TCP 22 in the IONOS"
-  echo "cloud firewall once 'ssh $ADMIN_USER@${TS_NAME:-$TS_IP}' works."
-  echo
-fi
+echo "  sudo -v && echo SUDO-OK"
+echo
 echo "GitHub repository variable TEST_VPS_HOST:"
 echo "  ${TS_NAME:-$TS_IP}"
 echo "GitHub repository variable TEST_VPS_KNOWN_HOSTS (one line):"

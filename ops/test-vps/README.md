@@ -5,7 +5,7 @@ Hier läuft das Relay (ADR 0002) zum Testen. Diese Notiz enthält keine Geheimni
 ## Wie der Zugang funktioniert
 
 ```
-Handys (ohne Tailscale) ──HTTPS 443──▶ vorhandener nginx-Proxy ──▶ Relay   (öffentlich, Subdomain)
+Handys (ohne Tailscale) ──HTTPS 443──▶ Caddy ──▶ Relay   (öffentlich, Subdomain von Nils)
 
 Nils (Admin) ───────┐
                     ├─SSH 22, nur über Tailscale──▶ VPS
@@ -15,10 +15,11 @@ Claude (Cloud) stößt den Workflow an und liest die Logs
 ```
 
 - **Cloud-Sessions von Claude können kein SSH.** Sie haben nur ausgehendes HTTPS über einen Proxy. Deshalb geht jeder Zugriff aus der Cloud über den Workflow `test-vps` (Actions → test-vps → Run workflow), jede Ausführung steht im Actions-Verlauf.
-- **SSH ist nur über das Tailnet erreichbar.** Der Test-VPS ist ein schon genutzter Server (Plesk, nginx-Proxy-Container für Webhooks und Subdomains auf 80/443). Deshalb läuft `bootstrap.sh` dort im Modus `shared`: keine Pakete, keine Firewall, keine laufenden Container werden angefasst. Port 22 wird stattdessen in der IONOS-Cloud-Firewall öffentlich geschlossen; Tailscale braucht dafür keinen offenen Port. Auf einem frischen Server (Modus `fresh`) setzt das Skript selbst ufw auf (22 nur auf `tailscale0`, öffentlich 80/443).
+- **SSH ist nur über das Tailnet erreichbar.** Der Server gehört allein dem Relay (Debian 13 ohne Plesk). `bootstrap.sh` setzt ufw auf: SSH nur auf `tailscale0`, öffentlich nur 80/443 für Caddy. Zusätzlich ist TCP 22 in der IONOS-Cloud-Firewall geschlossen.
+- **Achtung Docker und ufw:** Ports, die ein Container veröffentlicht (`ports:` in compose.yaml), umgehen ufw. Deshalb veröffentlicht nur Caddy 80/443, alle anderen Dienste bleiben im Docker-Netz oder binden an `127.0.0.1`.
 - **Zwei Benutzer, root-Login aus, nur Schlüssel:**
-  - `nils`: Admin mit sudo. Behält eigene Schlüssel, die von root kommen dazu.
-  - Im Modus `shared` gibt es kein `AllowUsers`, damit Plesk-Systembenutzer weiter funktionieren.
+  - `nils`: Admin mit sudo ohne Passwort (Login nur per Schlüssel über das Tailnet). Behält eigene Schlüssel, die von root kommen dazu. Das Skript prüft als `nils`, ob `sudo` wirklich geht, **bevor** es den root-Login abschaltet, und bricht sonst ab.
+  - `AllowUsers nils deploy`: andere Benutzer kommen per SSH gar nicht herein.
   - `deploy`: in der Docker-Gruppe, aber sein Schlüssel ist per `restrict,command=` an [`relay-deploy`](relay-deploy) gebunden. Erlaubt sind nur `ping`, `status`, `logs [dienst]`, `load` (Image über stdin), `up`. Keine Shell, keine Weiterleitungen.
 - **`/opt/familyapp/compose.yaml` gehört root.** Der Deploy-Schlüssel kann Images laden und den Stack neu starten, aber nicht ändern, was der Stack einbindet oder öffnet. Änderungen daran macht der Admin.
 - **Tailscale-Zugang ohne gespeichertes Geheimnis:** Der Workflow meldet sich per Workload Identity Federation (GitHub-OIDC) an, nur vom Branch `main`. Die Tailscale-Policy erlaubt `tag:ci` nur `tcp:22` auf `tag:familyapp-vps`.
@@ -28,46 +29,12 @@ Bekannte Grenze: Wer in der Docker-Gruppe beliebige Befehle ausführen kann, ist
 
 ## Einrichtung (einmalig, macht Nils)
 
-### 1. Deploy-Schlüssel auf dem PC erzeugen (PowerShell)
+Reihenfolge so wählen, dass der Server nie ohne Zugang dasteht. `<vps>` ist im Folgenden `tender-cori`.
 
-```powershell
-ssh-keygen -t ed25519 -C "familyapp-ci-deploy" -f "$env:USERPROFILE\.ssh\familyapp_ci_deploy"
-```
+### 1. Tailscale vorbereiten (Admin-Konsole)
 
-Bei der Passphrase zweimal Enter drücken (der Runner kann keine eingeben). Den öffentlichen Teil braucht Schritt 2:
-
-```powershell
-Get-Content "$env:USERPROFILE\.ssh\familyapp_ci_deploy.pub"
-```
-
-### 2. VPS härten (per Tailscale als root verbinden)
-
-Skripte vom PC auf den VPS kopieren (im Repo-Klon, `<vps>` = Tailnet-Name des VPS):
-
-```powershell
-scp ops/test-vps/bootstrap.sh ops/test-vps/relay-deploy root@<vps>:/root/
-ssh root@<vps>
-```
-
-Auf dem VPS:
-
-```bash
-bash /root/bootstrap.sh --admin-user nils --deploy-key "ssh-ed25519 AAAA... familyapp-ci-deploy"
-```
-
-Wer nicht als root, sondern als normaler Benutzer per Schlüssel hereinkommt, kopiert nach `~/` und startet mit `sudo bash ~/bootstrap.sh …`.
-
-Das Skript bricht ab, wenn die Sitzung nicht über Tailscale kommt, Tailscale nicht läuft oder root keine Schlüssel hat. **Diese root-Sitzung offen lassen** und in einem zweiten Fenster `ssh nils@<vps>` und `sudo -v` testen. Notfalls hilft die Remote-Konsole im IONOS-Panel.
-
-Am Ende gibt das Skript die Werte für `TEST_VPS_HOST` und `TEST_VPS_KNOWN_HOSTS` aus (beides öffentlich).
-
-### 3. IONOS-Firewall
-
-Im IONOS Cloud Panel unter Netzwerk → Firewall-Richtlinien die Regel für TCP 22 entfernen, **erst nachdem** `ssh nils@<vps>` über Tailscale klappt. 80/443 bleiben wie sie sind. Empfehlung: Auch den Plesk-Port 8443 öffentlich schließen und Plesk nur noch übers Tailnet aufrufen.
-
-### 4. Tailscale (Admin-Konsole)
-
-1. **Policy** (Access controls), ergänzen:
+1. Alten Eintrag des Servers löschen (Machines → … → Remove), damit der Name frei wird.
+2. **Policy** (Access controls):
 
    ```jsonc
    "tagOwners": {
@@ -75,26 +42,65 @@ Im IONOS Cloud Panel unter Netzwerk → Firewall-Richtlinien die Regel für TCP 
      "tag:familyapp-vps": ["autogroup:admin"]
    },
    "grants": [
-     // ... bestehende Regeln ...
+     {"src": ["autogroup:member"], "dst": ["*"], "ip": ["*"]},
      {"src": ["tag:ci"], "dst": ["tag:familyapp-vps"], "ip": ["tcp:22"]}
    ]
    ```
 
-   **Wichtig:** Steht in der Policy noch die Standardregel `"src": ["*"], "dst": ["*"]`, darf jedes Gerät alles, auch der CI-Runner zu deinen PCs. Dann diese Regel durch `{"src": ["autogroup:member"], "dst": ["*"], "ip": ["*"]}` ersetzen: deine eigenen Geräte dürfen weiter alles, getaggte Geräte nur, was eine eigene Regel erlaubt.
+   Die Standardregel `"src": ["*"], "dst": ["*"]` muss raus, sonst darf auch der CI-Runner alles. `autogroup:member` ersetzt sie: eigene Geräte dürfen alles, getaggte Geräte nur, was eine eigene Regel erlaubt.
+3. **Federated Identity:** Settings → Trust credentials → OpenID Connect, Aussteller GitHub. Subject `repo:RespawnedGuy/familyapp:ref:refs/heads/main`, Scope Auth Keys (write), Tag `tag:ci`. Client-ID und Audience notieren (beides kein Geheimnis).
+4. **Auth Key für den Server:** Settings → Keys → Generate auth key, einmalig, Tag `tag:familyapp-vps`. Nur für Schritt 4, nicht speichern.
 
-2. **VPS taggen:** Machines → VPS → Edit ACL tags → `tag:familyapp-vps`.
+### 2. PC vorbereiten (PowerShell, im Repo-Klon)
 
-3. **Federated Identity anlegen:** Settings → Trust credentials → Credential hinzufügen → OpenID Connect, Aussteller GitHub. Subject: `repo:RespawnedGuy/familyapp:ref:refs/heads/main`. Scope: Auth Keys (write), Tag `tag:ci`. Client-ID und Audience notieren.
+```powershell
+ssh-keygen -R tender-cori
+git pull
+ssh-keygen -t ed25519 -C "familyapp-ci-deploy" -f "$env:USERPROFILE\.ssh\familyapp_ci_deploy"
+```
 
-### 5. GitHub (Repo → Settings → Secrets and variables → Actions)
+`ssh-keygen -R` auch für die alte Tailnet-IP und die öffentliche IP ausführen. Beim Deploy-Schlüssel die Passphrase leer lassen (der Runner kann keine eingeben).
+
+### 3. IONOS: neu installieren
+
+Cloud Panel → Server → Neu installieren: Image **Debian 13** (ohne Plesk), SSH-Schlüssel `id_ed25519` von Brainbug hinterlegen. Firewall-Richtlinie: 80 und 443 offen, 8443 löschen, 22 vorerst offen lassen.
+
+### 4. Tailscale auf dem Server (über die öffentliche IP, als root)
+
+```bash
+hostnamectl set-hostname tender-cori
+curl -fsSL https://tailscale.com/install.sh | sh
+tailscale up --auth-key=<key aus 1.4>
+```
+
+Danach abmelden und als root über das Tailnet neu verbinden: `ssh root@tender-cori`.
+
+### 5. Härten (über das Tailnet)
+
+```powershell
+scp ops/test-vps/bootstrap.sh ops/test-vps/relay-deploy root@tender-cori:/root/
+ssh root@tender-cori
+```
+
+```bash
+bash /root/bootstrap.sh --admin-user nils --deploy-key "<Inhalt von familyapp_ci_deploy.pub>"
+```
+
+Das Skript bricht ab, wenn die Sitzung nicht über Tailscale kommt, Plesk gefunden wird oder `sudo` für `nils` nicht geht. **Die root-Sitzung offen lassen** und in einem zweiten Fenster `ssh nils@tender-cori` und `sudo -v` testen. Notfalls hilft die Remote-Konsole im IONOS-Panel. Am Ende stehen die Werte für `TEST_VPS_HOST` und `TEST_VPS_KNOWN_HOSTS` in der Ausgabe (beides öffentlich).
+
+### 6. IONOS-Firewall
+
+Erst wenn Schritt 5 klappt: Regel für TCP 22 in der IONOS-Firewall entfernen.
+
+### 7. GitHub (Repo → Settings → Secrets and variables → Actions)
 
 | Art | Name | Inhalt |
 | --- | --- | --- |
 | Secret | `TEST_VPS_SSH_KEY` | Inhalt von `familyapp_ci_deploy` (privater Teil) |
 | Variable | `TEST_VPS_HOST` | Ausgabe von bootstrap.sh |
 | Variable | `TEST_VPS_KNOWN_HOSTS` | Ausgabe von bootstrap.sh (eine Zeile) |
-| Variable | `TS_FEDERATED_CLIENT_ID` | aus Schritt 4.3 |
-| Variable | `TS_FEDERATED_AUDIENCE` | aus Schritt 4.3 |
+| Variable | `TS_FEDERATED_CLIENT_ID` | aus Schritt 1.3 |
+| Variable | `TS_FEDERATED_AUDIENCE` | aus Schritt 1.3 |
 
 Privaten Schlüssel in die Zwischenablage:
 
@@ -104,9 +110,9 @@ Get-Content "$env:USERPROFILE\.ssh\familyapp_ci_deploy" -Raw | Set-Clipboard
 
 Danach kann die private Datei vom PC gelöscht werden; bei Bedarf wird einfach ein neues Paar erzeugt.
 
-### 6. Verbindungstest
+### 8. Verbindungstest
 
-Actions → test-vps → Run workflow → `ping`. Erwartet: `ok <hostname> <zeit>`, Docker- und Compose-Version.
+Actions → test-vps → Run workflow → `ping`. Erwartet: `ok tender-cori <zeit>`, Docker- und Compose-Version.
 
 ## Schlüssel wechseln oder Zugang sperren
 
