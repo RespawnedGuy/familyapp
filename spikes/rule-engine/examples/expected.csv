@@ -1,0 +1,8 @@
+file;expected;person;type
+01-basar.eml;assigned;;TASK
+02-weber.eml;assigned;Mia;INFO
+03-kita.eml;assigned;Ben;TASK
+04-arzt-mia.txt;assigned;Mia;APPOINTMENT
+05-arzt-beide.txt;open;;
+06-paket.eml;open;;
+07-versicherung.eml;assigned;;DEADLINE

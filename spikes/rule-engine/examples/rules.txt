@@ -1,0 +1,7 @@
+# Example rules (fictional family). Format: id | conditions | assignment
+school         | domain=schulederkinder.de                              | area=Schule; owner=Lisa; type=TASK
+teacher-weber  | sender=frau.weber@schulederkinder.de                   | person=Mia; area=Schule; owner=Nils; type=INFO
+kita           | domain=kita-sonnenschein.de                            | person=Ben; area=Kita; owner=Nils; type=TASK
+doctor-mia     | contains=Mia, Lindenstraße 4                           | person=Mia; area=Gesundheit Kinder; owner=Lisa; type=APPOINTMENT
+doctor-ben     | contains=Ben, Lindenstraße 4                           | person=Ben; area=Gesundheit Kinder; owner=Nils; type=APPOINTMENT
+insurance      | domain=versicherung-beispiel.de                        | area=Verträge; owner=Nils; type=DEADLINE

@@ -12,3 +12,4 @@ local.properties
 # Real family data never goes into the repo
 **/samples-private/
 **/expected-private.csv
+**/rules-private.txt
