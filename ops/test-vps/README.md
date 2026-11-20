@@ -5,7 +5,7 @@ Hier läuft das Relay (ADR 0002) zum Testen. Diese Notiz enthält keine Geheimni
 ## Wie der Zugang funktioniert
 
 ```
-Handys (ohne Tailscale) ──HTTPS 443──▶ Caddy ──▶ Relay        (öffentlich, über die Domain)
+Handys (ohne Tailscale) ──HTTPS 443──▶ vorhandener nginx-Proxy ──▶ Relay   (öffentlich, Subdomain)
 
 Nils (Admin) ───────┐
                     ├─SSH 22, nur über Tailscale──▶ VPS
@@ -15,11 +15,12 @@ Claude (Cloud) stößt den Workflow an und liest die Logs
 ```
 
 - **Cloud-Sessions von Claude können kein SSH.** Sie haben nur ausgehendes HTTPS über einen Proxy. Deshalb geht jeder Zugriff aus der Cloud über den Workflow `test-vps` (Actions → test-vps → Run workflow), jede Ausführung steht im Actions-Verlauf.
-- **SSH ist nur über das Tailnet erreichbar.** ufw lässt Port 22 nur auf `tailscale0` zu, öffentlich offen sind nur 80/443 (Caddy) und 41641/udp (Tailscale).
+- **SSH ist nur über das Tailnet erreichbar.** Der Test-VPS ist ein schon genutzter Server (Plesk, nginx-Proxy-Container für Webhooks und Subdomains auf 80/443). Deshalb läuft `bootstrap.sh` dort im Modus `shared`: keine Pakete, keine Firewall, keine laufenden Container werden angefasst. Port 22 wird stattdessen in der IONOS-Cloud-Firewall öffentlich geschlossen; Tailscale braucht dafür keinen offenen Port. Auf einem frischen Server (Modus `fresh`) setzt das Skript selbst ufw auf (22 nur auf `tailscale0`, öffentlich 80/443).
 - **Zwei Benutzer, root-Login aus, nur Schlüssel:**
   - `nils`: Admin mit sudo. Behält eigene Schlüssel, die von root kommen dazu.
+  - Im Modus `shared` gibt es kein `AllowUsers`, damit Plesk-Systembenutzer weiter funktionieren.
   - `deploy`: in der Docker-Gruppe, aber sein Schlüssel ist per `restrict,command=` an [`relay-deploy`](relay-deploy) gebunden. Erlaubt sind nur `ping`, `status`, `logs [dienst]`, `load` (Image über stdin), `up`. Keine Shell, keine Weiterleitungen.
-- **`/opt/familyapp/compose.yaml` und `Caddyfile` gehören root.** Der Deploy-Schlüssel kann Images laden und den Stack neu starten, aber nicht ändern, was der Stack einbindet oder öffnet. Änderungen daran macht der Admin.
+- **`/opt/familyapp/compose.yaml` gehört root.** Der Deploy-Schlüssel kann Images laden und den Stack neu starten, aber nicht ändern, was der Stack einbindet oder öffnet. Änderungen daran macht der Admin.
 - **Tailscale-Zugang ohne gespeichertes Geheimnis:** Der Workflow meldet sich per Workload Identity Federation (GitHub-OIDC) an, nur vom Branch `main`. Die Tailscale-Policy erlaubt `tag:ci` nur `tcp:22` auf `tag:familyapp-vps`.
 - **Nachvollziehbar:** jede Aktion von `deploy` steht im Journal (`journalctl -t relay-deploy`), jeder Lauf im Actions-Verlauf.
 
@@ -62,7 +63,7 @@ Am Ende gibt das Skript die Werte für `TEST_VPS_HOST` und `TEST_VPS_KNOWN_HOSTS
 
 ### 3. IONOS-Firewall
 
-Im IONOS Cloud Panel unter Netzwerk → Firewall-Richtlinien: TCP 80, TCP 443, UDP 443 und UDP 41641 erlauben. Port 22 kann öffentlich zu, sobald `ssh nils@<vps>` über Tailscale klappt.
+Im IONOS Cloud Panel unter Netzwerk → Firewall-Richtlinien die Regel für TCP 22 entfernen, **erst nachdem** `ssh nils@<vps>` über Tailscale klappt. 80/443 bleiben wie sie sind. Empfehlung: Auch den Plesk-Port 8443 öffentlich schließen und Plesk nur noch übers Tailnet aufrufen.
 
 ### 4. Tailscale (Admin-Konsole)
 
