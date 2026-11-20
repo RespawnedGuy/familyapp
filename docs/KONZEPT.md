@@ -41,7 +41,7 @@ Masicampo & Baumeister (2011, JPSP): Ein konkreter Plan für ein offenes Ziel re
 
 | Phase | Automatisierung | Visualisierung | Messgröße |
 | --- | --- | --- | --- |
-| 1 Bemerken | Erfassen in unter 5 s per Sprache, Foto, Teilen, Mail-Weiterleitung. Kein Pflichtfeld. | Inbox-Zähler, der von selbst schrumpft | Sekunden bis gespeichert; Einträge je Familienmitglied |
+| 1 Bemerken | Erfassen per Sprache, Foto, Teilen, Mail-Weiterleitung; Aufnahme läuft ≤ 2 s nach Entsperren. Kein Pflichtfeld. | Inbox-Zähler, der von selbst schrumpft | Sekunden bis Aufnahme läuft; Einträge je Familienmitglied |
 | 2 Antizipieren | **Vorausschau-Pakete** nach Lebenslage (U-Untersuchungen, Impfungen, Ferien je Bundesland, Reifenwechsel, TÜV, Steuerfrist, Geburtstage). Rückwärtspläne aus Fristen. Folgeaufgaben aus Dokumenten. | „Demnächst“-Zeitleiste, 6 Wochen | Anteil Aufgaben vor Dringlichkeit angelegt; Last-Minute-Aktionen |
 | 3 Optionen finden | Familienwissen wiederverwenden: Kontakte, frühere Vorgänge gleichen Typs | Vorschlagskarte an der Aufgabe | Zeit bis Entscheidung |
 | 4 Entscheiden | Leichte Abstimmung (2–3 Optionen) statt Chat; Entscheidung mit Begründung gespeichert | Stapel offener Entscheidungen | Offene Entscheidungen > 7 Tage |
@@ -55,7 +55,7 @@ Masicampo & Baumeister (2011, JPSP): Ein konkreter Plan für ein offenes Ziel re
 
 ## Capture-Flows: schnell rein, komplett später
 
-Beim Erfassen keine Frage, kein Pflichtfeld, keine Kategorie. Ziel: unter 5 s ab Entsperren.
+Beim Erfassen keine Frage, kein Pflichtfeld, keine Kategorie. Ziel (entschieden 20.11.2026, siehe [gestaltung/optik-haptik-klickwege.md](gestaltung/optik-haptik-klickwege.md)): Aufnahme läuft ≤ 2 s nach Entsperren, gespeichert ohne weiteren Tap ≤ 1 s nach Sprechende. Die Sprechzeit zählt nicht als Aufwand.
 
 | Kanal | Typische Situation | Was Regeln daraus vorschlagen |
 | --- | --- | --- |
@@ -151,7 +151,7 @@ Ziel: Ein Elternpaar erfasst zwei Wochen lang alles ohne Setup, und der weniger 
 
 Abnahmekriterien:
 
-- Erfassen per Sprache/Foto im Median < 5 s
+- Erfassen: Aufnahme läuft im Median ≤ 2 s nach Entsperren, Speichern ohne Tap
 - ≥ 80 % der Vorschläge ohne Änderung bestätigt (ohne Cloud-KI)
 - Nach 2 Wochen hat der zweite Elternteil ≥ 2 Bereiche mit voller Zuständigkeit
 
@@ -176,7 +176,7 @@ Tagebuchstudie, 8–12 Paare, 5 Wochen: Woche 1 ohne App (Basis), Daminger-Sorti
 | Verteilung Antizipieren/Überwachen | Daminger-Sortieraufgabe vorher/nachher | Anteil des weniger belasteten Partners steigt |
 | Wahrgenommene Belastung | NASA-TLX (Hart & Staveland 1988), wöchentlich | sinkt beim höher belasteten Partner |
 | Beziehungszufriedenheit | CSI-4 (Funk & Rogge 2007) | nicht schlechter |
-| Aufwand beim Erfassen | Telemetrie | Median < 5 s |
+| Aufwand beim Erfassen | Telemetrie | Median ≤ 2 s bis Aufnahme läuft |
 | Trefferquote der Regeln | Telemetrie | ≥ 80 % ohne Änderung bestätigt, Anteil aus Regeln steigt |
 | Ungleichheit in der App | Erfassungen, Übernahmen, Rückfragen je Person | Richtung 50:50 |
 | Nachhalten durch die App | Erinnerungen App vs. Mensch | steigt |
