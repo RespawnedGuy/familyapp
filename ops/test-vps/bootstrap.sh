@@ -53,7 +53,7 @@ die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 command -v tailscale >/dev/null || die "tailscale not installed; SSH will only be reachable via the tailnet"
 tailscale status >/dev/null 2>&1 || die "tailscale is not up (run: tailscale up)"
 ip link show tailscale0 >/dev/null 2>&1 || die "interface tailscale0 missing"
-TS_IP="$(tailscale ip -4 | head -n1)"
+TS_IP="$(tailscale ip -4 | awk 'NR==1')"
 
 if [[ -n "${SSH_CONNECTION:-}" ]]; then
   CLIENT_IP="${SSH_CONNECTION%% *}"
@@ -173,8 +173,11 @@ if [[ "$MODE" == "fresh" ]]; then
   echo "AllowUsers $ADMIN_USER $DEPLOY_USER" >> /etc/ssh/sshd_config.d/10-familyapp.conf
 fi
 sshd -t
+# Capture once: "sshd -T | grep -q" would let grep exit early, sshd dies of SIGPIPE
+# and pipefail turns a match into a failure.
+EFFECTIVE_SSHD="$(sshd -T)"
 for check in "passwordauthentication no" "permitrootlogin no" "kbdinteractiveauthentication no"; do
-  sshd -T | grep -qx "$check" || die "sshd effective config lacks '$check'"
+  grep -qx "$check" <<<"$EFFECTIVE_SSHD" || die "sshd effective config lacks '$check'"
 done
 
 # --- Firewall -----------------------------------------------------------------
@@ -193,7 +196,7 @@ fi # fresh
 systemctl reload ssh
 
 # --- Summary ------------------------------------------------------------------
-TS_NAME="$(tailscale status --json 2>/dev/null | sed -n 's/.*"DNSName": *"\([^"]*\)\.".*/\1/p' | head -n1)"
+TS_NAME="$(tailscale status --json 2>/dev/null | sed -n 's/.*"DNSName": *"\([^"]*\)\.".*/\1/p' | awk 'NR==1')"
 log "Done"
 echo "Docker:  $(docker version --format '{{.Server.Version}}'), Compose $(docker compose version --short)"
 echo "Tailnet: ${TS_NAME:-?} ($TS_IP)"
