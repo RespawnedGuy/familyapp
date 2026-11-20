@@ -7,7 +7,7 @@
 # What it does (idempotent, safe to re-run):
 #   - updates the system, enables unattended security upgrades
 #   - installs Docker Engine + Compose plugin from download.docker.com
-#   - creates an admin user (sudo, SSH key copied from root) and a deploy user
+#   - creates an admin user (sudo, keeps its own SSH keys and adds root's) and a deploy user
 #     (docker group, key restricted to the relay-deploy forced command)
 #   - SSH: keys only, no root login, only these two users
 #   - ufw: SSH only via tailscale0; public 80/443 for Caddy in front of the relay
@@ -59,7 +59,12 @@ if [[ -n "${SSH_CONNECTION:-}" ]]; then
   fi
 fi
 
-[[ -s /root/.ssh/authorized_keys ]] || die "/root/.ssh/authorized_keys is empty; nothing to copy to $ADMIN_USER"
+# The admin user gets the union of root's keys and any keys it already has, so an
+# existing login of that user keeps working.
+ADMIN_KEYS_FILE="/home/$ADMIN_USER/.ssh/authorized_keys"
+if ! grep -qsEv '^[[:space:]]*(#|$)' /root/.ssh/authorized_keys "$ADMIN_KEYS_FILE"; then
+  die "no SSH keys in /root/.ssh/authorized_keys or $ADMIN_KEYS_FILE; $ADMIN_USER could not log in"
+fi
 
 export DEBIAN_FRONTEND=noninteractive
 
@@ -110,7 +115,10 @@ echo "$ADMIN_USER ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/90-$ADMIN_USER"
 chmod 0440 "/etc/sudoers.d/90-$ADMIN_USER"
 visudo -cf "/etc/sudoers.d/90-$ADMIN_USER" >/dev/null
 install -d -m 0700 -o "$ADMIN_USER" -g "$ADMIN_USER" "/home/$ADMIN_USER/.ssh"
-install -m 0600 -o "$ADMIN_USER" -g "$ADMIN_USER" /root/.ssh/authorized_keys "/home/$ADMIN_USER/.ssh/authorized_keys"
+MERGED_KEYS="$(cat /root/.ssh/authorized_keys "$ADMIN_KEYS_FILE" 2>/dev/null | grep -Ev '^[[:space:]]*(#|$)' | awk '!seen[$0]++')"
+printf '%s\n' "$MERGED_KEYS" > "$ADMIN_KEYS_FILE.new"
+install -m 0600 -o "$ADMIN_USER" -g "$ADMIN_USER" "$ADMIN_KEYS_FILE.new" "$ADMIN_KEYS_FILE"
+rm -f "$ADMIN_KEYS_FILE.new"
 
 log "Deploy user $DEPLOY_USER (forced command only)"
 # A real shell is required: sshd runs the forced command via the user's shell.
