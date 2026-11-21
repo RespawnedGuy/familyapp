@@ -284,6 +284,13 @@ jobs:
           if [ "$OK" = true ] && [ "$PRERELEASE" = false ]; then
             if [ -n "$RELEASES_REPO_TOKEN" ]; then
               PUB="RespawnedGuy/familyapp-releases"
+              # A release needs a commit to tag; a freshly created empty repo has none.
+              if ! GH_TOKEN="$RELEASES_REPO_TOKEN" gh api "repos/$PUB/commits?per_page=1" >/dev/null 2>&1; then
+                README="$(printf '%s\n' '# FamilyApp – Releases' '' 'Nur fertige, signierte Android-APKs der FamilyApp mit Prüfsumme und update.json.' 'Die App aktualisiert sich darüber selbst. Der Quellcode liegt nicht hier.' | base64 -w0)"
+                GH_TOKEN="$RELEASES_REPO_TOKEN" gh api -X PUT "repos/$PUB/contents/README.md" \
+                  -f message="Add README" -f content="$README" >/dev/null
+                echo "initialised $PUB with a README"
+              fi
               PREL="$(GH_TOKEN="$RELEASES_REPO_TOKEN" gh api "repos/$PUB/releases" -f tag_name="$TAG" \
                 -f name="$NAME" -f body="Installierbare APK für Android 8.0 und neuer. Die App aktualisiert sich über update.json selbst." \
                 -F prerelease=false -f make_latest=true)"
