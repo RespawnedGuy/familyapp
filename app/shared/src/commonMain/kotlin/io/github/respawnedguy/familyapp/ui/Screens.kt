@@ -1,0 +1,315 @@
+package io.github.respawnedguy.familyapp.ui
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import io.github.respawnedguy.familyapp.domain.DateFormat
+import io.github.respawnedguy.familyapp.domain.FamilyData
+import io.github.respawnedguy.familyapp.domain.ItemStatus
+import io.github.respawnedguy.familyapp.domain.Member
+import io.github.respawnedguy.familyapp.domain.MemberKind
+import io.github.respawnedguy.familyapp.domain.PERSON_COLOR_COUNT
+import io.github.respawnedguy.familyapp.domain.Views
+import io.github.respawnedguy.familyapp.presentation.AppModel
+
+private val ListPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp)
+
+/** Start screen: inbox on top, then "Meins" (design: idea taken over from variant B). */
+@Composable
+fun TodayScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reducedMotion: Boolean) {
+    val c = LocalFamilyColors.current
+    val inbox = Views.inbox(data)
+    val mine = Views.mine(data)
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = ListPadding) {
+        item(key = "h-inbox") { SectionHeader("Eingang", inbox.size) }
+        if (inbox.isEmpty()) {
+            item(key = "e-inbox") { EmptyNote("Alles sortiert. Darüber musst du gerade nicht nachdenken.") }
+        }
+        items(inbox, key = { it.id }) { item ->
+            Box(if (reducedMotion) Modifier else Modifier.animateItem()) {
+                InboxCard(item, data, model, photos, reducedMotion)
+            }
+        }
+        item(key = "h-mine") { SectionHeader("Meins", mine.size) }
+        if (mine.isEmpty()) {
+            item(key = "e-mine") { EmptyNote("Nichts offen für dich.") }
+        }
+        items(mine, key = { it.id }) { item ->
+            Box(if (reducedMotion) Modifier else Modifier.animateItem()) {
+                TaskRow(item, data, model, photos, reducedMotion, showAssignee = false, takeOver = false)
+            }
+        }
+        item(key = "done") {
+            Text(
+                "Diese Woche erledigt: ${Views.doneThisWeek(data, model.today())}",
+                Modifier.fillMaxWidth().padding(top = 16.dp),
+                color = c.textSecondary, fontSize = 14.sp,
+            )
+        }
+    }
+}
+
+/** Transparency has a fixed place: everybody's stack, load chart, take over openly. */
+@Composable
+fun FamilyScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reducedMotion: Boolean) {
+    val c = LocalFamilyColors.current
+    val today = model.today()
+    var filter by remember { mutableStateOf<String?>(null) }
+    var adding by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf<Member?>(null) }
+    val loads = Views.loads(data, today)
+    val maxOpen = (loads.maxOfOrNull { it.open } ?: 0).coerceAtLeast(1)
+    val shown = data.members.filter { filter == null || it.id == filter }
+
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = ListPadding) {
+        item(key = "load") {
+            Column(
+                Modifier.fillMaxWidth().padding(top = 12.dp).clip(RoundedCornerShape(16.dp)).background(c.card).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text("Lastkarte", fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.text)
+                Text("Nur feste Fristen und Termine. Antippen filtert die Liste.", fontSize = 12.sp, color = c.textTertiary)
+                loads.forEach { load ->
+                    val selected = filter == load.member.id
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                            .background(if (selected) c.background else c.card)
+                            .clickable { filter = if (selected) null else load.member.id }
+                            .padding(vertical = 6.dp, horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        PersonDot(load.member, 28.dp)
+                        Text(load.member.name, Modifier.width(72.dp).padding(start = 8.dp), color = c.text, fontSize = 14.sp, maxLines = 1)
+                        Box(Modifier.weight(1f).height(14.dp).clip(RoundedCornerShape(7.dp)).background(c.background)) {
+                            Row(Modifier.fillMaxHeight().fillMaxWidth(load.open.toFloat() / maxOpen)) {
+                                val calm = load.open - load.overdue
+                                if (calm > 0) Box(Modifier.weight(calm.toFloat()).fillMaxHeight().background(c.person(load.member.colorIndex)))
+                                if (load.overdue > 0) Box(Modifier.weight(load.overdue.toFloat()).fillMaxHeight().background(c.overdue))
+                            }
+                        }
+                        val text = if (load.overdue > 0) "${load.open} · ${load.overdue} überfällig" else "${load.open} offen"
+                        Text(
+                            text, Modifier.padding(start = 8.dp),
+                            color = if (load.overdue > 0) c.overdue else c.textSecondary, fontSize = 13.sp,
+                        )
+                    }
+                }
+                val unowned = Views.unowned(data)
+                Text(
+                    if (unowned == 0) "Im Eingang ist alles verteilt." else "Im Eingang gehören $unowned Dinge noch niemandem.",
+                    fontSize = 13.sp, color = c.textSecondary,
+                )
+            }
+        }
+        item(key = "members") {
+            Row(
+                Modifier.fillMaxWidth().padding(top = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Personen", Modifier.weight(1f), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = c.text)
+                OutlinedButton(onClick = { adding = true }) { Text("Person hinzufügen") }
+            }
+        }
+        shown.forEach { member ->
+            val open = Views.openFor(data, member.id)
+            item(key = "m-${member.id}") {
+                Row(
+                    Modifier.fillMaxWidth().clickable { editing = member }.padding(top = 16.dp, bottom = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    PersonDot(member, 32.dp)
+                    Column(Modifier.padding(start = 10.dp).weight(1f)) {
+                        Text(if (member.id == data.selfId) "${member.name} (ich)" else member.name, color = c.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        val kind = if (member.kind == MemberKind.CHILD) "Kind" else "Erwachsen"
+                        val device = if (member.hasDevice) "eigenes Handy" else "ohne eigenes Handy"
+                        Text("$kind · $device · ${open.size} offen", color = c.textTertiary, fontSize = 12.sp)
+                    }
+                    Text("Ändern", color = c.accent, fontSize = 13.sp)
+                }
+            }
+            items(open, key = { "f-${it.id}" }) { item ->
+                TaskRow(
+                    item, data, model, photos, reducedMotion,
+                    showAssignee = false,
+                    takeOver = member.id != data.selfId,
+                )
+            }
+        }
+    }
+
+    if (adding) MemberDialog(null, data, onDismiss = { adding = false }) { name, _, kind ->
+        model.addMember(name, kind)
+        adding = false
+    }
+    editing?.let { m ->
+        MemberDialog(m, data, onDismiss = { editing = null }, onRemove = if (m.id != data.selfId) ({ model.removeMember(m.id); editing = null }) else null) { name, color, kind ->
+            model.updateMember(m.id, name, color, kind)
+            editing = null
+        }
+    }
+}
+
+@Composable
+private fun MemberDialog(
+    member: Member?,
+    data: FamilyData,
+    onDismiss: () -> Unit,
+    onRemove: (() -> Unit)? = null,
+    onSave: (String, Int, MemberKind) -> Unit,
+) {
+    val c = LocalFamilyColors.current
+    var name by remember { mutableStateOf(member?.name ?: "") }
+    var kind by remember { mutableStateOf(member?.kind ?: MemberKind.ADULT) }
+    var color by remember { mutableStateOf(member?.colorIndex ?: 0) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (member == null) "Person hinzufügen" else "Person ändern") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, singleLine = true)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(selected = kind == MemberKind.ADULT, onClick = { kind = MemberKind.ADULT })
+                    Text("Erwachsen", Modifier.clickable { kind = MemberKind.ADULT })
+                    Spacer(Modifier.width(12.dp))
+                    RadioButton(selected = kind == MemberKind.CHILD, onClick = { kind = MemberKind.CHILD })
+                    Text("Kind", Modifier.clickable { kind = MemberKind.CHILD })
+                }
+                if (member != null) {
+                    Text("Farbe", fontSize = 13.sp, color = c.textSecondary)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        (0 until PERSON_COLOR_COUNT).forEach { i ->
+                            Box(
+                                Modifier.size(44.dp).clip(RoundedCornerShape(22.dp))
+                                    .background(if (i == color) c.text else c.card)
+                                    .clickable { color = i }
+                                    .padding(4.dp),
+                                contentAlignment = Alignment.Center,
+                            ) { PersonDot(member.copy(colorIndex = i, name = name.ifBlank { member.name }), 36.dp) }
+                        }
+                    }
+                }
+                if (member == null) {
+                    Text(
+                        "Ohne eigenes Handy (Kind, Oma). Mit eigenem Handy koppeln kommt im nächsten Update per QR-Code.",
+                        fontSize = 12.sp, color = c.textTertiary,
+                    )
+                }
+                if (onRemove != null) TextButton(onClick = onRemove) { Text("Aus der Familie entfernen", color = c.overdue) }
+            }
+        },
+        confirmButton = { TextButton(onClick = { if (name.isNotBlank()) onSave(name, color, kind) }) { Text("Speichern") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Abbrechen") } },
+    )
+}
+
+/** Six weeks by calendar week; open responsibility is a dashed circle with a question mark. */
+@Composable
+fun UpcomingScreen(data: FamilyData, model: AppModel) {
+    val c = LocalFamilyColors.current
+    val today = model.today()
+    val weeks = Views.upcoming(data, today)
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = ListPadding) {
+        weeks.forEach { week ->
+            item(key = "w-${week.monday}") { SectionHeader(DateFormat.weekLabel(week.monday)) }
+            if (week.items.isEmpty()) {
+                item(key = "we-${week.monday}") { Text("Nichts mit Datum.", color = c.textTertiary, fontSize = 14.sp) }
+            }
+            items(week.items, key = { "u-${it.id}" }) { item ->
+                val overdue = DateFormat.overdue(item.due!!, today)
+                Row(
+                    Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(12.dp)).background(c.card).padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        DateFormat.short(item.due),
+                        Modifier.width(84.dp),
+                        color = if (overdue != null && item.status == ItemStatus.OPEN) c.overdue else c.textSecondary,
+                        fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                    )
+                    Column(Modifier.weight(1f)) {
+                        Text(item.title, color = c.text, fontSize = 15.sp, maxLines = 2)
+                        val note = buildList {
+                            if (item.status == ItemStatus.INBOX) add("noch nicht bestätigt")
+                            if (overdue != null && item.status == ItemStatus.OPEN) add(overdue)
+                        }
+                        if (note.isNotEmpty()) Text(note.joinToString(" · "), color = c.textTertiary, fontSize = 12.sp)
+                    }
+                    PersonDot(data.member(item.assignee), 28.dp)
+                }
+            }
+        }
+    }
+}
+
+/** Family knowledge: everything ever captured, including done and dismissed things. */
+@Composable
+fun SearchScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?) {
+    val c = LocalFamilyColors.current
+    var query by remember { mutableStateOf("") }
+    var open by remember { mutableStateOf<String?>(null) }
+    val results = Views.search(data, query)
+    Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it },
+            placeholder = { Text("Suchen in allem, auch Erledigtem") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+        )
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 96.dp)) {
+            if (query.isNotBlank() && results.isEmpty()) item { EmptyNote("Nichts gefunden.") }
+            if (query.isBlank()) item { EmptyNote("${data.items.size} Einträge durchsuchbar.") }
+            items(results, key = { it.id }) { item ->
+                Row(
+                    Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(12.dp)).background(c.card)
+                        .clickable { open = item.id }.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(item.title, color = c.text, fontSize = 15.sp, maxLines = 2)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            StatusLabel(item)
+                            item.due?.let { Text(DateFormat.short(it), color = c.textTertiary, fontSize = 12.sp) }
+                            Text(ago(item.createdMs, model.repo.now()), color = c.textTertiary, fontSize = 12.sp)
+                        }
+                    }
+                    PersonDot(data.member(item.assignee), 28.dp)
+                }
+            }
+        }
+    }
+    open?.let { id -> data.items.firstOrNull { it.id == id }?.let { ItemDialog(it, model, photos) { open = null } } }
+}

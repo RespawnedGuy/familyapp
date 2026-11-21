@@ -6,9 +6,9 @@ Die erste Installation geht von Hand. Danach aktualisiert sich die App selbst (s
 
 ## Weg A: über GitHub (Browser)
 
-1. Releases öffnen: `github.com/RespawnedGuy/familyapp-releases/releases` (öffentlich, keine Anmeldung nötig). Das oberste Release nehmen (Name „FamilyApp 0.1.x“). „CI-Testbuild“-Einträge im privaten Repo nie installieren.
+1. Releases öffnen: `github.com/RespawnedGuy/familyapp-releases/releases` (öffentlich, keine Anmeldung nötig). Das oberste Release nehmen (Name „FamilyApp 0.x.y“). „CI-Testbuild“-Einträge im privaten Repo nie installieren.
 2. Weiter mit Schritt 3.
-3. Unter „Assets“ auf `familyapp-0.1.x.apk` tippen. Falls Chrome warnt („Datei kann schädlich sein“): „Trotzdem herunterladen“.
+3. Unter „Assets“ auf `familyapp-0.x.y.apk` tippen. Falls Chrome warnt („Datei kann schädlich sein“): „Trotzdem herunterladen“.
 4. Download antippen. Beim ersten Mal fragt Android, ob Chrome Apps installieren darf: „Einstellungen“ → „Dieser Quelle vertrauen“ einschalten → zurück.
 5. „Installieren“. Falls Google Play Protect fragt („Unbekannte App“): „Weitere Details“ → „Trotzdem installieren“. Einen Scan anzubieten ist in Ordnung.
 6. „Öffnen“. Es erscheint der Platzhalter-Bildschirm „FamilyApp“ mit Versionsnummer.
@@ -27,7 +27,7 @@ Liegt die APK im Ordner `FamilyApp/_apk` deines Synology Drive: in der Synology-
 
 ## Prüfen, ob die Datei echt ist (optional)
 
-Neben der APK liegt `familyapp-0.1.x.apk.sha256`. Die Zeichenkette muss zum Prüfbericht passen. Das Zertifikat muss den Fingerprint aus `app/signing/release-cert-sha256.txt` haben.
+Neben der APK liegt `familyapp-0.x.y.apk.sha256`. Die Zeichenkette muss zum Prüfbericht passen. Das Zertifikat muss den Fingerprint aus `app/signing/release-cert-sha256.txt` haben.
 
 ## Wenn etwas schiefgeht
 

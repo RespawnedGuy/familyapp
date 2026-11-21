@@ -29,11 +29,11 @@ echo "== Signatur (apksigner)"
 SIG="$("$BT/apksigner" verify --verbose --print-certs "$APK" 2>&1)"; SIG_RC=$?
 echo "$SIG" | grep -vE '^WARNING: META-INF' 
 [ $SIG_RC -eq 0 ] && pass "apksigner verify erfolgreich" || fail "apksigner verify fehlgeschlagen"
-echo "$SIG" | grep -q "Verified using v2 scheme (APK Signature Scheme v2): true" && pass "Signaturschema v2" || fail "Signaturschema v2 fehlt"
-echo "$SIG" | grep -q "Verified using v3 scheme (APK Signature Scheme v3): true" && pass "Signaturschema v3" || fail "Signaturschema v3 fehlt"
+grep -q "Verified using v2 scheme (APK Signature Scheme v2): true" <<<"$SIG" && pass "Signaturschema v2" || fail "Signaturschema v2 fehlt"
+grep -q "Verified using v3 scheme (APK Signature Scheme v3): true" <<<"$SIG" && pass "Signaturschema v3" || fail "Signaturschema v3 fehlt"
 CERT="$(echo "$SIG" | grep -m1 'certificate SHA-256 digest' | awk '{print $NF}')"
 echo "Zertifikat SHA-256: $CERT"
-echo "$SIG" | grep -q "CN=Android Debug" && fail "mit Android-Debug-Schlüssel signiert" || pass "kein Android-Debug-Schlüssel"
+grep -q "CN=Android Debug" <<<"$SIG" && fail "mit Android-Debug-Schlüssel signiert" || pass "kein Android-Debug-Schlüssel"
 if [ -n "$CERT_FILE" ]; then
   EXPECTED_CERT="$(grep -vE '^\s*(#|$)' "$CERT_FILE" | head -1 | tr -d '[:space:]:' | tr 'A-F' 'a-f')"
   [ "$CERT" = "$EXPECTED_CERT" ] && pass "Zertifikat = fester Release-Schlüssel (Updates möglich)" || fail "Zertifikat weicht vom Release-Schlüssel ab ($EXPECTED_CERT)"
@@ -47,15 +47,15 @@ echo
 echo "== Manifest (aapt2 dump badging)"
 BADGING="$("$BT/aapt2" dump badging "$APK" 2>&1)"
 echo "$BADGING" | grep -vE "^application-label-|^locales:|^densities:"
-echo "$BADGING" | grep -q "^package: name='$PKG'" && pass "Paketname $PKG" || fail "Paketname ist nicht $PKG"
-echo "$BADGING" | grep -q "versionCode='$EXPECTED_VC'" && pass "versionCode $EXPECTED_VC" || fail "versionCode ist nicht $EXPECTED_VC"
-echo "$BADGING" | grep -qE "^(min)?[sS]dkVersion:'$MIN_SDK'" && pass "minSdk $MIN_SDK (Android 8.0)" || fail "minSdk ist nicht $MIN_SDK"
-echo "$BADGING" | grep -q "^targetSdkVersion:'$TARGET_SDK'" && pass "targetSdk $TARGET_SDK" || fail "targetSdk ist nicht $TARGET_SDK"
-echo "$BADGING" | grep -q "^launchable-activity:" && pass "startbare Activity vorhanden (App-Symbol erscheint)" || fail "keine startbare Activity"
-echo "$BADGING" | grep -q "application-debuggable" && fail "APK ist debuggable" || pass "nicht debuggable"
-echo "$BADGING" | grep -qi "testOnly" && fail "APK ist testOnly (Installation wird abgelehnt)" || pass "nicht testOnly"
-if echo "$BADGING" | grep -q "^native-code:"; then
-  echo "$BADGING" | grep "^native-code:" | grep -q "arm64-v8a" && pass "native Bibliotheken enthalten arm64-v8a" || fail "native Bibliotheken ohne arm64-v8a"
+grep -q "^package: name='$PKG'" <<<"$BADGING" && pass "Paketname $PKG" || fail "Paketname ist nicht $PKG"
+grep -q "versionCode='$EXPECTED_VC'" <<<"$BADGING" && pass "versionCode $EXPECTED_VC" || fail "versionCode ist nicht $EXPECTED_VC"
+grep -qE "^(min)?[sS]dkVersion:'$MIN_SDK'" <<<"$BADGING" && pass "minSdk $MIN_SDK (Android 8.0)" || fail "minSdk ist nicht $MIN_SDK"
+grep -q "^targetSdkVersion:'$TARGET_SDK'" <<<"$BADGING" && pass "targetSdk $TARGET_SDK" || fail "targetSdk ist nicht $TARGET_SDK"
+grep -q "^launchable-activity:" <<<"$BADGING" && pass "startbare Activity vorhanden (App-Symbol erscheint)" || fail "keine startbare Activity"
+grep -q "application-debuggable" <<<"$BADGING" && fail "APK ist debuggable" || pass "nicht debuggable"
+grep -qi "testOnly" <<<"$BADGING" && fail "APK ist testOnly (Installation wird abgelehnt)" || pass "nicht testOnly"
+if grep -q "^native-code:" <<<"$BADGING"; then
+  grep "^native-code:" <<<"$BADGING" | grep -q "arm64-v8a" && pass "native Bibliotheken enthalten arm64-v8a" || fail "native Bibliotheken ohne arm64-v8a"
 else
   pass "keine nativen Bibliotheken (läuft auf jeder CPU-Architektur)"
 fi
@@ -64,7 +64,7 @@ fi
 echo
 echo "== Netzwerk (Manifest)"
 XMLTREE="$("$BT/aapt2" dump xmltree --file AndroidManifest.xml "$APK" 2>&1)"
-echo "$XMLTREE" | grep -qE "networkSecurityConfig|usesCleartextTraffic" \
+grep -qE "networkSecurityConfig|usesCleartextTraffic" <<<"$XMLTREE" \
   && fail "Manifest lockert die Netzwerksicherheit (nur im e2e-Testbuild erlaubt)" \
   || pass "nur HTTPS (keine Ausnahme für unverschlüsseltes HTTP)"
 
