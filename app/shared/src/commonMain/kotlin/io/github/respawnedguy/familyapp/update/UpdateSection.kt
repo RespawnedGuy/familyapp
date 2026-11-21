@@ -36,6 +36,7 @@ fun UpdateSection(controller: UpdateController, modifier: Modifier = Modifier) {
                 UpdateState.Idle -> Text("Noch nicht geprüft.")
                 UpdateState.Checking -> Text("Suche nach Updates …")
                 UpdateState.UpToDate -> Text("Die App ist aktuell.")
+                UpdateState.NothingPublished -> Text("Die App ist aktuell. Es gibt noch keine neuere Version.")
                 is UpdateState.Available -> {
                     Text("Update auf Version ${s.manifest.versionName} verfügbar.")
                     if (s.manifest.releaseNotes.isNotBlank()) {

@@ -37,12 +37,18 @@ dump() { # writes $OUT/ui.xml
   return 1
 }
 
+FAILSHOT=0
 wait_text() { # <regex> <seconds> [package]
   local end=$((SECONDS + $2))
   while [ $SECONDS -lt $end ]; do
     dump && python3 "$HERE/ui-tap.py" "$OUT/ui.xml" "$1" "${3:-}" >/dev/null && return 0
     sleep 2
   done
+  # Evidence for the report: what was on screen instead.
+  FAILSHOT=$((FAILSHOT + 1))
+  adb exec-out screencap -p > "$OUT/e2e-fail$FAILSHOT-api$API.png" 2>/dev/null || true
+  echo "nicht gefunden: '$1' – sichtbare Texte:"
+  grep -o 'text="[^"]\+"' "$OUT/ui.xml" 2>/dev/null | sort -u | head -20 | sed 's/^/    /'
   return 1
 }
 

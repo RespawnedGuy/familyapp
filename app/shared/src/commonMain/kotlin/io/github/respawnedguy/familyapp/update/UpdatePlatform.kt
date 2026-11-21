@@ -25,8 +25,11 @@ interface UpdatePlatform {
     var lastCheckMs: Long?
     fun nowMs(): Long
 
-    /** Returns the raw text of update.json. Throws [UpdateException] on network errors. */
-    suspend fun fetchManifest(): String
+    /**
+     * Returns the raw text of update.json, or null if the channel has no release yet.
+     * Throws [UpdateException] on network errors.
+     */
+    suspend fun fetchManifest(): String?
 
     /** Downloads the APK, checks size and SHA-256. Throws [UpdateException] on any mismatch. */
     suspend fun download(manifest: UpdateManifest, onProgress: (Float) -> Unit): VerifiedDownload
