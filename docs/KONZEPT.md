@@ -134,7 +134,7 @@ Sechs der acht Ideen passen direkt ins Konzept. Die Portal-Anbindungen (LernSax/
 | Gemeinsamer Kalender, Bedienung + Import | 1, 6 | MVP | Im MVP nur Import (ICS, Foto, Mail), Export als Abo-Link; Zwei-Wege-Sync später |
 | Gemeinsame To-dos | 5, 6 | MVP | Wischen statt Formular; Zuständigkeit wichtiger als Listen |
 | Einkaufs- und Essensplaner mit Angeboten | 2, 3, 4 | Stufe 2 | Angebotsdaten: offene Schnittstellen fehlen oft, Datenpartner klären oder Prospekte per Foto |
-| Rezeptimport (Foto, Screenshot, Instagram, TikTok) | 1 | Stufe 2 | Erkennung lokal oder per Klick ergänzt; Videos brauchen Transkription; nur privat speichern, Quelle verlinken |
+| Rezeptimport (Foto, Screenshot, Instagram, TikTok) | 1 | Stufe 2 | Erkennung lokal oder per Klick ergänzt; Videos brauchen Transkription; nur privat speichern, Quelle verlinken. Ausgearbeitet in [kochbibliothek.md](kochbibliothek.md) |
 | Sprache statt Tippen | 1 | MVP | Auch für Befehle („verschieb den Zahnarzt“) |
 | Bildaufnahme mit Routing | 1, 2 | MVP | Routing-Genauigkeit = Abnahmekriterium (80 %) |
 | Nachrichten aus LernSax, HortPro | 1, 6 | Spike vor Stufe 2 | Schnittstelle ungeklärt; Scraping mit Zugangsdaten heikel und fragil. Zwischenlösung: Portal-Mails an Familienadresse weiterleiten |
