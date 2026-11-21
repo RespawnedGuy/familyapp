@@ -69,7 +69,10 @@ echo "-- Kernweg: Familie anlegen, per Text erfassen, Karte mit einem Tap bestä
 adb shell pm grant "$PKG" android.permission.RECORD_AUDIO >/dev/null 2>&1 || true
 if tap_text "@EditText" 20; then
   sleep 1; adb shell input text "Nils"; sleep 1
-  tap_text "Los geht.s" 10 && pass "Familie angelegt (Onboarding)" || fail "Onboarding-Knopf fehlt"
+  # Enter = "Fertig" on the keyboard. On small screens the open keyboard can cover the button.
+  adb shell input keyevent 66; sleep 2
+  dump && python3 "$HERE/ui-tap.py" "$OUT/ui.xml" "Los geht.s" "$PKG" >/dev/null && tap_text "Los geht.s" 5
+  wait_text "Heute" 10 && pass "Familie angelegt (Onboarding)" || fail "Onboarding abgeschlossen, aber \"Heute\" fehlt"
 else
   fail "Onboarding-Feld fehlt"
 fi
@@ -77,7 +80,8 @@ wait_text "Alles sortiert.*" 15 && pass "leerer Eingang zeigt \"Alles sortiert\"
 tap_text "Erfassen" 10 && pass "Erfassen geöffnet" || fail "Erfassen-Knopf fehlt"
 tap_text "Tippen" 15 && pass "Wechsel zu Tippen im Erfassen-Blatt" || fail "\"Tippen\" im Erfassen-Blatt fehlt"
 sleep 2; adb shell input text "Hausschuhe%sbis%sDonnerstag"; sleep 1
-tap_text "Speichern" 10 || fail "\"Speichern\" fehlt"
+adb shell input keyevent 66; sleep 2
+if dump && python3 "$HERE/ui-tap.py" "$OUT/ui.xml" "Speichern" "$PKG" >/dev/null; then tap_text "Speichern" 5; fi
 wait_text "Hausschuhe bis Donnerstag.*" 10 && pass "Eintrag liegt im Eingang" || fail "Eintrag nicht im Eingang"
 wait_text ".*bis (Morgen|Do [0-9]{2}\.[0-9]{2}\.).*" 5 && pass "Regel hat das Datum vorgeschlagen" || fail "Datumsvorschlag fehlt"
 adb exec-out screencap -p > "$OUT/screen-inbox-api$API.png" || true

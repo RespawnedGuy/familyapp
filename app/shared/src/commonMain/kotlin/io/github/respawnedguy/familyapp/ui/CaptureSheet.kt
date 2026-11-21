@@ -45,6 +45,11 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -127,7 +132,12 @@ private fun ColumnScope.Typing(model: AppModel) {
         value = text,
         onValueChange = { text = it },
         placeholder = { Text("Was ist zu tun?") },
-        modifier = Modifier.fillMaxWidth().focusRequester(focus),
+        // Enter saves (soft keyboard "Fertig" and hardware keyboards alike); no newline in a quick note.
+        modifier = Modifier.fillMaxWidth().focusRequester(focus).onPreviewKeyEvent {
+            if (it.key != Key.Enter && it.key != Key.NumPadEnter) return@onPreviewKeyEvent false
+            if (it.type == KeyEventType.KeyUp) model.saveText(text)
+            true
+        },
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(onDone = { model.saveText(text) }),
         minLines = 2,
