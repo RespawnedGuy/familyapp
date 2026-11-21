@@ -1,0 +1,192 @@
+package io.github.respawnedguy.familyapp.presentation
+
+import io.github.respawnedguy.familyapp.data.FamilyRepository
+import io.github.respawnedguy.familyapp.data.InMemoryTextStore
+import io.github.respawnedguy.familyapp.domain.CaptureAction
+import io.github.respawnedguy.familyapp.domain.ItemStatus
+import io.github.respawnedguy.familyapp.domain.MemberKind
+import io.github.respawnedguy.familyapp.domain.Source
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+private class FakeSpeech : SpeechInput {
+    var listener: SpeechListener? = null
+    var cancelled = 0
+    override fun start(listener: SpeechListener) { this.listener = listener }
+    override fun stop() {}
+    override fun cancel() { cancelled++ }
+}
+
+private class FakePlatform(override val speech: SpeechInput?) : PlatformServices {
+    var elapsed = 0L
+    var photoCallback: ((String?) -> Unit)? = null
+    val backups = mutableListOf<String>()
+    override fun elapsedMs() = elapsed
+    override fun reducedMotion() = false
+    override fun takePhoto(onResult: (String?) -> Unit) { photoCallback = onResult }
+    override fun pickBackupFolder(onResult: (String?) -> Unit) = onResult("ordner")
+    override fun writeBackup(folder: String, text: String): String? { backups += text; return null }
+    override fun pickRestoreFile(onResult: (String?) -> Unit) = onResult(null)
+    override fun describeFolder(folder: String) = folder
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class AppModelTest {
+    private val friday = LocalDate(2026, 11, 20)
+    private var ids = 0
+
+    private fun TestScope.model(speech: SpeechInput? = FakeSpeech(), platform: FakePlatform = FakePlatform(speech)): AppModel {
+        val repo = FamilyRepository(InMemoryTextStore(), backgroundScope, UnconfinedTestDispatcher(testScheduler), { testScheduler.currentTime }, { friday }, { "id${ids++}" })
+        return AppModel(repo, platform, backgroundScope, { friday }).apply { createFamily("Nils") }
+    }
+
+    @Test
+    fun voiceCaptureSavesWithoutTapAndRecordsLatency() = runTest {
+        val speech = FakeSpeech()
+        val platform = FakePlatform(speech)
+        val m = model(speech, platform)
+        platform.elapsed = 1_000
+        m.startCapture("Kachel", startedAtMs = 200)
+        assertIs<CaptureState.Listening>(m.capture.value)
+        speech.listener!!.onReady()
+        assertEquals(800L, m.repo.current.settings.latency.single().ms)
+        assertEquals("Kachel", m.repo.current.settings.latency.single().trigger)
+        speech.listener!!.onResult("Hausschuhe bis Donnerstag")
+        assertEquals(CaptureState.Closed, m.capture.value)
+        val item = m.repo.current.items.single()
+        assertEquals(Source.VOICE, item.source)
+        assertEquals(LocalDate(2026, 11, 26), item.due)
+        assertEquals("Gespeichert. Liegt oben im Eingang.", m.feedback.value?.message)
+    }
+
+    @Test
+    fun undoAfterCaptureRemovesTheItem() = runTest {
+        val speech = FakeSpeech()
+        val m = model(speech)
+        m.startCapture("Knopf", 0)
+        speech.listener!!.onResult("Milch")
+        m.undo(m.feedback.value!!)
+        assertTrue(m.repo.current.items.isEmpty())
+    }
+
+    @Test
+    fun withoutRecognizerTheSheetOffersTyping() = runTest {
+        val m = model(speech = null)
+        m.startCapture("Knopf", 0)
+        assertIs<CaptureState.Problem>(m.capture.value)
+        m.switchCapture(CaptureAction.TEXT)
+        assertEquals(CaptureState.Typing, m.capture.value)
+        m.saveText("Oma anrufen")
+        assertEquals("Oma anrufen", m.repo.current.items.single().title)
+    }
+
+    @Test
+    fun emptyRecognitionIsAProblemNotAnItem() = runTest {
+        val speech = FakeSpeech()
+        val m = model(speech)
+        m.startCapture("Knopf", 0)
+        speech.listener!!.onResult(" ")
+        assertIs<CaptureState.Problem>(m.capture.value)
+        assertTrue(m.repo.current.items.isEmpty())
+    }
+
+    @Test
+    fun lateResultAfterDismissIsIgnored() = runTest {
+        val speech = FakeSpeech()
+        val m = model(speech)
+        m.startCapture("Knopf", 0)
+        val listener = speech.listener!!
+        m.dismissCapture()
+        listener.onResult("zu spät")
+        assertTrue(m.repo.current.items.isEmpty())
+    }
+
+    @Test
+    fun photoCaptureStoresPathAndCancelKeepsNothing() = runTest {
+        val platform = FakePlatform(FakeSpeech())
+        val m = model(platform = platform)
+        m.startCapture("Knopf", 0, CaptureAction.PHOTO)
+        platform.photoCallback!!(null)
+        assertEquals(CaptureState.Closed, m.capture.value)
+        m.startCapture("Knopf", 0, CaptureAction.PHOTO)
+        platform.photoCallback!!("/photos/1.jpg")
+        assertEquals("/photos/1.jpg", m.repo.current.items.single().photoPath)
+        assertEquals("Foto", m.repo.current.items.single().title)
+    }
+
+    @Test
+    fun sharedTextIsSavedDirectly() = runTest {
+        val m = model()
+        m.captureShared("Elternbrief: Ausflug am 4.12.", null)
+        val item = m.repo.current.items.single()
+        assertEquals(Source.SHARE, item.source)
+        assertEquals(LocalDate(2026, 12, 4), item.due)
+    }
+
+    @Test
+    fun backClosesSheetThenSettingsThenTab() = runTest {
+        val m = model()
+        m.select(Tab.FAMILY)
+        m.openSettings()
+        m.startCapture("Knopf", 0, CaptureAction.TEXT)
+        assertTrue(m.handleBack())
+        assertEquals(CaptureState.Closed, m.capture.value)
+        // startCapture closed settings already; back now returns to Heute.
+        assertTrue(m.handleBack())
+        assertEquals(Tab.TODAY, m.tab.value)
+        assertFalse(m.handleBack())
+    }
+
+    @Test
+    fun choosingPersonOnCardWithSuggestedDateConfirmsWithFeedback() = runTest {
+        val m = model()
+        m.addMember("Lisa", MemberKind.ADULT)
+        m.saveText("Elternabend am Dienstag")
+        val item = m.repo.current.items.single()
+        val lisa = m.repo.current.members.first { it.name == "Lisa" }.id
+        m.setAssignee(item, lisa)
+        assertEquals(ItemStatus.OPEN, m.repo.current.items.single().status)
+        assertEquals("Bestätigt: Lisa kümmert sich.", m.feedback.value?.message)
+    }
+
+    @Test
+    fun autoBackupIsDebouncedAndDoesNotLoop() = runTest {
+        val platform = FakePlatform(FakeSpeech())
+        val m = model(platform = platform)
+        runCurrent()
+        m.chooseBackupFolder()
+        assertEquals(1, platform.backups.size) // immediate backup after choosing
+        m.saveText("A")
+        m.saveText("B")
+        advanceTimeBy(AppModel.AUTO_BACKUP_DELAY_MS + 100)
+        assertEquals(2, platform.backups.size)
+        assertTrue(platform.backups.last().contains("\"B\""))
+        advanceTimeBy(AppModel.AUTO_BACKUP_DELAY_MS * 5)
+        assertEquals(2, platform.backups.size)
+        assertNull(m.repo.current.settings.lastBackupError)
+    }
+
+    @Test
+    fun oneTapShareCountsOnlyDecidedCards() = runTest {
+        val m = model()
+        m.saveText("A")
+        m.saveText("B")
+        m.saveText("C")
+        val (a, b) = m.repo.current.items
+        m.confirm(a)
+        m.setAssignee(b, m.repo.current.selfId!!)
+        m.setDue(b, null)
+        assertEquals(1 to 2, m.oneTapShare())
+    }
+}

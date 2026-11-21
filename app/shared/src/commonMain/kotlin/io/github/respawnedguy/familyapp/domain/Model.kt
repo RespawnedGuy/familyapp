@@ -1,0 +1,111 @@
+package io.github.respawnedguy.familyapp.domain
+
+import kotlinx.datetime.LocalDate
+import kotlinx.serialization.Serializable
+
+/** Index into the fixed person palette (design D6). Never derived from the system theme. */
+const val PERSON_COLOR_COUNT = 4
+
+@Serializable
+enum class MemberKind { ADULT, CHILD }
+
+/**
+ * A family member. Created in the GUI only, never hard-coded.
+ * [hasDevice] is false for people without their own phone (child, grandparent).
+ */
+@Serializable
+data class Member(
+    val id: String,
+    val name: String,
+    val colorIndex: Int,
+    val kind: MemberKind = MemberKind.ADULT,
+    val hasDevice: Boolean = false,
+    val stamp: Stamp,
+) {
+    val initial: String get() = name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?"
+}
+
+@Serializable
+enum class Source { VOICE, PHOTO, TEXT, SHARE }
+
+@Serializable
+enum class ItemStatus {
+    /** Waiting for a human decision (HITL). */
+    INBOX,
+
+    /** Confirmed: has someone who takes care of it and a decided date (or explicitly none). */
+    OPEN,
+    DONE,
+    IRRELEVANT,
+}
+
+/** Who set a field: a deterministic rule (shown as suggestion with reason) or a person. */
+@Serializable
+enum class Origin { RULE, PERSON }
+
+@Serializable
+data class Item(
+    val id: String,
+    val title: String,
+    val source: Source,
+    val createdMs: Long,
+    val createdBy: String,
+    val photoPath: String? = null,
+    val status: ItemStatus = ItemStatus.INBOX,
+    /** Whom it concerns ("betrifft"), e.g. a child. Optional. */
+    val concerns: String? = null,
+    val concernsOrigin: Origin? = null,
+    /** Who takes care of it ("kümmert sich"). */
+    val assignee: String? = null,
+    val assigneeOrigin: Origin? = null,
+    val due: LocalDate? = null,
+    /** True once a date was chosen or "Kein Datum" was picked; a rule suggestion does not count. */
+    val dueDecided: Boolean = false,
+    val dueOrigin: Origin? = null,
+    /** Why the rules suggested what they suggested; shown small on the card. */
+    val reasons: List<String> = emptyList(),
+    val doneMs: Long? = null,
+    /** Local day of completion, for "diese Woche erledigt". */
+    val doneOn: LocalDate? = null,
+    /** Taps spent on this card while it was in the inbox (local metric, design doc "Prüfung" 4). */
+    val inboxTaps: Int = 0,
+    val stamp: Stamp,
+) {
+    val hasFixedDate: Boolean get() = due != null
+}
+
+@Serializable
+enum class CaptureAction { VOICE, PHOTO, TEXT }
+
+/** One measurement "trigger to recording is running", in milliseconds. */
+@Serializable
+data class LatencySample(val trigger: String, val ms: Long, val atMs: Long)
+
+@Serializable
+data class Settings(
+    val firstCaptureAction: CaptureAction = CaptureAction.VOICE,
+    val backupFolder: String? = null,
+    val lastBackupMs: Long? = null,
+    val lastBackupError: String? = null,
+    val latency: List<LatencySample> = emptyList(),
+)
+
+/** Everything stored on this device. Sync (ADR 0003) will exchange members and items by [Stamp]. */
+@Serializable
+data class FamilyData(
+    val schema: Int = 1,
+    val deviceId: String,
+    val selfId: String? = null,
+    val members: List<Member> = emptyList(),
+    val items: List<Item> = emptyList(),
+    val settings: Settings = Settings(),
+) {
+    val self: Member? get() = members.firstOrNull { it.id == selfId }
+    fun member(id: String?): Member? = id?.let { i -> members.firstOrNull { it.id == i } }
+}
+
+/**
+ * Design D4: choosing a person or a date confirms the card as soon as both are settled.
+ * A date suggested by a rule counts as settled once a person chooses someone (they saw it on the card).
+ */
+val Item.readyToConfirm: Boolean get() = assignee != null && (dueDecided || due != null)
