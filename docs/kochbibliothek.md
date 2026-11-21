@@ -10,7 +10,7 @@ Was dieses Konzept anders macht als ein Feature-Brainstorm:
 
 - Es baut auf vorhandenem, laufendem Code auf statt neu zu erfinden: Nils' Repo `preisvergleich` (Angebote von Aldi Nord, Lidl, Kaufland, REWE, Normalpreis-Gedächtnis mit 1.385 Produkten, Zutat-zu-Angebot-Abgleich) und den Rezept-Importer aus dem SurfaceLab (Stand 21.11.2026, Code gelesen). Jeder Schritt des Importers ist einzeln auf eine Lösung ohne Server abgebildet.
 - Jede Technikaussage ist gegen die Primärquelle geprüft (ML-Kit-Doku, BGH-Rechtsprechung) und mit Datum belegt; was nicht geprüft werden konnte, ist markiert.
-- Es endet mit einer Messmethode, die fast nichts kostet: Die Rezepte, die der SurfaceLab-Importer schon in Mealie angelegt hat, samt Quelllink, sind eine fertige Vergleichsbasis. Dieselben Links laufen durch die Handy-Kette, und wir vergleichen Zutat für Zutat.
+- Es endet mit einer Messmethode: eine Liste echter Instagram-Links, deren Zutaten ein Mensch geprüft hat. Dieselben Links laufen durch die Handy-Kette, und wir vergleichen Zutat für Zutat.
 
 ## Bezug zum Mental Load
 
@@ -59,7 +59,7 @@ Was wir daraus lernen:
 
 ## Die Kochbibliothek in der App (ohne Mealie)
 
-Mealie fällt weg. Die Bibliothek ist ein weiterer Teil des Familiengraphen, synchronisiert wie alles andere über ADR 0003.
+Mealie fällt ganz weg, auch als Gegenstelle für Import oder Export. Die Bibliothek ist ein weiterer Teil des Familiengraphen, synchronisiert wie alles andere über ADR 0003.
 
 ### Datenmodell
 
@@ -82,8 +82,7 @@ Zutat-Schlüssel sind ein eigener kleiner Katalog („zwiebel“, „hackfleisch
 ### Import und Export
 
 - **Export:** pro Rezept JSON-LD (schema.org), gesammelt als ZIP mit Bildern. Das ist auch die Sicherung („Sicherung in Ordner“ aus dem Prototyp).
-- **Einmalige Übernahme aus Mealie:** Nils' vorhandene Rezepte über die Mealie-API (`/api/recipes`, Token) oder Mealies Export-ZIP einlesen. Danach wird Mealie nicht mehr gebraucht.
-- **Weg zurück zu Mealie** bleibt offen, weil Mealie schema.org-JSON importieren kann (vor Zusage mit einem Rezept testen, nicht geprüft).
+- **Vorhandene Rezepte (optional):** Wer alte Rezepte behalten will, liest sie einmal als schema.org-JSON ein; Mealie und die meisten Rezept-Apps können so exportieren. Die App braucht dafür keine Mealie-Anbindung.
 
 ### Sync
 
@@ -92,6 +91,53 @@ Rezepte sind kleine Datensätze und laufen über den normalen Sync. Das Titelbil
 ### Wo es in der Navigation sitzt
 
 Die untere Leiste ist entschieden (Heute · Familie · Erfassen · Demnächst · Suchen). Die Kochbibliothek bekommt keinen eigenen Tab, sondern: Rezeptvorschlag der Woche als Karte unter **Heute**, die Bibliothek als Bereich unter **Familie**, Rezepte in **Suchen**. Neue Rezepte aus dem Import landen wie alles andere zuerst im **Eingang** als Vorschlagskarte.
+
+## Grundfunktionen, die Mealie bisher übernimmt
+
+Nils, 21.11.2026: Die App baut die Grundfunktionen von Mealie nach, damit Mealie ganz wegfallen kann: **Rezepte, Übersicht, Kochmodus und Einkaufsliste**. Alles läuft offline auf dem Handy und synchronisiert über ADR 0003.
+
+### Rezept-Ansicht
+
+- Titelbild, Titel, Quelle (Instagram-Account mit Link), Zeiten, Portionen.
+- **Portionen umrechnen** mit Plus und Minus: Mengen werden aus den strukturierten Zutaten neu berechnet und sinnvoll gerundet (0,33 TL → „⅓ TL“, 1.050 g → „1,05 kg“). Zutaten ohne Menge („Salz“) bleiben, wie sie sind.
+- Zutaten, Schritte, Notizen der Familie („doppelt Knoblauch“), wer es mag, zuletzt gekocht.
+- Aktionen: **Kochen** (Kochmodus), **Auf die Einkaufsliste**, Bearbeiten, Teilen als Text oder schema.org-JSON.
+- Original bleibt erreichbar: Link, Bildunterschrift, Transkript, Fotos der Vorlage.
+
+### Übersicht
+
+- Kacheln mit Bild und Titel, umschaltbar auf eine kompakte Liste.
+- **Suche über Titel und Zutaten** („was mache ich mit Zucchini“), offline über eine Volltextsuche in der lokalen Datenbank (SQLite FTS, in KMP z. B. über SQLDelight).
+- Filter als Chips: Kategorie, Schlagwort, Zeit (unter 30 min), „Kinder essen es“, „lange nicht gekocht“, **„im Angebot“** und **„Saison“** aus den Vorschlägen unten.
+- Sortierung: zuletzt hinzugefügt (Standard), zuletzt gekocht, Name.
+- Neue Rezepte aus dem Import, die noch nicht bestätigt sind, erscheinen mit Markierung „Vorschlag“, damit nichts doppelt gepflegt werden muss.
+
+### Kochmodus
+
+Der Kochmodus ist für fettige Finger und einen Blick aus einem Meter Entfernung gemacht.
+
+- **Bildschirm bleibt an**, solange der Kochmodus offen ist (Android `FLAG_KEEP_SCREEN_ON`, iOS `isIdleTimerDisabled`), danach wieder normal.
+- **Ein Schritt pro Bildschirm**, große Schrift, Weiter und Zurück als große Flächen am unteren Rand und per Wischen.
+- **Zutaten des Schritts** stehen über dem Schritttext, mit umgerechneten Mengen. Zuordnung per Regel: Zutat-Name kommt im Schritttext vor. Vorher eine Übersicht „Alles bereitlegen“ zum Abhaken.
+- **Timer aus dem Text**: „10 Minuten köcheln“ wird zu einer antippbaren Zeitangabe. Mehrere Timer gleichzeitig, sichtbar oben im Kochmodus und als laufende Benachrichtigung. Der Ablauf meldet sich mit Ton über einen eigenen Benachrichtigungskanal „Kochtimer“. Ob es zusätzlich vibriert, entscheidet die System-Einstellung, die App setzt kein Muster (Entscheidung „keine Vibration“).
+- Beim Schließen: „Gekocht?“ als ein Tap, das setzt „zuletzt gekocht“ und hält die Vorschläge frisch.
+
+### Einkaufsliste
+
+Eine gemeinsame Liste für die Familie, synchronisiert auf alle Handys.
+
+- **Aus Rezepten befüllen**, mit den gewählten Portionen. Gleiche Zutaten werden über den Zutat-Schlüssel zusammengeführt und Einheiten umgerechnet (500 g + 0,5 kg = 1 kg; EL und g werden nicht zusammengerechnet, sondern nebeneinander gezeigt). Jeder Eintrag merkt sich, für welches Rezept er ist.
+- **Freie Einträge** per Tippen oder Sprache („Milch und Klopapier“), wie beim Erfassen.
+- **Grundvorrat**: Salz, Öl, Mehl und andere Grundzutaten kommen nicht automatisch auf die Liste, sondern als ausgegraute Zeile „Hast du noch …?“ zum Antippen.
+- **Sortiert nach Markt und Abteilung**: Einträge, die diese Woche im Angebot sind, zeigen Markt und Preis; der Rest nach Abteilung (Obst und Gemüse, Kühlregal …), damit man im Laden nicht zurückläuft.
+- **Abhaken** mit einem Tap, Abgehaktes rutscht nach unten und verschwindet nach dem Einkauf. Zwei Personen im selben Laden sehen die Haken des anderen, sobald beide Handys sich erreichen (im selben WLAN oder über Tailscale).
+- **Zuständigkeit**: „Einkaufen“ ist eine normale Aufgabe mit Person und Datum, wie alles andere in der App. Damit gilt auch die Eskalation.
+
+Sync-Hinweis: Jeder Eintrag ist ein eigener Datensatz, Abhaken ist ein Feld mit „letzte Änderung gewinnt“ (LWW wie im Sync-Spike). Zwei Personen, die gleichzeitig Milch eintragen, ergeben zwei Einträge; die Liste fasst gleiche Zutat-Schlüssel in der Anzeige zusammen.
+
+### Bewusst später
+
+Wochenplan mit Kalender (Mealie „Meal Planner“): Der Wochenvorschlag unten deckt das Wichtigste ab. Ein eigener Plan mit Tagen kommt, wenn die Familie ihn vermisst. Ebenso Kochbücher (Sammlungen), Nährwerte und Vorratshaltung.
 
 ## Erfassen: drei Wege, eine Warteschlange
 
@@ -183,7 +229,7 @@ Ablauf in der Woche: Montag liegt unter **Heute** eine Karte „Diese Woche gün
 
 1. **Mealie wird ersetzt.** Die Kochbibliothek lebt komplett in der App, im Familiengraphen, mit Sync über ADR 0003.
 2. **schema.org/Recipe als Datenmodell und Austauschformat**, ergänzt um strukturierte Zutaten und Familienfelder. Export als JSON-LD-ZIP, keine eigene Formaterfindung.
-3. **Einmalige Übernahme der vorhandenen Mealie-Rezepte** über Mealies API oder Export, danach kann Mealie aus.
+3. **Die App baut die Mealie-Grundfunktionen nach:** Rezept-Ansicht mit Portionen umrechnen, Übersicht mit Suche über Zutaten, Kochmodus mit wachem Bildschirm und Timern aus dem Text, gemeinsame Einkaufsliste nach Markt und Abteilung. Alte Rezepte nur optional per schema.org-JSON übernehmen.
 4. **Eine Warteschlange auf dem Gerät für alle drei Wege**: Teilen speichert sofort, Verarbeitung im Hintergrund, Stand sichtbar, Ergebnis als Vorschlagskarte im Eingang (HITL).
 5. **Instagram wie im SurfaceLab über yt-dlp, jetzt in der App** (`youtubedl-android`, yt-dlp zur Laufzeit aktualisierbar), Rückfall angemeldete WebView, letzter Rückfall „Datei teilen“.
 6. **Erkennung nur lokal:** ML Kit Text Recognition für Bilder und Videobilder, ML Kit GenAI Speech Recognition für Ton (Deutsch, Pixel 10). Beide Alpha-/Beta-APIs hinter eigenen Schnittstellen.
@@ -204,10 +250,10 @@ Ziel in einem Satz: Zeigen, dass aus 30 echten Instagram-Rezepten ohne Server un
 
 Vorgehen:
 
-1. **Vergleichsbasis aus Mealie:** Die letzten 30 vom SurfaceLab-Importer angelegten Rezepte mit Instagram-Link per Mealie-API exportieren. Nils prüft sie kurz und korrigiert offensichtliche Fehler, dann sind sie die Erwartung (`expected-private.csv`, Titel, Portionen, Zutaten mit Menge und Einheit). Ablage nur in `samples-private/`, wie beim Regel-Spike. Mischung prüfen: Rezept in Bildunterschrift, eingeblendeter Text, nur gesprochen, Karussell; fehlende Arten mit neuen Posts ergänzen.
+1. **Vergleichsbasis ohne Mealie:** Nils legt 30 Instagram-Links in eine Textdatei. `spikes/recipe-import/tools/collect_samples.py` holt Bildunterschrift und Transkript; die Zutaten trägt Nils ein oder lässt sie von Claude vorschreiben (Qualität des heutigen Importers) und prüft sie (`expected-private.csv`). Ablage nur in `samples-private/`, wie beim Regel-Spike. Mischung prüfen: Rezept in Bildunterschrift, eingeblendeter Text, nur gesprochen, Karussell; fehlende Arten mit neuen Posts ergänzen.
 2. **Teil A (JVM, in der Cloud testbar):** Bildunterschriften und vorhandene Transkripte durch den Regel-Baustein, gemessen an der Erwartung.
 3. **Teil B (Pixel 10, kleine Test-App):** dieselben 30 Links durch yt-dlp auf dem Handy, Texterkennung aus Videobildern, Spracherkennung, Gemini Nano als Verstärker. Gemessen auf dem echten Gerät, im WLAN und im Mobilfunknetz.
-4. Ergebnis als Tabelle: pro Link Regeln allein, Regeln + Nano, Claude (Bestand), Abweichungen pro Zutat.
+4. Ergebnis als Tabelle: pro Link Regeln allein, Regeln + Nano, Claude, Abweichungen pro Zutat.
 
 Abnahmekriterien:
 
@@ -224,7 +270,6 @@ Danach separat: Angebots-Abruf auf dem Handy (Kotlin-Port von `aldi.py`, `lidl.p
 - [ ] Welche Märkte und welche Filialen/PLZ genau? Aldi Nord oder Süd?
 - [ ] Welche Handys hat die Familie? Für Spracherkennung „Advanced“ braucht es Pixel 10 oder ein Gerät mit Gemini Nano; iPhones bekommen später einen eigenen Spike.
 - [ ] `robots.txt` und Nutzungsbedingungen der Märkte auf Vorbehalt nach § 44b UrhG prüfen.
-- [ ] Mealie-Rückweg (schema.org-JSON importieren) mit einem Rezept testen.
 - [ ] Anhänge im P2P-Sync (Titelbilder) als eigener Baustein, hängt am Sync-Thread.
 
 ## Quellen

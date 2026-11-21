@@ -13,12 +13,14 @@ gradle run --args="examples/samples examples/expected.csv"
 
 Die Beispiele in `examples/` sind selbst geschrieben und zeigen nur, dass die Messung funktioniert. Aussagekräftig ist erst der Lauf mit echten Rezepten.
 
-## Mit echten Rezepten aus Mealie (nur lokal, nie committen)
+## Mit echten Rezepten (nur lokal, nie committen)
 
-1. Auf Surfacelab: `MEALIE_BASE_URL=… MEALIE_API_TOKEN=… python3 tools/export_mealie.py ~/rezept-spike --limit 30 --transcript`
-   Holt die 30 neuesten Mealie-Rezepte mit Instagram-Link, lädt deren Bildunterschrift erneut per yt-dlp (ohne Anmeldung) und optional das Transkript über den lokalen Whisper-Server. Die Zutaten aus Mealie werden die Erwartung.
-2. `expected-private.csv` einmal durchsehen und offensichtliche Fehler des bisherigen Importers korrigieren.
-3. `gradle run --args="~/rezept-spike/samples-private ~/rezept-spike/expected-private.csv"`
+1. 30 Instagram-Links in eine Textdatei `links.txt` legen, einer pro Zeile.
+2. Auf Surfacelab (yt-dlp, für Transkripte zusätzlich ffmpeg und der lokale Whisper-Server):
+   `python3 tools/collect_samples.py links.txt ~/rezept-spike --transcript`
+   Mit `--draft-with-claude` (und `ANTHROPIC_API_KEY`) schreibt Claude die Zutaten vor, sonst trägst du sie selbst ein.
+3. `~/rezept-spike/expected-private.csv` durchsehen und korrigieren: eine Zeile pro Zutat, `id;250 g Mehl`.
+4. `gradle run --args="~/rezept-spike/samples-private ~/rezept-spike/expected-private.csv"`
 
 Format: ein Ordner pro Rezept mit `caption.txt`, optional `ocr.txt` und `transcript.txt`; `expected-private.csv` mit `id;line`, eine Zeile pro Zutat.
 

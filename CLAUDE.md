@@ -17,7 +17,7 @@ Sync-Spike (in `spikes/sync/`): `gradle test`, `gradle build`, `gradle run` (Rel
 
 App (in `app/`, Android SDK nötig, in Cloud-Sessions nicht vorhanden): `./gradlew :shared:testDebugUnitTest`, `./gradlew :androidApp:assembleRelease`. Signierte APK, Prüfung und Emulator-Test baut nur GitHub Actions (`.github/workflows/android-apk.yml`, ADR 0004); Ergebnis als GitHub-Release. Secrets: `FAMILYAPP_KEYSTORE_BASE64`, `FAMILYAPP_KEYSTORE_PASSWORD`, `RELEASES_REPO_TOKEN` (veröffentlicht in das öffentliche Update-Repo `familyapp-releases`, ADR 0005). Build-Typ `e2e` nur für den Update-Test im CI, nie veröffentlichen.
 
-Spike `spikes/recipe-import/`: `gradle test`, `gradle run --args="<samples-dir> [expected.csv]"`; Vergleichsdaten per `tools/export_mealie.py` auf Surfacelab (siehe README dort).
+Spike `spikes/recipe-import/`: `gradle test`, `gradle run --args="<samples-dir> [expected.csv]"`; Vergleichsdaten aus einer Linkliste per `tools/collect_samples.py` (siehe README dort).
 
 Spike `spikes/p2p-sync/`: `gradle test`, `gradle build`, CLI per `gradle installDist` und `build/install/p2p-sync/bin/p2p-sync` (siehe README dort).
 
@@ -28,7 +28,7 @@ Spike `spikes/p2p-sync/`: `gradle test`, `gradle build`, CLI per `gradle install
 - `spikes/rule-engine/` Spike: deterministische Regel-Engine + deutscher Datums-Parser
 - `spikes/sync/` Spike: Local-first-Sync über blindes Relay (ADR 0002)
 - `spikes/p2p-sync/` Spike: Gerätesync ohne Server (WLAN/Tailscale, optional geteilter Ordner), ADR 0003
-- `spikes/recipe-import/` Spike: Rezept aus Bildunterschrift/Transkript per Regeln, Messung gegen Mealie-Bestand
+- `spikes/recipe-import/` Spike: Rezept aus Bildunterschrift/Transkript per Regeln, Messung gegen geprüfte Instagram-Rezepte
 
 ## Datenschutz
 
