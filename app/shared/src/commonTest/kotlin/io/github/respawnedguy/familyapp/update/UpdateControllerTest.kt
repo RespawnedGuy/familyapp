@@ -16,7 +16,7 @@ class UpdateControllerTest {
         """{"versionCode":9,"versionName":"0.1.9","apkUrl":"${prefix}v0.1.9/familyapp-0.1.9.apk","sha256":"${"a".repeat(64)}","sizeBytes":100,"minSdk":26}"""
 
     private class FakePlatform(
-        var manifestText: String,
+        var manifestText: String?,
         val prefix: String,
         var downloadError: String? = null,
         var packageProblem: String? = null,
@@ -32,7 +32,7 @@ class UpdateControllerTest {
         var fetches = 0
         var installs = 0
         override fun nowMs() = now
-        override suspend fun fetchManifest(): String { fetches++; return manifestText }
+        override suspend fun fetchManifest(): String? { fetches++; return manifestText }
         override suspend fun download(manifest: UpdateManifest, onProgress: (Float) -> Unit): VerifiedDownload {
             downloadError?.let { throw UpdateException(it) }
             onProgress(1f)
@@ -127,9 +127,18 @@ class UpdateControllerTest {
     }
 
     @Test
+    fun emptyChannelIsNotAnError() = runTest {
+        val p = FakePlatform(null, prefix)
+        val c = controller(p)
+        c.check(); advanceUntilIdle()
+        assertEquals(UpdateState.NothingPublished, c.state.value)
+        assertEquals(p.now, p.lastCheckMs)
+    }
+
+    @Test
     fun networkErrorIsReported() = runTest {
         val p = object : UpdatePlatform by FakePlatform(manifestJson, prefix) {
-            override suspend fun fetchManifest(): String = throw UpdateException("Keine Verbindung")
+            override suspend fun fetchManifest(): String? = throw UpdateException("Keine Verbindung")
         }
         val c = UpdateController(p, this)
         c.check(); advanceUntilIdle()

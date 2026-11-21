@@ -11,6 +11,8 @@ sealed interface UpdateState {
     data object Idle : UpdateState
     data object Checking : UpdateState
     data object UpToDate : UpdateState
+    /** The update channel exists but holds no release yet. Not an error. */
+    data object NothingPublished : UpdateState
     data class Available(val manifest: UpdateManifest) : UpdateState
     data class DeviceTooOld(val manifest: UpdateManifest) : UpdateState
     data class Downloading(val manifest: UpdateManifest, val progress: Float) : UpdateState
@@ -47,7 +49,9 @@ class UpdateController(
             _state.value = try {
                 val text = platform.fetchManifest()
                 platform.lastCheckMs = platform.nowMs()
-                when (val parsed = UpdateManifestParser.parse(text, platform.allowedApkUrlPrefix)) {
+                if (text == null) {
+                    UpdateState.NothingPublished
+                } else when (val parsed = UpdateManifestParser.parse(text, platform.allowedApkUrlPrefix)) {
                     is ManifestResult.Invalid -> UpdateState.Failed("Update-Info ungültig: ${parsed.reason}")
                     is ManifestResult.Valid ->
                         when (val d = UpdatePolicy.decide(platform.installedVersionCode, platform.deviceSdk, parsed.manifest)) {
