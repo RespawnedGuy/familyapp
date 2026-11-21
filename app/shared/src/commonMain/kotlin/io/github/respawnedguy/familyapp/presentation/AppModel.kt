@@ -8,7 +8,9 @@ import io.github.respawnedguy.familyapp.domain.Item
 import io.github.respawnedguy.familyapp.domain.ItemStatus
 import io.github.respawnedguy.familyapp.domain.MemberKind
 import io.github.respawnedguy.familyapp.domain.Source
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,6 +44,8 @@ class AppModel(
     private val platform: PlatformServices,
     private val scope: CoroutineScope,
     val today: () -> LocalDate,
+    /** For backups into the chosen folder, which may be a slow document provider. */
+    private val io: CoroutineDispatcher,
 ) {
     private var feedbackCounter = 0L
 
@@ -63,6 +67,8 @@ class AppModel(
     init {
         startAutoBackup()
     }
+
+    fun elapsedMs(): Long = platform.elapsedMs()
 
     // ---- Navigation --------------------------------------------------------------------------
 
@@ -268,6 +274,8 @@ class AppModel(
 
     fun setFirstCaptureAction(action: CaptureAction) = repo.setFirstCaptureAction(action)
 
+    fun setAllowOnlineSpeech(allowed: Boolean) = repo.setAllowOnlineSpeech(allowed)
+
     fun renameSelf(name: String) {
         if (name.isNotBlank()) repo.rename(name)
     }
@@ -285,9 +293,12 @@ class AppModel(
 
     fun backupNow() {
         val folder = repo.current.settings.backupFolder ?: return
-        val error = platform.writeBackup(folder, repo.exportBackup())
-        repo.recordBackup(error)
-        show(error?.let { "Sicherung fehlgeschlagen: $it" } ?: "Gesichert.")
+        val text = repo.exportBackup()
+        scope.launch {
+            val error = withContext(io) { platform.writeBackup(folder, text) }
+            repo.recordBackup(error)
+            show(error?.let { "Sicherung fehlgeschlagen: $it" } ?: "Gesichert.")
+        }
     }
 
     fun restoreFromFile() {
@@ -310,7 +321,8 @@ class AppModel(
                 .debounce(AUTO_BACKUP_DELAY_MS)
                 .collect {
                     val folder = repo.current.settings.backupFolder ?: return@collect
-                    repo.recordBackup(platform.writeBackup(folder, repo.exportBackup()))
+                    val text = repo.exportBackup()
+                    repo.recordBackup(withContext(io) { platform.writeBackup(folder, text) })
                 }
         }
     }

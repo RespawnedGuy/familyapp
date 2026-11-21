@@ -40,7 +40,7 @@ class FamilyRepository(
     private val store: TextStore,
     scope: CoroutineScope,
     ioDispatcher: CoroutineDispatcher,
-    private val now: () -> Long,
+    val now: () -> Long,
     private val today: () -> LocalDate,
     private val newId: () -> String,
     private val rules: CaptureRules = CaptureRules(),
@@ -251,6 +251,8 @@ class FamilyRepository(
     private fun settings(block: (Settings) -> Settings) = update { it.copy(settings = block(it.settings)) }
 
     fun setFirstCaptureAction(action: CaptureAction) = settings { it.copy(firstCaptureAction = action) }
+
+    fun setAllowOnlineSpeech(allowed: Boolean) = settings { it.copy(allowOnlineSpeech = allowed) }
 
     fun setBackupFolder(folder: String?) = settings { it.copy(backupFolder = folder, lastBackupError = null) }
 

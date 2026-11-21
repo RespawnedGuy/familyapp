@@ -2,6 +2,8 @@
 """Find a UI node in a uiautomator dump and print the tap coordinates of its centre.
 
 Usage: ui-tap.py <dump.xml> <text-regex> [package-substring]
+The regex is matched against the node's text and its content description (Compose merges the
+texts of clickable rows). "@EditText" matches the first text input field instead.
 Exit code 1 if no node matches.
 """
 import re
@@ -15,8 +17,13 @@ try:
 except (ET.ParseError, FileNotFoundError):
     sys.exit(1)
 for node in root.iter("node"):
-    text = node.get("text", "")
-    if pattern.fullmatch(text) and package in node.get("package", ""):
+    if package not in node.get("package", ""):
+        continue
+    if sys.argv[2] == "@EditText":
+        hit = "EditText" in node.get("class", "")
+    else:
+        hit = any(pattern.fullmatch(node.get(attr, "")) for attr in ("text", "content-desc"))
+    if hit:
         x1, y1, x2, y2 = map(int, re.findall(r"\d+", node.get("bounds", "")))
         print((x1 + x2) // 2, (y1 + y2) // 2)
         sys.exit(0)

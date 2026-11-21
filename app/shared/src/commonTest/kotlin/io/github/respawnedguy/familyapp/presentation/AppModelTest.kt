@@ -48,7 +48,7 @@ class AppModelTest {
 
     private fun TestScope.model(speech: SpeechInput? = FakeSpeech(), platform: FakePlatform = FakePlatform(speech)): AppModel {
         val repo = FamilyRepository(InMemoryTextStore(), backgroundScope, UnconfinedTestDispatcher(testScheduler), { testScheduler.currentTime }, { friday }, { "id${ids++}" })
-        return AppModel(repo, platform, backgroundScope, { friday }).apply { createFamily("Nils") }
+        return AppModel(repo, platform, backgroundScope, { friday }, UnconfinedTestDispatcher(testScheduler)).apply { createFamily("Nils") }
     }
 
     @Test
@@ -166,6 +166,7 @@ class AppModelTest {
         val m = model(platform = platform)
         runCurrent()
         m.chooseBackupFolder()
+        runCurrent()
         assertEquals(1, platform.backups.size) // immediate backup after choosing
         m.saveText("A")
         m.saveText("B")

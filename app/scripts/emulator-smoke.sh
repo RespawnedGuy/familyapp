@@ -12,6 +12,29 @@ FAILED=0
 pass() { echo "OK    $1"; }
 fail() { echo "FEHLER $1"; FAILED=1; }
 vc() { adb shell dumpsys package "$PKG" | grep -m1 -o 'versionCode=[0-9]*' | cut -d= -f2; }
+HERE="$(cd "$(dirname "$0")" && pwd)"
+dump() { # writes $OUT/ui.xml
+  for _ in 1 2 3; do
+    adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 && adb pull /sdcard/ui.xml "$OUT/ui.xml" >/dev/null 2>&1 && return 0
+    sleep 1
+  done
+  return 1
+}
+wait_text() { # <regex> <seconds>
+  local end=$((SECONDS + $2))
+  while [ $SECONDS -lt $end ]; do
+    dump && python3 "$HERE/ui-tap.py" "$OUT/ui.xml" "$1" "$PKG" >/dev/null && return 0
+    sleep 2
+  done
+  echo "nicht gefunden: '$1' – sichtbare Texte:"
+  grep -o 'text="[^"]\+"' "$OUT/ui.xml" 2>/dev/null | sort -u | head -25 | sed 's/^/    /'
+  return 1
+}
+tap_text() { # <regex> <seconds>
+  wait_text "$1" "$2" || return 1
+  local xy; xy="$(python3 "$HERE/ui-tap.py" "$OUT/ui.xml" "$1" "$PKG")" || return 1
+  adb shell input tap $xy
+}
 
 echo "== Emulator API $API ($(adb shell getprop ro.build.version.release | tr -d '\r'))"
 adb shell input keyevent 82 >/dev/null 2>&1 || true   # unlock screen
@@ -41,6 +64,31 @@ adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
 adb pull /sdcard/ui.xml "$OUT/ui-api$API.xml" >/dev/null 2>&1
 grep -q 'text="FamilyApp"' "$OUT/ui-api$API.xml" && pass "Startbildschirm zeigt \"FamilyApp\"" || fail "Text \"FamilyApp\" nicht auf dem Bildschirm"
 adb exec-out screencap -p > "$OUT/screen-api$API.png" || true
+
+echo "-- Kernweg: Familie anlegen, per Text erfassen, Karte mit einem Tap bestätigen, Neustart"
+adb shell pm grant "$PKG" android.permission.RECORD_AUDIO >/dev/null 2>&1 || true
+if tap_text "@EditText" 20; then
+  sleep 1; adb shell input text "Nils"; sleep 1
+  tap_text "Los geht.s" 10 && pass "Familie angelegt (Onboarding)" || fail "Onboarding-Knopf fehlt"
+else
+  fail "Onboarding-Feld fehlt"
+fi
+wait_text "Alles sortiert.*" 15 && pass "leerer Eingang zeigt \"Alles sortiert\"" || fail "leerer Eingang nicht sichtbar"
+tap_text "Erfassen" 10 && pass "Erfassen geöffnet" || fail "Erfassen-Knopf fehlt"
+tap_text "Tippen" 15 && pass "Wechsel zu Tippen im Erfassen-Blatt" || fail "\"Tippen\" im Erfassen-Blatt fehlt"
+sleep 2; adb shell input text "Hausschuhe%sbis%sDonnerstag"; sleep 1
+tap_text "Speichern" 10 || fail "\"Speichern\" fehlt"
+wait_text "Hausschuhe bis Donnerstag.*" 10 && pass "Eintrag liegt im Eingang" || fail "Eintrag nicht im Eingang"
+wait_text ".*bis (Morgen|Do [0-9]{2}\.[0-9]{2}\.).*" 5 && pass "Regel hat das Datum vorgeschlagen" || fail "Datumsvorschlag fehlt"
+adb exec-out screencap -p > "$OUT/screen-inbox-api$API.png" || true
+tap_text "Mach ich" 10 && pass "Karte mit einem Tap bestätigt" || fail "\"Mach ich\" fehlt"
+wait_text "Alles sortiert.*" 10 && pass "Eingang danach leer" || fail "Eingang nicht leer"
+adb shell am force-stop "$PKG"
+adb shell am start -W -n "$PKG/.MainActivity" >/dev/null 2>&1
+wait_text "Hausschuhe bis Donnerstag.*" 20 && pass "Eintrag übersteht Neustart (unter \"Meins\")" || fail "Eintrag nach Neustart weg"
+adb exec-out screencap -p > "$OUT/screen-today-api$API.png" || true
+adb logcat -d > "$OUT/logcat-core-api$API.txt"
+grep -qE "FATAL EXCEPTION|ANR in $PKG" "$OUT/logcat-core-api$API.txt" && fail "Absturz/ANR im Kernweg" || pass "kein Absturz im Kernweg"
 
 echo "-- Update-Probe (versionCode +1, gleicher Schlüssel) darüber installieren"
 R="$(adb install -r "$PROBE" 2>&1)"; echo "$R"

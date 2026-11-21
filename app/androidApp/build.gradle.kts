@@ -110,4 +110,6 @@ dependencies {
     implementation(project(":shared"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    // FileProvider: hands the camera app one file to write the photo into.
+    implementation(libs.androidx.core)
 }

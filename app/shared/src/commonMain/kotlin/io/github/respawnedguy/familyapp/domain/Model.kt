@@ -84,6 +84,8 @@ data class LatencySample(val trigger: String, val ms: Long, val atMs: Long)
 @Serializable
 data class Settings(
     val firstCaptureAction: CaptureAction = CaptureAction.VOICE,
+    /** Off by default: speech stays on the device; online recognition (Google) only if switched on. */
+    val allowOnlineSpeech: Boolean = false,
     val backupFolder: String? = null,
     val lastBackupMs: Long? = null,
     val lastBackupError: String? = null,
