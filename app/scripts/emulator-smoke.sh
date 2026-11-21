@@ -79,17 +79,18 @@ fi
 wait_text "Alles sortiert.*" 15 && pass "leerer Eingang zeigt \"Alles sortiert\"" || fail "leerer Eingang nicht sichtbar"
 tap_text "Erfassen" 10 && pass "Erfassen geöffnet" || fail "Erfassen-Knopf fehlt"
 tap_text "Tippen" 15 && pass "Wechsel zu Tippen im Erfassen-Blatt" || fail "\"Tippen\" im Erfassen-Blatt fehlt"
+# The Android 8 keyboard autocorrects "bis" to "bus" after the space; the title check allows that.
 sleep 2; adb shell input text "Hausschuhe%sbis%sDonnerstag"; sleep 1
 adb shell input keyevent 66; sleep 2
 if dump && python3 "$HERE/ui-tap.py" "$OUT/ui.xml" "Speichern" "$PKG" >/dev/null; then tap_text "Speichern" 5; fi
-wait_text "Hausschuhe bis Donnerstag.*" 10 && pass "Eintrag liegt im Eingang" || fail "Eintrag nicht im Eingang"
+wait_text "Hausschuhe b.s Donnerstag.*" 10 && pass "Eintrag liegt im Eingang" || fail "Eintrag nicht im Eingang"
 wait_text ".*bis (Morgen|Do [0-9]{2}\.[0-9]{2}\.).*" 5 && pass "Regel hat das Datum vorgeschlagen" || fail "Datumsvorschlag fehlt"
 adb exec-out screencap -p > "$OUT/screen-inbox-api$API.png" || true
 tap_text "Mach ich" 10 && pass "Karte mit einem Tap bestätigt" || fail "\"Mach ich\" fehlt"
 wait_text "Alles sortiert.*" 10 && pass "Eingang danach leer" || fail "Eingang nicht leer"
 adb shell am force-stop "$PKG"
 adb shell am start -W -n "$PKG/.MainActivity" >/dev/null 2>&1
-wait_text "Hausschuhe bis Donnerstag.*" 20 && pass "Eintrag übersteht Neustart (unter \"Meins\")" || fail "Eintrag nach Neustart weg"
+wait_text "Hausschuhe b.s Donnerstag.*" 20 && pass "Eintrag übersteht Neustart (unter \"Meins\")" || fail "Eintrag nach Neustart weg"
 adb exec-out screencap -p > "$OUT/screen-today-api$API.png" || true
 adb logcat -d > "$OUT/logcat-core-api$API.txt"
 grep -qE "FATAL EXCEPTION|ANR in $PKG" "$OUT/logcat-core-api$API.txt" && fail "Absturz/ANR im Kernweg" || pass "kein Absturz im Kernweg"
