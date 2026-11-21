@@ -50,11 +50,12 @@ class AndroidUpdatePlatform(
 
     override fun nowMs(): Long = System.currentTimeMillis()
 
-    override suspend fun fetchManifest(): String = withContext(Dispatchers.IO) {
+    override suspend fun fetchManifest(): String? = withContext(Dispatchers.IO) {
         val conn = open(manifestUrl)
         try {
             val code = conn.responseCode
-            if (code == HttpURLConnection.HTTP_NOT_FOUND) throw UpdateException("Noch kein Update veröffentlicht")
+            // GitHub answers 404 while the releases repo has no release yet: nothing to update to.
+            if (code == HttpURLConnection.HTTP_NOT_FOUND) return@withContext null
             if (code != HttpURLConnection.HTTP_OK) throw UpdateException("Update-Server antwortet mit $code")
             val bytes = conn.inputStream.use { input ->
                 val buffer = input.readNBytesCompat(MAX_MANIFEST_BYTES + 1)
