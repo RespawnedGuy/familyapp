@@ -33,7 +33,9 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.ui)
             implementation(libs.kotlinx.serialization.json)
-            implementation(libs.kotlinx.coroutines.core)
+            // Part of the shared API (AppModel, LocalDate in the domain), so the apps see them too.
+            api(libs.kotlinx.coroutines.core)
+            api(libs.kotlinx.datetime)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
