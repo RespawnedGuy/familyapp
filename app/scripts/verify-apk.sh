@@ -60,6 +60,14 @@ else
   pass "keine nativen Bibliotheken (läuft auf jeder CPU-Architektur)"
 fi
 
+
+echo
+echo "== Netzwerk (Manifest)"
+XMLTREE="$("$BT/aapt2" dump xmltree --file AndroidManifest.xml "$APK" 2>&1)"
+echo "$XMLTREE" | grep -qE "networkSecurityConfig|usesCleartextTraffic" \
+  && fail "Manifest lockert die Netzwerksicherheit (nur im e2e-Testbuild erlaubt)" \
+  || pass "nur HTTPS (keine Ausnahme für unverschlüsseltes HTTP)"
+
 echo
 [ $FAILED -eq 0 ] && echo "ERGEBNIS: alle Prüfungen bestanden" || echo "ERGEBNIS: mindestens eine Prüfung fehlgeschlagen"
 exit $FAILED

@@ -15,6 +15,13 @@ val appVersionName = (findProperty("versionName") as String?) ?: "0.1.0-local"
 val releaseKeystore = System.getenv("FAMILYAPP_KEYSTORE_PATH")?.let { file(it) }?.takeIf { it.exists() }
 val releaseKeystorePassword = System.getenv("FAMILYAPP_KEYSTORE_PASSWORD")
 
+// Update channel: public repo that only holds release APKs (ADR 0005). The code repo stays private.
+val updateReleasesBase = "https://github.com/RespawnedGuy/familyapp-releases/releases"
+// Only for the CI end-to-end test build type "e2e": a local HTTP server on the emulator host.
+val e2eUpdateBaseUrl = (findProperty("e2eUpdateBaseUrl") as String?) ?: "http://10.0.2.2:8000/"
+
+fun String.quoted() = "\"" + this + "\""
+
 android {
     namespace = "io.github.respawnedguy.familyapp"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -26,6 +33,9 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = appVersionCode
         versionName = appVersionName
+        buildConfigField("boolean", "UPDATES_ENABLED", "true")
+        buildConfigField("String", "UPDATE_MANIFEST_URL", "$updateReleasesBase/latest/download/update.json".quoted())
+        buildConfigField("String", "UPDATE_APK_URL_PREFIX", "$updateReleasesBase/download/".quoted())
     }
 
     signingConfigs {
@@ -54,6 +64,16 @@ android {
             // Debug and release builds can be installed side by side.
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            // A debug build has another package name, so release APKs can never update it.
+            buildConfigField("boolean", "UPDATES_ENABLED", "false")
+        }
+        // Release build that fetches updates from a local test server (CI end-to-end test only).
+        // Never published. Its manifest overlay allows cleartext HTTP to the emulator host only.
+        create("e2e") {
+            initWith(getByName("release"))
+            matchingFallbacks += "release"
+            buildConfigField("String", "UPDATE_MANIFEST_URL", "${e2eUpdateBaseUrl}update.json".quoted())
+            buildConfigField("String", "UPDATE_APK_URL_PREFIX", e2eUpdateBaseUrl.quoted())
         }
     }
 
@@ -89,4 +109,5 @@ kotlin {
 dependencies {
     implementation(project(":shared"))
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
 }

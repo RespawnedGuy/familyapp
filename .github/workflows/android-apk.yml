@@ -90,6 +90,24 @@ jobs:
           mkdir -p ../probe
           cp androidApp/build/outputs/apk/release/androidApp-release.apk ../probe/update-probe.apk
 
+      - name: End-to-end updater APKs (e2e build type, never published)
+        run: |
+          set -o pipefail
+          mkdir -p ../e2e
+          for VC in 100 101; do
+            ./gradlew --no-daemon :androidApp:assembleE2e -PversionCode=$VC -PversionName=e2e-$VC 2>&1 | tee -a ../logs/gradle-e2e.txt
+            cp androidApp/build/outputs/apk/e2e/androidApp-e2e.apk ../e2e/e2e-$VC.apk
+          done
+          # Same app, signed with a different key: the updater must refuse it.
+          FOREIGN="$RUNNER_TEMP/foreign.p12"
+          FPW="$(openssl rand -hex 24)"
+          keytool -genkeypair -storetype PKCS12 -keystore "$FOREIGN" -alias familyapp \
+            -keyalg RSA -keysize 2048 -validity 30 -storepass "$FPW" -dname "CN=Foreign key"
+          FAMILYAPP_KEYSTORE_PATH="$FOREIGN" FAMILYAPP_KEYSTORE_PASSWORD="$FPW" \
+            ./gradlew --no-daemon :androidApp:assembleE2e -PversionCode=102 -PversionName=e2e-102 2>&1 | tee -a ../logs/gradle-e2e.txt
+          cp androidApp/build/outputs/apk/e2e/androidApp-e2e.apk ../e2e/e2e-102-foreign.apk
+          ls -la ../e2e
+
       - name: Verify APK (apksigner, zipalign, aapt2)
         run: |
           set -o pipefail
@@ -99,6 +117,19 @@ jobs:
           fi
           scripts/verify-apk.sh ../dist/familyapp-$VERSION_NAME.apk $VERSION_CODE $CERT_ARG | tee ../dist/pruefbericht-apk.txt
           (cd ../dist && sha256sum familyapp-$VERSION_NAME.apk > familyapp-$VERSION_NAME.apk.sha256)
+
+      - name: Write update.json (read by the in-app updater, ADR 0005)
+        run: |
+          APK=../dist/familyapp-$VERSION_NAME.apk
+          jq -n \
+            --argjson versionCode "$VERSION_CODE" \
+            --arg versionName "$VERSION_NAME" \
+            --arg apkUrl "https://github.com/RespawnedGuy/familyapp-releases/releases/download/v$VERSION_NAME/familyapp-$VERSION_NAME.apk" \
+            --arg sha256 "$(sha256sum "$APK" | cut -d' ' -f1)" \
+            --argjson sizeBytes "$(stat -c %s "$APK")" \
+            '{versionCode: $versionCode, versionName: $versionName, apkUrl: $apkUrl, sha256: $sha256, sizeBytes: $sizeBytes, minSdk: 26, releaseNotes: ""}' \
+            > ../dist/update.json
+          cat ../dist/update.json
 
       - name: Fetch previous release APK for the update test
         if: steps.signing.outputs.release_key == 'true'
@@ -126,6 +157,7 @@ jobs:
           path: |
             dist/
             probe/
+            e2e/
             logs/
           if-no-files-found: ignore
 
@@ -158,13 +190,17 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           # The runner executes each line with sh, so pipefail needs an explicit bash.
-          script: bash -c 'set -o pipefail; bash app/scripts/emulator-smoke.sh "dist/familyapp-${{ env.VERSION_NAME }}.apk" probe/update-probe.apk emulator-out "$(ls probe/previous/*.apk 2>/dev/null | head -1)" 2>&1 | tee emulator-out-report.txt'
+          # Smoke test, then the in-app updater end to end (wrong checksum, foreign key, real update).
+          script: |
+            bash -c 'set -o pipefail; bash app/scripts/emulator-smoke.sh "dist/familyapp-${{ env.VERSION_NAME }}.apk" probe/update-probe.apk emulator-out "$(ls probe/previous/*.apk 2>/dev/null | head -1)" 2>&1 | tee emulator-out-report.txt'
+            bash -c 'set -o pipefail; bash app/scripts/emulator-update-e2e.sh e2e emulator-out 2>&1 | tee emulator-out-e2e.txt'
 
       - name: Collect report
         if: always()
         run: |
           mkdir -p emulator-out
           [ -f emulator-out-report.txt ] && mv emulator-out-report.txt emulator-out/pruefbericht-emulator-api${{ matrix.api-level }}.txt || true
+          [ -f emulator-out-e2e.txt ] && mv emulator-out-e2e.txt emulator-out/pruefbericht-update-e2e-api${{ matrix.api-level }}.txt || true
 
       - uses: actions/upload-artifact@v5
         if: always()
@@ -180,6 +216,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
+      RELEASES_REPO_TOKEN: ${{ secrets.RELEASES_REPO_TOKEN }}
     steps:
       - uses: actions/download-artifact@v5
         with:
@@ -193,7 +230,7 @@ jobs:
             [ -d "$d" ] || continue
             api="${d##*-}"
             cp "$d"/pruefbericht-*.txt out/ 2>/dev/null || true
-            cp "$d"/screen-*.png out/ 2>/dev/null || true
+            cp "$d"/screen-*.png "$d"/e2e-*.png out/ 2>/dev/null || true
           done
           if [ "${{ needs.build.result }}" != "success" ] || [ "${{ needs.emulator.result }}" != "success" ]; then
             (cd in && find . -path '*/logs/*' -type f | zip -q -@ ../out/ci-logs.zip) || true
@@ -235,12 +272,36 @@ jobs:
               *.apk) CT="application/vnd.android.package-archive" ;;
               *.png) CT="image/png" ;;
               *.zip) CT="application/zip" ;;
+              *.json) CT="application/json" ;;
               *) CT="text/plain; charset=utf-8" ;;
             esac
             curl -sSf -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Content-Type: $CT" \
               --data-binary @"$f" "$UPLOAD_URL?name=$(basename "$f")" > /dev/null
             echo "uploaded $(basename "$f") as $CT"
           done
+
+          # Public update channel: only the APK and its metadata, never reports or code.
+          if [ "$OK" = true ] && [ "$PRERELEASE" = false ]; then
+            if [ -n "$RELEASES_REPO_TOKEN" ]; then
+              PUB="RespawnedGuy/familyapp-releases"
+              PREL="$(GH_TOKEN="$RELEASES_REPO_TOKEN" gh api "repos/$PUB/releases" -f tag_name="$TAG" \
+                -f name="$NAME" -f body="Installierbare APK für Android 8.0 und neuer. Die App aktualisiert sich über update.json selbst." \
+                -F prerelease=false -f make_latest=true)"
+              PUPLOAD="$(echo "$PREL" | jq -r .upload_url | sed 's/{.*}//')"
+              for f in out/familyapp-*.apk out/familyapp-*.apk.sha256 out/update.json; do
+                case "$f" in
+                  *.apk) CT="application/vnd.android.package-archive" ;;
+                  *.json) CT="application/json" ;;
+                  *) CT="text/plain; charset=utf-8" ;;
+                esac
+                curl -sSf -X POST -H "Authorization: Bearer $RELEASES_REPO_TOKEN" -H "Content-Type: $CT" \
+                  --data-binary @"$f" "$PUPLOAD?name=$(basename "$f")" > /dev/null
+                echo "published $(basename "$f") to $PUB"
+              done
+            else
+              echo "::warning::RELEASES_REPO_TOKEN missing: release not published to the public update channel."
+            fi
+          fi
 
           {
             echo "### $NAME"
