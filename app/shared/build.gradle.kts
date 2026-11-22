@@ -37,11 +37,20 @@ kotlin {
             api(libs.kotlinx.coroutines.core)
             api(libs.kotlinx.datetime)
         }
+        androidMain.dependencies {
+            // @Preview annotation for the Android Studio previews in androidMain/.../preview.
+            implementation(compose.preview)
+        }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
         }
     }
+}
+
+dependencies {
+    // Renderer for the Android Studio preview pane; debug only, never in the release APK.
+    debugImplementation(compose.uiTooling)
 }
 
 android {
