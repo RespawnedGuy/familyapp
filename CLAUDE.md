@@ -23,7 +23,7 @@ Spike `spikes/p2p-sync/`: `gradle test`, `gradle build`, CLI per `gradle install
 
 ## Ordner
 
-- `docs/` Konzept, `docs/kochbibliothek.md` Kochbibliothek mit Rezeptimport und Angeboten, `docs/entscheidungen/` ADRs, `docs/gestaltung/` Optik, Haptik, Klickwege, `docs/android-installieren.md` Sideloading-Anleitung, `docs/ui-bearbeiten.md` UI in Android Studio bearbeiten (Vorschauen in `app/shared/src/androidMain/.../preview/`)
+- `docs/` Konzept, `docs/qualitaet/` ISO-25010-Bewertung mit Messungen (`messung/`: `gradle test detekt` ohne Android SDK), `docs/kochbibliothek.md` Kochbibliothek mit Rezeptimport und Angeboten, `docs/entscheidungen/` ADRs, `docs/gestaltung/` Optik, Haptik, Klickwege, `docs/android-installieren.md` Sideloading-Anleitung, `docs/ui-bearbeiten.md` UI in Android Studio bearbeiten (Vorschauen in `app/shared/src/androidMain/.../preview/`)
 - `app/` KMP-App: `shared/` (gemeinsamer Compose-Code), `androidApp/`, `iosApp/` (vorbereitet), `scripts/` (APK-Prüfung, Emulator-Test)
 - `spikes/rule-engine/` Spike: deterministische Regel-Engine + deutscher Datums-Parser
 - `spikes/sync/` Spike: Local-first-Sync über blindes Relay (ADR 0002)
