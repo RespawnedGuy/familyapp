@@ -47,7 +47,8 @@ from_adb() { # <uri> <text>: adb plays an app that sends a link (no URI grant po
     --eu android.intent.extra.STREAM "$1" --es android.intent.extra.TEXT "'$2'" >/dev/null 2>&1
 }
 from_app() { # <kind> <text>: the test app shares one of its files with a read grant
-  adb shell am start -W -n "$SRC/.ShareSourceActivity" --es kind "$1" --es text "'$2'" >/dev/null 2>&1
+  # Fresh task each time: a second start must not just resurface the previous share.
+  adb shell am start -W --activity-clear-task -n "$SRC/.ShareSourceActivity" --es kind "$1" --es text "'$2'" >/dev/null 2>&1
 }
 expect() { # <label> <regex of the message>
   if wait_text "$2" 20; then pass "$1"; else fail "$1"; fi
