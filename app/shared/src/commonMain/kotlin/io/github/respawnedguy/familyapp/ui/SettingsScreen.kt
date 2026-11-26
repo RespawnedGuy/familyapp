@@ -1,5 +1,8 @@
 package io.github.respawnedguy.familyapp.ui
 
+import io.github.respawnedguy.familyapp.resources.reminders_blocked
+import org.jetbrains.compose.resources.stringResource
+import io.github.respawnedguy.familyapp.resources.Res
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.selectable
@@ -124,6 +127,13 @@ fun SettingsScreen(data: FamilyData, model: AppModel, updates: UpdateController?
                     )
                 }
                 Switch(checked = s.remindersOn, onCheckedChange = null)
+            }
+            // FMEA F4: switched on here but blocked by the system would fail silently.
+            if (s.remindersOn && model.notificationsBlocked()) {
+                Text(
+                    stringResource(Res.string.reminders_blocked),
+                    fontSize = 13.sp, color = c.overdue,
+                )
             }
         }
 

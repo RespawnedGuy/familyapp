@@ -108,6 +108,8 @@ data class Settings(
     val remindersCheckedMs: Long? = null,
     /** The app asked once for the notification permission (Android 13+); never nag again. */
     val notificationsAsked: Boolean = false,
+    /** Number of items when the "only on this phone" hint was put aside (P1-11); null = never. */
+    val localOnlyHintDismissedAt: Int? = null,
 )
 
 @Serializable

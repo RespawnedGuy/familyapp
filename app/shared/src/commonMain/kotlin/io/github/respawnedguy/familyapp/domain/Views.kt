@@ -42,6 +42,21 @@ object Views {
         }
     }
 
+    /**
+     * Quality plan P1-11 (FMEA D3/D4): everything lives on one phone only. Shown on "Heute" from
+     * [LOCAL_ONLY_MIN_ITEMS] entries, never as a notification; put aside, it waits for
+     * [LOCAL_ONLY_SNOOZE_ITEMS] more entries.
+     */
+    fun showLocalOnlyHint(data: FamilyData, paired: Boolean): Boolean {
+        if (paired || data.settings.backupFolder != null) return false
+        val count = data.items.size
+        val dismissed = data.settings.localOnlyHintDismissedAt
+        return count >= LOCAL_ONLY_MIN_ITEMS && (dismissed == null || count >= dismissed + LOCAL_ONLY_SNOOZE_ITEMS)
+    }
+
+    const val LOCAL_ONLY_MIN_ITEMS = 10
+    const val LOCAL_ONLY_SNOOZE_ITEMS = 30
+
     /** Inbox items nobody takes care of yet (shown under the load chart). */
     fun unowned(data: FamilyData): Int = data.items.count { it.status == ItemStatus.INBOX && it.assignee == null }
 

@@ -116,6 +116,9 @@ class AndroidPlatform(private val app: FamilyApplication) : PlatformServices {
 
     override fun newRecoveryCode(): String = BackupCrypto.newCode()
 
+    override fun notificationsBlocked(): Boolean =
+        app.getSystemService(android.app.NotificationManager::class.java)?.areNotificationsEnabled() == false
+
     override fun requestNotificationPermission() {
         activity?.requestNotifications()
     }

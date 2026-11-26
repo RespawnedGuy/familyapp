@@ -342,6 +342,8 @@ class FamilyRepository(
 
     fun recordNotificationsAsked() = settings { it.copy(notificationsAsked = true) }
 
+    fun dismissLocalOnlyHint() = settings { it.copy(localOnlyHintDismissedAt = current.items.size) }
+
     fun recordBackup(error: String?) = settings {
         if (error == null) it.copy(lastBackupMs = now(), lastBackupError = null) else it.copy(lastBackupError = error)
     }

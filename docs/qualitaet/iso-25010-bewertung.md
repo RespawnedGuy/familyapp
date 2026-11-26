@@ -305,6 +305,12 @@ Prüfung (Anfang von P1-4): `AccessibilityTest` in `app/shared/src/jvmTest` stel
 
 Noch nicht geprüft: Prüfungen des Accessibility Test Framework auf Android (Kontrast, Beschriftung) und Screenshots bei Schriftgröße 2,0; beides braucht den Emulator-Job. Ein TalkBack-Durchgang durch Nils steht aus.
 
+### 26.11.2026: P1-5 Datumsparser, P1-9 Gefahrenanalyse, P1-11
+
+- **P1-5:** 12 Eigenschaftstests über 1 000 Tage (`DateParserPropertiesTest`) und ein öffentlicher Korpus mit 44 typischen Sätzen (`tools/quality-check/corpus/dates.csv`, `DateCorpusTest`). Ergebnis: **0 falsche Daten**, 0 verpasste. Vier echte Fehler gefunden und behoben: „29.2.“ im Nicht-Schaltjahr, Nummern („Kapitel 4.1.“, „Nr. 3.4.“), Bezugsdaten („Rechnung vom 12.11.“) und Bereiche („15.-19.6.“ ergibt jetzt beide Enden, die Karte fragt). Ein privater Korpus echter Sprachaufnahmen (`corpus/dates-private.csv`, nie committen) wird gemessen, sobald er vorliegt.
+- **P1-9:** [Gefahrenanalyse](gefahrenanalyse.md) mit 19 Fehlerarten für „Termin falsch, fehlt, zu spät“ und „Daten weg“. Alle 14 vorher hohen Zeilen haben einen Test. Dabei neu umgesetzt: Hinweis in den Einstellungen, wenn Android die Benachrichtigungen blockiert.
+- **P1-11 (neu aus der Gefahrenanalyse):** Karte „Nur auf diesem Handy“ auf „Heute“ ab 10 Einträgen ohne Sicherungsordner und ohne gekoppeltes Gerät; „Später“ legt sie für 30 weitere Einträge beiseite (`localOnlyHintAppearsFromTenEntriesAndWaitsThirtyMoreAfterBeingPutAside`).
+
 ### 26.11.2026: P1-7 Texte in Ressourcen, Schritt 1
 
 Die App nutzt Compose Multiplatform Resources. Alle Texte stehen in `app/shared/src/commonMain/composeResources/values/strings.xml`, Deutsch ist die Grundsprache (`values/`), eine Übersetzung käme nach `values-<sprache>/`. Der Code holt sie mit `stringResource(Res.string.…)`; die Klasse `Res` ist modulintern (`io.github.respawnedguy.familyapp.resources`).
@@ -383,4 +389,4 @@ Was der Test gefunden hat und jetzt behoben ist:
 
 Screenshots: Artefakt `emulator-api26/36`, Ordner `schrift-api*`, und im Release als `schrift-screenshots-api*.zip`. Alle Emulator-Tests laufen jetzt auch dann, wenn ein früherer fehlschlägt, damit ein roter Test die anderen nicht verdeckt.
 
-Noch offen aus P1: P1-5 Datumsparser-Korpus, P1-7 Texte in Ressourcen (Rest), P1-9 FMEA, P1-10 Referenzwerte vom Gerät, TalkBack-Durchgang durch Nils.
+Noch offen aus P1: P1-7 Texte in Ressourcen (Rest), P1-10 Referenzwerte vom Gerät, TalkBack-Durchgang durch Nils.
