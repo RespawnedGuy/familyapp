@@ -339,4 +339,20 @@ Bewusst nicht gemacht: Macrobenchmark. Er misst im CI-Emulator dieselbe Spanne w
 
 Abnahme P1-10 ist erst erfüllt, wenn die Pixel-Zeile ausgefüllt ist und der Median „bis Aufnahme läuft“ ≤ 2 s liegt.
 
-Noch offen aus P1: P1-4 Rest (Android-Prüfungen, Screenshots bei 200 % Schrift), P1-5 Datumsparser-Korpus, P1-7 Texte in Ressourcen (begonnen, siehe oben), P1-8 Bedrohungsmodell, P1-9 FMEA, P1-10 Referenzwerte vom Gerät.
+### 26.11.2026: P1-8 Bedrohungsmodell und Härtung der Eingänge
+
+[Bedrohungsmodell](bedrohungsmodell.md) nach STRIDE für Teilen, Kopplung, Direktabgleich, geteilten Ordner, Hausgerät und Gerät: 28 Bedrohungen, jede mit Maßnahme und Test oder als offene Maßnahme M1 bis M4. Beim Durchgehen des Codes gefunden und gleich behoben:
+
+| Befund | Umsetzung | Beleg |
+| --- | --- | --- |
+| Teilen prüfte weder Typ noch Inhalt; nur der FileProvider `.files` galt als eigener Anbieter; abgelehnte Bilder verschwanden still | Typ vom Anbieter muss `image/*` sein, der Bilddecoder muss eine Größe lesen (≤ 100 MP), alle eigenen Anbieter abgelehnt, Text ≤ 20 000 Zeichen, Meldung mit Grund | `SharedInputTest`, `AppModelTest.refusedSharedImage…`, Emulator `emulator-share-e2e.sh` |
+| Ein Fremder im WLAN konnte mit 4 Bytes 32 MB Speicher pro Verbindung belegen, unbegrenzt viele Verbindungen je 200 s offen halten | Vor dem Handshake höchstens 64 KB pro Rahmen, 10 s Wartezeit, 8 Verbindungen | `TcpTransportTest` |
+| Wiederherstellen und Ordnerabgleich lasen jede Datei ganz in den Speicher; eine kaputte Riesendatei hätte jeden Abgleich scheitern lassen | Höchstens 32 MB pro Datei, zu große Abgleichdatei wird übersprungen | `BoundedReadTest`, `SyncControllerTest` |
+| Ab Android 12 hätte der Umzug auf ein neues Handy Familienschlüssel und Geräte-ID mitkopiert | `dataExtractionRules` | `verify-apk.sh` |
+| Hausgerät: `sync.json` mit Standardrechten lesbar für andere Konten | `rw-------`, Verzeichnis `rwx------` | `SyncFilesTest` |
+
+Abnahmekriterium „`file://`-URI und Übergröße werden abgelehnt“ prüft jetzt der Emulator-Test auf Android 8 und 16 (dazu eigener Anbieter, HTML, HTML mit Bildtyp und ein echtes Bild). Höchstes Restrisiko: Ein verlorenes Handy oder ein ehemaliges Familienmitglied behält den Familienschlüssel (M1, Gerät entfernen mit Schlüsselwechsel).
+
+Messwerte danach (`gradle check`, zusammen mit P1-7 Schritt 1): 178 App-Tests grün, Abdeckung Zeilen 91 %, Zweige 62 %.
+
+Noch offen aus P1: P1-4 Rest (Android-Prüfungen, Screenshots bei 200 % Schrift), P1-5 Datumsparser-Korpus, P1-7 Texte in Ressourcen (begonnen), P1-9 FMEA, P1-10 Referenzwerte vom Gerät.

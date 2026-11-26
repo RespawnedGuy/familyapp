@@ -2,6 +2,7 @@ package io.github.respawnedguy.familyapp
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Debug
@@ -12,6 +13,9 @@ import androidx.core.content.FileProvider
 import io.github.respawnedguy.familyapp.data.BackupCrypto
 import io.github.respawnedguy.familyapp.data.BackupFolder
 import io.github.respawnedguy.familyapp.data.PhotoCleanup
+import io.github.respawnedguy.familyapp.data.ShareRejection
+import io.github.respawnedguy.familyapp.data.SharedImage
+import io.github.respawnedguy.familyapp.data.SharedInput
 import io.github.respawnedguy.familyapp.data.StoredPhoto
 import io.github.respawnedguy.familyapp.domain.DeviceInfo
 import io.github.respawnedguy.familyapp.domain.FamilyData
@@ -21,6 +25,7 @@ import io.github.respawnedguy.familyapp.presentation.PlatformServices
 import io.github.respawnedguy.familyapp.presentation.RestoreRead
 import io.github.respawnedguy.familyapp.presentation.SpeechInput
 import java.io.File
+import java.io.IOException
 import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
@@ -135,32 +140,38 @@ class AndroidPlatform(private val app: FamilyApplication) : PlatformServices {
     }.getOrDefault(folder)
 
     /**
-     * Copies an image shared from another app into private storage, returns its path. Only
-     * content:// from other apps and at most [MAX_SHARED_BYTES]: a file:// link could point into
-     * this app's own private files (quality plan P1-8).
+     * Copies an image shared from another app into private storage (quality plan P1-8, threat model
+     * TE-1 to TE-4 in docs/qualitaet/bedrohungsmodell.md). Only content:// from a provider of another
+     * app: a file:// link or our own FileProvider could point into this app's private files. The
+     * copy stops after 20 MB whatever size the sender claims, and the image decoder must read a
+     * plausible picture size from the copied bytes, so a renamed APK or HTML file is not kept.
      */
-    fun importSharedImage(uri: Uri): String? = runCatching {
-        if (uri.scheme != "content" || uri.authority == "${app.packageName}.files") return null
+    fun importSharedImage(uri: Uri, declaredType: String?): SharedImage {
+        val type = runCatching { app.contentResolver.getType(uri) }.getOrNull() ?: declaredType
         val file = File(photoDir, "${UUID.randomUUID()}.jpg")
-        app.contentResolver.openInputStream(uri)?.use { input ->
-            file.outputStream().use { out ->
-                val buffer = ByteArray(64 * 1024)
-                var total = 0L
-                while (true) {
-                    val n = input.read(buffer)
-                    if (n < 0) break
-                    total += n
-                    if (total > MAX_SHARED_BYTES) {
-                        out.close()
-                        file.delete()
-                        return null
-                    }
-                    out.write(buffer, 0, n)
-                }
-            }
-        } ?: return null
-        file.absolutePath
-    }.getOrNull()
+        val rejection = SharedInput.precheck(uri.scheme, isOwnProvider(uri.authority.orEmpty()), type)
+            ?: runCatching { copyAndCheck(uri, file) }.getOrElse { ShareRejection.UNREADABLE }
+        if (rejection == null) return SharedImage.Accepted(file.absolutePath)
+        file.delete()
+        return SharedImage.Rejected(rejection)
+    }
+
+    /** Fails closed: if the package manager cannot answer, the provider counts as our own. */
+    private fun isOwnProvider(authority: String): Boolean =
+        authority == app.packageName || authority.startsWith("${app.packageName}.") ||
+            runCatching { app.packageManager.resolveContentProvider(authority, 0)?.packageName == app.packageName }
+                .getOrDefault(true)
+
+    private fun copyAndCheck(uri: Uri, file: File): ShareRejection? {
+        val input = app.contentResolver.openInputStream(uri) ?: throw IOException("Kein Inhalt")
+        val copied = input.use { i ->
+            file.outputStream().use { o -> SharedInput.copyLimited({ i.read(it) }, { b, n -> o.write(b, 0, n) }) }
+        }
+        if (copied == null) return ShareRejection.TOO_LARGE
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.absolutePath, bounds)
+        return SharedInput.postcheck(bounds.outWidth, bounds.outHeight)
+    }
 
     // ---- Measurements on the real phone (quality plan P1-10) -------------------------------------
 
@@ -195,9 +206,5 @@ class AndroidPlatform(private val app: FamilyApplication) : PlatformServices {
                 app.startActivity(chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             }
         }.isSuccess
-    }
-
-    companion object {
-        const val MAX_SHARED_BYTES = 20L * 1024 * 1024
     }
 }

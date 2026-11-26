@@ -2,6 +2,7 @@ package io.github.respawnedguy.familyapp.presentation
 
 import io.github.respawnedguy.familyapp.data.FamilyRepository
 import io.github.respawnedguy.familyapp.data.InMemoryTextStore
+import io.github.respawnedguy.familyapp.data.ShareRejection
 import io.github.respawnedguy.familyapp.domain.CaptureAction
 import io.github.respawnedguy.familyapp.domain.ItemStatus
 import io.github.respawnedguy.familyapp.domain.MemberKind
@@ -157,6 +158,25 @@ class AppModelTest {
         val item = m.repo.current.items.single()
         assertEquals(Source.SHARE, item.source)
         assertEquals(LocalDate(2026, 12, 4), item.due)
+    }
+
+    @Test
+    fun refusedSharedImageIsNamedAndTheTextStillSaved() = runTest {
+        val m = model()
+        m.captureShared("Elternbrief", null, ShareRejection.TOO_LARGE)
+        assertNull(m.repo.current.items.single().photoPath)
+        assertEquals("Gespeichert ohne Bild. Das Bild ist größer als 20 MB.", m.feedback.value?.message)
+    }
+
+    @Test
+    fun refusedSharedImageWithoutTextSavesNothingButSaysWhy() = runTest {
+        val m = model()
+        m.captureShared("", null, ShareRejection.NOT_FROM_OTHER_APP)
+        assertTrue(m.repo.current.items.isEmpty())
+        assertEquals(
+            "Bild nicht übernommen. Es werden nur Bilder angenommen, die eine andere App teilt.",
+            m.feedback.value?.message,
+        )
     }
 
     @Test

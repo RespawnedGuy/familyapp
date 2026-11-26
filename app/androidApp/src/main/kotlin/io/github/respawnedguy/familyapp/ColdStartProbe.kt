@@ -2,6 +2,7 @@ package io.github.respawnedguy.familyapp
 
 import android.app.Activity
 import android.content.Intent
+import android.os.Build
 import android.os.Process
 import android.os.SystemClock
 import android.view.ViewTreeObserver
@@ -15,6 +16,19 @@ object ColdStartProbe {
     /** Activity created this soon after the process: the process was started for this launch. */
     private const val LAUNCH_WINDOW_MS = 5_000L
 
+    /**
+     * When Android was asked to start this process. From Android 13 on, `getStartElapsedRealtime`
+     * is the moment the process was ready to run app code, which the CI measured about 1.1 s after
+     * Android's own launch timestamp on API 36 (against 17 ms on API 26): the app would have looked
+     * a second faster than it is. `getStartRequestedElapsedRealtime` matches what Android counts.
+     */
+    fun processStartElapsedMs(): Long =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Process.getStartRequestedElapsedRealtime()
+        } else {
+            Process.getStartElapsedRealtime()
+        }
+
     fun attach(activity: Activity, app: FamilyApplication, intent: Intent?) {
         if (!app.coldStartUnmeasured) return
         app.coldStartUnmeasured = false
@@ -25,7 +39,7 @@ object ColdStartProbe {
             Intent.ACTION_SEND -> "Teilen"
             else -> "Symbol"
         }
-        val processStart = Process.getStartElapsedRealtime()
+        val processStart = processStartElapsedMs()
         val decor = activity.window.decorView
         decor.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
             override fun onPreDraw(): Boolean {

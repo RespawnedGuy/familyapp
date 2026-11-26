@@ -1,5 +1,6 @@
 package io.github.respawnedguy.familyapp.sync
 
+import io.github.respawnedguy.familyapp.data.BoundedRead
 import io.github.respawnedguy.familyapp.data.FamilyRepository
 import io.github.respawnedguy.familyapp.data.InMemoryTextStore
 import io.github.respawnedguy.familyapp.domain.Source
@@ -15,6 +16,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.LocalDate
 import java.io.File
+import java.io.RandomAccessFile
 import java.nio.file.Files
 import java.util.UUID
 import java.util.concurrent.Executors
@@ -256,6 +258,14 @@ class SyncControllerTest {
         File(folder, "${FolderSync.STATE_DIR}/0123456789ab.fas").writeText("Müll")
         nils.sync.syncAll(manual = true)
         assertNull(nils.sync.status.value.problem)
+        // A file too large to be ours (threat model OR-3) is skipped; the other devices still sync.
+        RandomAccessFile(File(folder, "${FolderSync.STATE_DIR}/fedcba9876543210.fas"), "rw").use {
+            it.setLength(BoundedRead.MAX_FILE_BYTES + 1) // sparse: costs no disk space
+        }
+        lisa.onRepo { capture("Nach der Riesendatei", Source.TEXT) }
+        lisa.sync.syncAll()
+        nils.sync.syncAll(manual = true)
+        assertTrue(nils.onRepo { current.items.any { it.title == "Nach der Riesendatei" } })
     }
 
     @Test
