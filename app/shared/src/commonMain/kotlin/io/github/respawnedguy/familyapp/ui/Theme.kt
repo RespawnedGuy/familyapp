@@ -3,6 +3,7 @@ package io.github.respawnedguy.familyapp.ui
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
@@ -12,6 +13,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.unit.dp
 
 /**
@@ -102,6 +104,10 @@ fun FamilyTheme(content: @Composable () -> Unit) {
         large = RoundedCornerShape(28.dp),
     )
     CompositionLocalProvider(LocalFamilyColors provides c) {
-        MaterialTheme(colorScheme = scheme, shapes = shapes, content = content)
+        MaterialTheme(colorScheme = scheme, shapes = shapes) {
+            // Long German words ("Steuererklärung") in narrow columns at 200 % font size get a
+            // hyphen instead of a bare break in the middle of the word (P1-4).
+            CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(hyphens = Hyphens.Auto), content = content)
+        }
     }
 }

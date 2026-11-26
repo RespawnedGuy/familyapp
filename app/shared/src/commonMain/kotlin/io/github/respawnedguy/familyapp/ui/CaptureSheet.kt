@@ -180,10 +180,7 @@ private fun BottomRow(state: CaptureState, model: AppModel) {
                 Modifier.size(64.dp).clip(CircleShape).background(c.accent).clickable { model.switchCapture(CaptureAction.PHOTO) },
                 contentAlignment = Alignment.Center,
             ) { Icon(FamilyIcons.Camera, contentDescription = null, tint = c.onAccent, modifier = Modifier.size(30.dp)) }
-            Text(
-                stringResource(Res.string.common_photo),
-                color = c.text, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp),
-            )
+            FitLabel(stringResource(Res.string.common_photo), c.text, 12.sp, Modifier.padding(top = 2.dp, start = 2.dp, end = 2.dp))
         }
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
             SheetAction(stringResource(Res.string.common_cancel)) { model.dismissCapture() }
@@ -194,11 +191,9 @@ private fun BottomRow(state: CaptureState, model: AppModel) {
 @Composable
 private fun SheetAction(label: String, onClick: () -> Unit) {
     val c = LocalFamilyColors.current
-    Text(
-        label,
-        modifier = Modifier.clip(RoundedCornerShape(24.dp)).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp),
-        color = c.accent,
-        fontSize = 15.sp,
-        fontWeight = FontWeight.SemiBold,
+    FitLabel(
+        label, c.accent, 15.sp,
+        Modifier.clip(RoundedCornerShape(24.dp)).clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 14.dp),
+        FontWeight.SemiBold,
     )
 }

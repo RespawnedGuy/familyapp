@@ -60,6 +60,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
@@ -74,6 +75,7 @@ import io.github.respawnedguy.familyapp.presentation.Tab
 import io.github.respawnedguy.familyapp.sync.SyncUi
 import io.github.respawnedguy.familyapp.ui.CaptureSheet
 import io.github.respawnedguy.familyapp.ui.FamilyIcons
+import io.github.respawnedguy.familyapp.ui.FitLabel
 import io.github.respawnedguy.familyapp.ui.FamilyScreen
 import io.github.respawnedguy.familyapp.ui.FamilyTheme
 import io.github.respawnedguy.familyapp.ui.JoinFamilyForm
@@ -303,7 +305,7 @@ private fun TopBar(title: String, data: FamilyData, onAvatar: () -> Unit) {
         Modifier.fillMaxWidth().statusBarsPadding().padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, Modifier.weight(1f), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = c.text)
+        FitLabel(title, c.text, 24.sp, Modifier.weight(1f), FontWeight.Bold, minPhysical = 18f, textAlign = TextAlign.Start)
         Box(
             Modifier.size(48.dp).clip(CircleShape).clickable(onClickLabel = settings, onClick = onAvatar)
                 .semantics { contentDescription = settings },
@@ -340,11 +342,7 @@ private fun BottomBar(selected: Tab?, inboxCount: Int, first: CaptureAction, mod
                 }
                 Icon(icon, contentDescription = null, tint = c.onAccent, modifier = Modifier.size(30.dp))
             }
-            Text(
-                capture,
-                fontSize = 12.sp, color = c.text, fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.offset(y = (-6).dp),
-            )
+            FitLabel(capture, c.text, 12.sp, Modifier.offset(y = (-6).dp).padding(horizontal = 2.dp), FontWeight.SemiBold)
         }
         NavItem(Tab.UPCOMING, FamilyIcons.Upcoming, selected == Tab.UPCOMING) { model.select(Tab.UPCOMING) }
         NavItem(Tab.SEARCH, FamilyIcons.Search, selected == Tab.SEARCH) { model.select(Tab.SEARCH) }
@@ -380,11 +378,12 @@ private fun RowScope.NavItem(tab: Tab, icon: ImageVector, selected: Boolean, bad
                 )
             }
         }
-        Text(
+        FitLabel(
             stringResource(tab.label),
-            fontSize = 12.sp,
-            color = if (selected) c.text else c.textSecondary,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            if (selected) c.text else c.textSecondary,
+            12.sp,
+            Modifier.padding(horizontal = 2.dp),
+            if (selected) FontWeight.SemiBold else FontWeight.Normal,
         )
     }
 }

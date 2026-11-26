@@ -26,8 +26,10 @@ adb pull "/sdcard/Android/data/$PKG/files/schrift/." "$DIR/" >/dev/null 2>&1 || 
   adb exec-out run-as "$PKG" sh -c 'cd files/schrift && tar cf - .' | tar xf - -C "$DIR" 2>/dev/null || true
 cat "$DIR"/*-schrift*.txt > "$DIR/befunde.txt" 2>/dev/null || true
 echo
-# Only screens with findings, each under its "== name" line.
+# Every finding, each under its "== name" line (the job log is the quickest place to read them).
 awk '/^==/{h=$0; next} /^(FEHLER|HINWEIS)/{if(h){print h; h=""} print}' "$DIR/befunde.txt"
+# Crashes or errors before a report was written show up only in the runner output.
+grep -A8 '^[0-9]*) ' "$DIR/instrument-raw.txt" | grep -v '^\s*at androidx\|^\s*at org.junit\|^\s*at java' | head -60 || true
 echo
 SHOTS="$(ls "$DIR"/*.png 2>/dev/null | wc -l)"
 echo "Screenshots: $SHOTS (Artefakt emulator-api$API, Ordner schrift-api$API)"

@@ -27,6 +27,7 @@ import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.test.then
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.respawnedguy.familyapp.presentation.CaptureState
@@ -114,7 +115,8 @@ class LargeFontScreensTest(private val case: Case) {
                 try {
                     onRoot().tryPerformAccessibilityChecks()
                 } catch (e: Throwable) {
-                    problems += "Accessibility Test Framework: " + (e.message ?: e.toString()).take(1500)
+                    problems += "Accessibility Test Framework: " +
+                        (e.message ?: e.toString()).lines().map { it.trim() }.filter { it.isNotEmpty() }.joinToString(" | ").take(3000)
                 }
             }
             screenshot(page)
@@ -159,7 +161,7 @@ class LargeFontScreensTest(private val case: Case) {
         val visible = mutableListOf<TextNode>()
         for (t in texts) {
             val label = "„${t.text.take(60)}“"
-            t.layout?.let { checkLayout(it, label, problems, notes) }
+            t.layout?.let { checkLayout(it, t.node, label, problems, notes) }
             if (t.rect.right > root.right + dp || t.rect.left < root.left - dp) {
                 problems += "$label ragt seitlich über den Bildschirm"
                 continue
@@ -188,23 +190,45 @@ class LargeFontScreensTest(private val case: Case) {
         }
     }
 
-    private fun checkLayout(layout: TextLayoutResult, label: String, problems: MutableSet<String>, notes: MutableSet<String>) {
+    /**
+     * The layout result from the semantics action is not compared with its own size (its overflow
+     * flags were set on texts that fit, first CI run): the lines are compared with the size the
+     * text node really got on screen.
+     */
+    private fun checkLayout(
+        layout: TextLayoutResult,
+        node: SemanticsNode,
+        label: String,
+        problems: MutableSet<String>,
+        notes: MutableSet<String>,
+    ) {
         val text = layout.layoutInput.text.text
         val lines = layout.lineCount
-        val ellipsized = lines > 0 && layout.isLineEllipsized(lines - 1)
-        if (ellipsized || layout.hasVisualOverflow) {
+        if (lines == 0) return
+        val ellipsized = layout.isLineEllipsized(lines - 1)
+        val tooManyLines = layout.multiParagraph.didExceedMaxLines
+        val tolerance = 1.5f
+        val tooHigh = layout.getLineBottom(lines - 1) > node.size.height + tolerance
+        val tooWide = (0 until lines).any { layout.getLineRight(it) > node.size.width + tolerance || layout.getLineLeft(it) < -tolerance }
+        if (ellipsized || tooManyLines) {
             val deliberate = layout.layoutInput.overflow == TextOverflow.Ellipsis && layout.layoutInput.maxLines >= 2
             if (deliberate) {
                 notes += "$label nach ${layout.layoutInput.maxLines} Zeilen mit „…“ gekürzt (freier Text, ganz per Tippen)"
             } else {
-                problems += "$label ist abgeschnitten (${if (ellipsized) "„…“" else "passt nicht in die Fläche"})"
+                problems += "$label ist abgeschnitten (mehr als ${layout.layoutInput.maxLines} Zeile(n))"
             }
+        } else if (tooHigh) {
+            problems += "$label ist unten abgeschnitten (Text ${layout.getLineBottom(lines - 1).roundToInt()} px, Fläche ${node.size.height} px)"
         }
+        if (tooWide) problems += "$label ist zu breit für seine Fläche (${node.size.width} px)"
+        val hyphenated = layout.layoutInput.style.hyphens == Hyphens.Auto
         for (line in 0 until lines - 1) {
             if (layout.isLineEllipsized(line)) continue
             val end = layout.getLineEnd(line)
             if (end in 1 until text.length && text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit()) {
-                problems += "$label: Wort mitten getrennt („${text.substring(maxOf(0, end - 8), end)}|${text.substring(end, minOf(text.length, end + 8))}“)"
+                val where = "„${text.substring(maxOf(0, end - 8), end)}|${text.substring(end, minOf(text.length, end + 8))}“"
+                // With automatic hyphenation the break gets a visible hyphen (only in the drawing, not in the string).
+                if (hyphenated) notes += "$label: Silbentrennung $where" else problems += "$label: Wort mitten getrennt $where"
             }
         }
     }
