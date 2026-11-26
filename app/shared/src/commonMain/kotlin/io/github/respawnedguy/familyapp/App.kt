@@ -54,6 +54,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
@@ -268,7 +269,8 @@ private fun TopBar(title: String, data: FamilyData, onAvatar: () -> Unit) {
     ) {
         Text(title, Modifier.weight(1f), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = c.text)
         Box(
-            Modifier.size(48.dp).clip(CircleShape).clickable(onClickLabel = "Einstellungen", onClick = onAvatar),
+            Modifier.size(48.dp).clip(CircleShape).clickable(onClickLabel = "Einstellungen", onClick = onAvatar)
+                .semantics { contentDescription = "Einstellungen" },
             contentAlignment = Alignment.Center,
         ) { PersonDot(data.self, 36.dp) }
     }
