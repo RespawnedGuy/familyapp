@@ -35,6 +35,8 @@ class FamilyJsonMigrationTest {
         assertEquals("/data/user/0/io.github.respawnedguy.familyapp/files/photos/abc.jpg", d.items.first { it.title == "Foto" }.photoPath)
         assertEquals(ItemStatus.DONE, d.items.first { it.title == "Milch" }.status)
         assertEquals(900L, d.settings.latency.single().ms)
+        // Before P1-10 every sample measured "until recording runs".
+        assertEquals(io.github.respawnedguy.familyapp.domain.Metric.CAPTURE_READY, d.settings.latency.single().metric)
         assertNull(shoes.changedBy)
         assertTrue(d.tombstones.isEmpty())
     }

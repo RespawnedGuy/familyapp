@@ -59,4 +59,11 @@
     <string name="local_only_later">Später</string>
     <string name="reminders_blocked">Android blockiert Benachrichtigungen dieser App. Die Erinnerung am Morgen kommt dann nicht an; „Heute wichtig“ in der App zeigt die Fristen trotzdem. Erlauben in den Android-Einstellungen unter Apps.</string>
     <string name="task_mark_done">Als erledigt markieren</string>
+    <!-- Settings: measurements on real phones (P1-10) -->
+    <string name="measure_title">Messwerte (nur lokal)</string>
+    <string name="measure_none">Noch keine Messung. Öffne die App ein paar Mal neu und sprich einmal per Knopf, Kachel oder Verknüpfung.</string>
+    <string name="measure_one_tap">Karten mit einem Tap erledigt: %1$d von %2$d (%3$d %, Ziel ≥ 70 %).</string>
+    <string name="measure_share">Messwerte teilen</string>
+    <string name="measure_restart">Messreihe neu beginnen</string>
+    <string name="measure_share_note">Teilen schickt eine Tabelle (CSV) nur mit Zeiten, Handymodell und App-Version, ohne Einträge oder Namen.</string>
 </resources>

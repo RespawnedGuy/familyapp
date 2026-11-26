@@ -7,6 +7,8 @@ import android.content.pm.ShortcutManager
 import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
+import android.os.SystemClock
+import android.util.Log
 import io.github.respawnedguy.familyapp.data.AndroidTextStore
 import io.github.respawnedguy.familyapp.data.FamilyRepository
 import io.github.respawnedguy.familyapp.presentation.AppModel
@@ -18,6 +20,8 @@ import io.github.respawnedguy.familyapp.sync.SyncUi
 import io.github.respawnedguy.familyapp.sync.TcpTransport
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.toKotlinLocalDate
@@ -45,8 +49,19 @@ class FamilyApplication : Application() {
     /** True until the first capture intent was handled: then the process start is the trigger time. */
     var coldStart = true
 
+    /** True until the first activity measured its cold start (P1-10). */
+    var coldStartUnmeasured = true
+
+    /**
+     * When this process finished starting up (monotonic ms). Tells a launch apart from a process
+     * that had been running in the background first.
+     */
+    var createdAtMs = 0L
+        private set
+
     override fun onCreate() {
         super.onCreate()
+        createdAtMs = SystemClock.elapsedRealtime()
         platform = AndroidPlatform(this)
         val repo = FamilyRepository(
             store = AndroidTextStore(File(filesDir, "familyapp.json")),
@@ -78,6 +93,25 @@ class FamilyApplication : Application() {
         runCatching { SyncWorker.schedule(this) }
         reminders = AndroidReminders(this, repo).also { it.follow(scope) }
         publishShortcut()
+        logMeasurements(repo)
+    }
+
+    /**
+     * Writes each new local measurement to logcat (tag FamilyPerf). The emulator job reads these
+     * lines and compares them with Android's own launch time (app/scripts/emulator-perf.sh).
+     * Contains only metric, trigger and milliseconds, never family data.
+     */
+    private fun logMeasurements(repo: FamilyRepository) {
+        // Compares whole lists: two samples recorded within one frame arrive as one state update.
+        var logged = repo.current.settings.latency.toSet()
+        scope.launch {
+            repo.data.map { it.settings.latency }.distinctUntilChanged().collect { samples ->
+                samples.filterNot { it in logged }.forEach { s ->
+                    Log.i(PERF_TAG, "metric=${s.metric} trigger=${s.trigger} ms=${s.ms}")
+                }
+                logged = samples.toSet()
+            }
+        }
     }
 
     /** Long-press on the app icon → "Erfassen" (dynamic, so debug builds with another package work too). */
@@ -96,4 +130,8 @@ class FamilyApplication : Application() {
     }
 
     private fun today(): LocalDate = java.time.LocalDate.now().toKotlinLocalDate()
+
+    companion object {
+        const val PERF_TAG = "FamilyPerf"
+    }
 }

@@ -8,6 +8,8 @@ import io.github.respawnedguy.familyapp.domain.HybridClock
 import io.github.respawnedguy.familyapp.domain.Item
 import io.github.respawnedguy.familyapp.domain.ItemStatus
 import io.github.respawnedguy.familyapp.domain.LatencySample
+import io.github.respawnedguy.familyapp.domain.Measurements
+import io.github.respawnedguy.familyapp.domain.Metric
 import io.github.respawnedguy.familyapp.domain.Member
 import io.github.respawnedguy.familyapp.domain.MemberKind
 import io.github.respawnedguy.familyapp.domain.Origin
@@ -346,9 +348,12 @@ class FamilyRepository(
         if (error == null) it.copy(lastBackupMs = now(), lastBackupError = null) else it.copy(lastBackupError = error)
     }
 
-    fun recordLatency(trigger: String, ms: Long) = settings {
-        it.copy(latency = (it.latency + LatencySample(trigger, ms, now())).takeLast(MAX_LATENCY_SAMPLES))
+    fun recordLatency(trigger: String, ms: Long, metric: Metric = Metric.CAPTURE_READY) = settings {
+        it.copy(latency = Measurements.add(it.latency, LatencySample(trigger, ms, now(), metric)))
     }
+
+    /** Starts a fresh measurement series, e.g. before a reference measurement on a new phone. */
+    fun clearMeasurements() = settings { it.copy(latency = emptyList()) }
 
     fun rename(selfName: String) {
         val me = current.self ?: return
@@ -449,8 +454,6 @@ class FamilyRepository(
     }
 
     companion object {
-        const val MAX_LATENCY_SAMPLES = 50
-
         /** File name of a stored photo, the key that survives moving photos between devices. */
         fun photoName(path: String): String = path.substringAfterLast('/').substringAfterLast('\\')
     }

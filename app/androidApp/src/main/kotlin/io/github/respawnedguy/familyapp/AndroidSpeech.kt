@@ -138,7 +138,9 @@ class AndroidSpeech(
         override fun onBeginningOfSpeech() = Unit
         override fun onRmsChanged(rmsdB: Float) = Unit
         override fun onBufferReceived(buffer: ByteArray?) = Unit
-        override fun onEndOfSpeech() = Unit
+        override fun onEndOfSpeech() {
+            if (current()) target.onEndOfSpeech()
+        }
         override fun onEvent(eventType: Int, params: Bundle?) = Unit
     }
 

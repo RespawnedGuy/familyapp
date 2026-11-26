@@ -4,7 +4,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Process
 import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -81,6 +80,7 @@ class MainActivity : ComponentActivity() {
             }
         })
 
+        if (savedInstanceState == null) ColdStartProbe.attach(this, app, intent)
         // A capture intent is handled before the first frame so the microphone starts in parallel.
         if (savedInstanceState == null) handleAppIntent(intent)
 
@@ -125,7 +125,7 @@ class MainActivity : ComponentActivity() {
                 val trigger = intent.getStringExtra(EXTRA_TRIGGER) ?: "Verknüpfung"
                 // The tile passes its tap time; otherwise a cold start counts from process start.
                 val started = intent.getLongExtra(EXTRA_TRIGGER_AT, -1L).takeIf { it > 0 }
-                    ?: if (app.coldStart) Process.getStartElapsedRealtime() else SystemClock.elapsedRealtime()
+                    ?: if (app.coldStart) ColdStartProbe.processStartElapsedMs() else SystemClock.elapsedRealtime()
                 app.coldStart = false
                 app.model.startCapture(trigger, started)
             }

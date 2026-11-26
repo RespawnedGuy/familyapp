@@ -1,9 +1,15 @@
 package io.github.respawnedguy.familyapp.presentation
 
+import io.github.respawnedguy.familyapp.domain.DeviceInfo
+import io.github.respawnedguy.familyapp.domain.ResourceUsage
+
 /** Callbacks of on-device speech recognition (Android SpeechRecognizer, later iOS SFSpeechRecognizer). */
 interface SpeechListener {
     /** The microphone is open and listening: the moment the 2-second target (D8) measures. */
     fun onReady()
+
+    /** The recognizer noticed that the person stopped speaking: the moment D8 (b) "saved ≤ 1 s later" measures from. */
+    fun onEndOfSpeech() = Unit
     fun onPartial(text: String)
     fun onResult(text: String)
     fun onError(message: String)
@@ -20,7 +26,7 @@ interface SpeechInput {
  * Everything the shared UI needs from the platform. Android implements it in androidApp;
  * iOS gets its own implementation when the iOS app is built.
  */
-interface PlatformServices {
+interface PlatformServices : DeviceMeasurements {
     /** Null where no recognizer is available; the capture sheet then offers text instead. */
     val speech: SpeechInput?
 
@@ -56,6 +62,7 @@ interface PlatformServices {
 
     /** Human-readable name of a backup folder reference. */
     fun describeFolder(folder: String): String
+
 }
 
 /** What goes into a backup. [photoPaths] are the private photo files the items point to. */
@@ -67,4 +74,19 @@ sealed interface RestoreRead {
     data object NeedsCode : RestoreRead
     data object WrongCode : RestoreRead
     data class Failed(val message: String) : RestoreRead
+}
+
+/** What the reference measurement on real phones needs (quality plan P1-10). Defaults where a platform has none. */
+interface DeviceMeasurements {
+    /** Phone model, OS version and app version for the measurement CSV. */
+    fun deviceInfo(): DeviceInfo? = null
+
+    /** Memory of the app process and space its files take, right now. */
+    fun resourceUsage(): ResourceUsage? = null
+
+    /** Local date and time (ISO 8601 with offset) of an epoch-milliseconds value, for the CSV. */
+    fun formatLocalTime(epochMs: Long): String = epochMs.toString()
+
+    /** Opens the system share sheet with [text]; false where sharing is not available. */
+    fun shareText(subject: String, text: String): Boolean = false
 }
