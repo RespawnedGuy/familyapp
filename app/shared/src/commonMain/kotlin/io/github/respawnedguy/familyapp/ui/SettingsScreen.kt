@@ -56,8 +56,13 @@ fun SettingsScreen(data: FamilyData, model: AppModel, updates: UpdateController?
             if (name.isNotBlank() && name.trim() != data.self?.name) {
                 Button(onClick = { model.renameSelf(name) }) { Text("Namen speichern") }
             }
-            Text("Kein Konto, keine E-Mail. Alles liegt nur auf diesem Handy.", fontSize = 12.sp, color = c.textTertiary)
+            Text(
+                "Kein Konto, keine E-Mail. Alles liegt nur auf euren Geräten.",
+                fontSize = 12.sp, color = c.textTertiary,
+            )
         }
+
+        LocalSync.current?.let { SyncSettings(it, data, model.repo.now()) }
 
         SettingsGroup("Erfassen") {
             Text("Was der erste Tap auf „Erfassen“ startet:", fontSize = 14.sp, color = c.textSecondary)
@@ -183,7 +188,7 @@ fun SettingsScreen(data: FamilyData, model: AppModel, updates: UpdateController?
         SettingsGroup("Über") {
             Text("${AppInfo.NAME} · ${AppInfo.versionLabel(versionName)}", fontSize = 14.sp, color = c.text)
             Text(
-                "Prototyp. Alles bleibt auf diesem Gerät, keine Cloud, keine KI. Die App vibriert nicht. Kopplung mit anderen Handys folgt im nächsten Update.",
+                "Prototyp. Alles bleibt auf euren Geräten, keine Cloud, keine KI. Die App vibriert nicht.",
                 fontSize = 12.sp, color = c.textTertiary,
             )
         }

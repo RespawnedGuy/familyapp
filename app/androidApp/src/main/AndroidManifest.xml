@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Update check and download from GitHub (ADR 0005). Nothing else goes out. -->
+    <!-- Update check and download from GitHub (ADR 0005), direct sync with paired family devices
+         in the same WLAN or tailnet (ADR 0003). Nothing else goes out. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Finding the other family devices in the WLAN (DNS-SD). -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <!-- Lets the app hand a downloaded update to the system installer; the user confirms each time. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- Speech capture. Asked on first use of "Erfassen", not at install. -->
@@ -75,6 +79,11 @@
             <meta-data android:name="android.service.quicksettings.ACTIVE_TILE" android:value="false" />
         </service>
 
+        <!-- QR scanner for pairing (ZXing). Follows the phone's orientation instead of landscape only. -->
+        <activity
+            android:name="com.journeyapps.barcodescanner.CaptureActivity"
+            android:screenOrientation="fullSensor"
+            tools:replace="android:screenOrientation" />
         <receiver android:name=".ReminderReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

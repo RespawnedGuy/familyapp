@@ -1,6 +1,6 @@
 # ADR 0003: Erster Schritt ohne Server – Gerätesync im selben Netz (WLAN oder Tailscale)
 
-- Status: Vorgeschlagen
+- Status: Angenommen, umgesetzt in der App mit [ADR 0006](0006-kopplung-und-abgleich-umsetzung.md) (dort die Abweichungen bei Krypto und Datenmodell)
 - Datum: 2026-11-20
 - Ergänzt: [ADR 0002](0002-local-first-sync.md) (verschiebt das Relay, ändert nichts an Datenmodell, CRDT und Verschlüsselung)
 
