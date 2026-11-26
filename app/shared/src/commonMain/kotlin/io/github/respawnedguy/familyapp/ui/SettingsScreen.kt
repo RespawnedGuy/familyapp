@@ -1,5 +1,7 @@
 package io.github.respawnedguy.familyapp.ui
 
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -83,6 +85,29 @@ fun SettingsScreen(data: FamilyData, model: AppModel, updates: UpdateController?
                 "Schneller als die App: Schnellkachel „Erfassen“ in den Schnelleinstellungen, langes Drücken aufs App-Symbol, oder „Teilen“ aus Mail und Galerie.",
                 fontSize = 12.sp, color = c.textTertiary,
             )
+        }
+
+        SettingsGroup("Erinnerungen") {
+            // Whole row is one switch for screen readers and a large touch target (P1-6).
+            Row(
+                Modifier.fillMaxWidth().toggleable(
+                    value = s.remindersOn,
+                    role = Role.Switch,
+                    onValueChange = { model.setRemindersOn(it) },
+                ),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("An Fristen erinnern", fontSize = 15.sp, color = c.text)
+                    Text(
+                        "Um 8 Uhr am Tag der Frist und am Tag danach, wenn sie noch offen ist. " +
+                            "Ist sie dann immer noch offen, erfahren es alle. " +
+                            "Mehrere Fristen kommen als eine Nachricht.",
+                        fontSize = 12.sp, color = c.textTertiary,
+                    )
+                }
+                Switch(checked = s.remindersOn, onCheckedChange = null)
+            }
         }
 
         SettingsGroup("Sicherung in Ordner") {

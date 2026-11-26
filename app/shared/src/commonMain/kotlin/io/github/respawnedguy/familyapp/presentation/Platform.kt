@@ -48,6 +48,9 @@ interface PlatformServices {
     /** A new random recovery code (about 100 bits, from a secure random source). */
     fun newRecoveryCode(): String
 
+    /** Asks the system for permission to show notifications where that is needed (Android 13+). */
+    fun requestNotificationPermission()
+
     /** Human-readable name of a backup folder reference. */
     fun describeFolder(folder: String): String
 }

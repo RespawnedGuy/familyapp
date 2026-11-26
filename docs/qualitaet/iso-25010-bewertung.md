@@ -256,4 +256,25 @@ Messwerte danach (`gradle check` am 26.11.2026): 112 App-Tests grün (vorher 86)
 
 Abweichung vom Gestaltungsdoc: Der Wiederherstellungscode (D7) erscheint jetzt schon, wenn jemand einen Sicherungsordner wählt, nicht erst nach dem ersten Pairing. Ohne Code gäbe es keine verschlüsselte Sicherung. Die Karte „Sichere deinen Wiederherstellungscode“ nach Pairing oder 10 Einträgen bleibt für alle, die keinen Ordner gewählt haben.
 
-Noch offen aus P1: P1-1 Benachrichtigungen und Eskalation, P1-4 Compose-UI-Tests mit Barrierefreiheitsprüfung, P1-5 Datumsparser-Korpus, P1-6 Barrierefreiheit beheben, P1-7 Texte in Ressourcen, P1-8 Bedrohungsmodell, P1-9 FMEA, P1-10 Referenzmessung.
+### 26.11.2026: P1-1 Erinnerungen und gestufte Eskalation
+
+Nils hat P1 am 26.11. gestartet („go“).
+
+| Regel | Umsetzung | Beleg |
+| --- | --- | --- |
+| Frist fällig → Zuständige | Wer sich kümmert, bekommt um 8 Uhr am Tag der Frist „Heute fällig: …“ und, falls noch offen, am Tag danach „Frist abgelaufen“ | `ownDeadlineRemindsOnTheDayAndOnceMoreWhenMissed` |
+| +1 Tag → alle | Alle anderen Geräte, die die Frist kennen, melden sie einen Tag nach der verpassten Frist (Tag +2). Hat niemand die Karte übernommen oder liegt sie noch im Eingang, melden alle gleich am Tag +1 | `someoneElsesDeadlineReachesMeOneDayAfterItWasMissed`, `deadlineWithoutAnyoneInChargeReachesEveryoneRightAfterIt` |
+| Kein Nörgeln | Höchstens drei Meldungen pro Eintrag, nie täglich; Erledigtes, Irrelevantes und Einträge ohne Datum melden nie; alles um 8 Uhr, also nie in der Ruhezeit 21–7 Uhr | `finishedDismissedAndUndatedItemsNeverRemind`, `nothingArrivesInTheQuietHours` |
+| Bündelung | Was zur selben Zeit fällig ist, kommt als eine Meldung („2 Fristen brauchen einen Blick“); eine feste Meldungs-ID ersetzt die vorige statt zu stapeln. War das Handy aus, fasst der nächste Lauf alles Verpasste zu einer Meldung zusammen, je Eintrag nur der neueste Stand | `remindersAtTheSameMomentAreBundledIntoOne`, `runsMissedWhileThePhoneWasOffBecomeOneNotificationWithTheNewestStatePerItem` |
+| Neutraler Text | „Stand prüfen“ statt Vorwurf, weil das Gerät ohne Sync nicht wissen kann, ob jemand anderes es schon erledigt hat | `singleReminderTextIsNeutral` |
+| Kein Altlasten-Schwall | Beim ersten Lauf wird nur „jetzt“ als geprüft vermerkt; alte Fristen melden sich nicht nachträglich | `firstRunShowsNothingOldButPlansTheNextAlarm` |
+| Erlaubnis im richtigen Moment | Android 13+ fragt einmal, wenn die erste Frist bestätigt wird, nicht beim ersten Start; nie, wenn Erinnerungen aus sind | `notificationPermissionIsAskedOnceWhenTheFirstDeadlineIsConfirmed`, `switchedOffRemindersNeverAskForThePermission` |
+| Abschaltbar | Einstellungen → „An Fristen erinnern“ (ganze Zeile ist ein Schalter); aus = kein Wecker, keine Meldung | `switchedOffMeansNoNotificationAndNoAlarm` |
+
+Technik: Die Regeln sind eine reine Funktion `ReminderPlanner` (gemeinsamer Code, Fake-Uhr-Tests im Qualitätstor). Android stellt genau einen ungenauen Wecker (`AlarmManager.setAndAllowWhileIdle`, keine Berechtigung für exakte Wecker nötig, ein paar Minuten Verzug um 8 Uhr sind egal), plant nach jeder Änderung (2 s entprellt), nach Neustart (`BOOT_COMPLETED`) und nach einem Update neu. Kanal „Fristen“ ohne Vibration (Gestaltungsentscheidung). Emulator-Test prüft, dass nach „Mach ich“ ein Wecker geplant ist.
+
+Grenzen: Ohne Sync erinnert ein Gerät nur an Fristen, die es selbst kennt; bis P2-1 ist das in der Regel nur das Gerät, auf dem erfasst wurde. Das Akzeptanzkriterium „Meldung erscheint nach Zeitsprung im Emulator“ ist noch nicht automatisiert, geprüft ist der geplante Wecker. iOS bekommt Erinnerungen mit der iOS-Portierung.
+
+Messwerte danach (`gradle check`): 127 App-Tests grün, Abdeckung Zeilen 89 %, Zweige 57 %.
+
+Noch offen aus P1: P1-4 Compose-UI-Tests mit Barrierefreiheitsprüfung, P1-5 Datumsparser-Korpus, P1-6 Barrierefreiheit beheben, P1-7 Texte in Ressourcen, P1-8 Bedrohungsmodell, P1-9 FMEA, P1-10 Referenzmessung.

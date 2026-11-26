@@ -33,6 +33,15 @@ class MainActivity : ComponentActivity() {
         micCallback = null
     }
 
+    private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
+    /** Android 13+ only; older versions show notifications without asking. */
+    fun requestNotifications() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notificationPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
     fun requestMicrophone(onResult: (Boolean) -> Unit) {
         micCallback = onResult
         micPermission.launch(android.Manifest.permission.RECORD_AUDIO)
