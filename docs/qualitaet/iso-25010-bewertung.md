@@ -305,6 +305,18 @@ Prüfung (Anfang von P1-4): `AccessibilityTest` in `app/shared/src/jvmTest` stel
 
 Noch nicht geprüft: Prüfungen des Accessibility Test Framework auf Android (Kontrast, Beschriftung) und Screenshots bei Schriftgröße 2,0; beides braucht den Emulator-Job. Ein TalkBack-Durchgang durch Nils steht aus.
 
+Noch offen aus P1: P1-4 Rest (Android-Prüfungen, Screenshots bei 200 % Schrift), P1-5 Datumsparser-Korpus, P1-7 Texte in Ressourcen (begonnen, siehe unten), P1-9 FMEA, P1-10 Referenzmessung.
+
+### 26.11.2026: P1-7 Texte in Ressourcen, Schritt 1
+
+Die App nutzt Compose Multiplatform Resources. Alle Texte stehen in `app/shared/src/commonMain/composeResources/values/strings.xml`, Deutsch ist die Grundsprache (`values/`), eine Übersetzung käme nach `values-<sprache>/`. Der Code holt sie mit `stringResource(Res.string.…)`; die Klasse `Res` ist modulintern (`io.github.respawnedguy.familyapp.resources`).
+
+Umgestellt in Schritt 1: der Rahmen in `App.kt` (Willkommen, obere Leiste, Navigation, Speicherproblem, Wiederherstellungscode, Rückgängig, Update-Hinweis) und das Erfassen-Blatt (`ui/CaptureSheet.kt`), zusammen 32 Texte. Der Wortlaut ist unverändert, die Emulator-Tests finden die Knöpfe also weiter über ihren Text.
+
+Messung und Tor: `UiStringsTest` im Qualitätstor zählt die Text-Literale (Zeichenketten mit Buchstaben, ohne Kommentare und `$`-Platzhalter) in `App.kt`, `ui/` und `update/UpdateSection.kt` und vergleicht sie mit `tools/quality-check/config/ui-strings-baseline.txt`. Eine Datei darf nie mehr Texte im Code haben als dort steht, neue UI-Dateien starten bei 0; die Zahlen werden mit jedem Schritt gesenkt (Sperrklinke wie bei der detekt-Baseline). Stand: 214 Texte im Code, `CaptureSheet.kt` bei 0, `App.kt` bei 2 (Versionsanzeige, zieht mit den Einstellungen um).
+
+Nächste Schritte, je ein kleiner PR: (2) `Components.kt` und `Cards.kt` mit Pluralformen für „vor 3 Std.“/„vor 2 Tagen“, (3) `Screens.kt`, (4) `SettingsScreen.kt` mit `AppInfo.versionLabel` und `UpdateSection.kt`, (5) `SyncScreens.kt`, (6) Texte aus `presentation/AppModel.kt` (Rückmeldungen wie „Gespeichert.“) und Android-Benachrichtigungen, die nicht in Composables entstehen (`getString`). Danach ist das Abnahmekriterium „keine deutschen String-Literale mehr in `ui/`“ erfüllt, wenn die Baseline leer ist.
+
 ### 26.11.2026: P1-8 Bedrohungsmodell und Härtung der Eingänge
 
 [Bedrohungsmodell](bedrohungsmodell.md) nach STRIDE für Teilen, Kopplung, Direktabgleich, geteilten Ordner, Hausgerät und Gerät: 28 Bedrohungen, jede mit Maßnahme und Test oder als offene Maßnahme M1 bis M4. Beim Durchgehen des Codes gefunden und gleich behoben:
@@ -319,6 +331,6 @@ Noch nicht geprüft: Prüfungen des Accessibility Test Framework auf Android (Ko
 
 Abnahmekriterium „`file://`-URI und Übergröße werden abgelehnt“ prüft jetzt der Emulator-Test auf Android 8 und 16 (dazu eigener Anbieter, HTML, HTML mit Bildtyp und ein echtes Bild). Höchstes Restrisiko: Ein verlorenes Handy oder ein ehemaliges Familienmitglied behält den Familienschlüssel (M1, Gerät entfernen mit Schlüsselwechsel).
 
-Messwerte danach (`gradle check`): 175 App-Tests grün, Abdeckung Zeilen 91 %, Zweige 62 %.
+Messwerte danach (`gradle check`, zusammen mit P1-7 Schritt 1): 178 App-Tests grün, Abdeckung Zeilen 91 %, Zweige 62 %.
 
-Noch offen aus P1: P1-4 Rest (Android-Prüfungen, Screenshots bei 200 % Schrift), P1-5 Datumsparser-Korpus, P1-7 Texte in Ressourcen, P1-9 FMEA, P1-10 Referenzmessung.
+Noch offen aus P1: P1-4 Rest (Android-Prüfungen, Screenshots bei 200 % Schrift), P1-5 Datumsparser-Korpus, P1-7 Texte in Ressourcen (begonnen), P1-9 FMEA, P1-10 Referenzmessung.

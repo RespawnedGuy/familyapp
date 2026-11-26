@@ -28,7 +28,7 @@ sourceSets {
     test {
         kotlin.setSrcDirs(
             listOf("domain", "data", "presentation", "update", "sync").map { "$shared/commonTest/$pkg/$it" } +
-                listOf("data", "sync").map { "$shared/androidUnitTest/$pkg/$it" } + "probes",
+                listOf("data", "sync").map { "$shared/androidUnitTest/$pkg/$it" } + "probes" + "guards",
         )
     }
 }
