@@ -318,10 +318,13 @@ fun TaskRow(
                         fontWeight = if (overdue) FontWeight.SemiBold else FontWeight.Normal,
                     )
                 }
+                // Below the text, not beside it: beside it the button left the title only 16 dp at
+                // 200 % font size and too little for long words on narrow phones even at 100 % (P1-4).
+                if (takeOver) {
+                    TextButton(onClick = { model.takeOver(item) }) { Text("Übernehme ich") }
+                }
             }
-            if (takeOver) {
-                TextButton(onClick = { model.takeOver(item) }) { Text("Übernehme ich") }
-            } else if (showAssignee) {
+            if (!takeOver && showAssignee) {
                 PersonDot(data.member(item.assignee), 28.dp, Modifier.padding(end = 8.dp))
             }
         }

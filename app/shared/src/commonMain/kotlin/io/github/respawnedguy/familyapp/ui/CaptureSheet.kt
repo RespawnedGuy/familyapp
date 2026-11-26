@@ -50,6 +50,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -84,9 +85,11 @@ fun CaptureSheet(state: CaptureState, model: AppModel, reducedMotion: Boolean) {
     if (state == CaptureState.Closed || state == CaptureState.WaitingForPhoto) return
     val c = LocalFamilyColors.current
     Box(Modifier.fillMaxSize()) {
-        // Tapping outside cancels (design: "Abbrechen durch ... Tippen daneben").
+        // Tapping outside cancels (design: "Abbrechen durch ... Tippen daneben"). Hidden from screen
+        // readers, which reach "Abbrechen" in the sheet; ATF reported it as an unnamed target (P1-4).
         Box(
             Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.32f))
+                .clearAndSetSemantics {}
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { model.dismissCapture() },
         )
         Column(

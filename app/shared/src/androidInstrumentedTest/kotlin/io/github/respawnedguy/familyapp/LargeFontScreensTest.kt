@@ -42,6 +42,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
+import com.google.android.apps.common.testing.accessibility.framework.AccessibilityViewCheckResult
+import com.google.android.apps.common.testing.accessibility.framework.checks.SpeakableTextPresentCheck
+import com.google.android.apps.common.testing.accessibility.framework.integrations.espresso.AccessibilityValidator
+import org.hamcrest.Description
+import org.hamcrest.TypeSafeMatcher
 import java.io.File
 import kotlin.math.roundToInt
 
@@ -99,7 +104,11 @@ class LargeFontScreensTest(private val case: Case) {
     @Test
     fun textFitsOnEveryPage() = runComposeUiTest {
         val atf = Build.VERSION.SDK_INT >= 34
-        if (atf) enableAccessibilityChecks()
+        if (atf) {
+            enableAccessibilityChecks(
+                AccessibilityValidator().setRunChecksFromRootView(true).setSuppressingResultMatcher(CutOffAtListEdge),
+            )
+        }
         setContent {
             DeviceConfigurationOverride(
                 DeviceConfigurationOverride.FontScale(case.fontScale) then DeviceConfigurationOverride.DarkMode(case.dark),
@@ -133,6 +142,21 @@ class LargeFontScreensTest(private val case: Case) {
         File(outDir, "${case.name}.txt").writeText(report)
         Log.i(TAG, report)
         assertTrue(report, problems.isEmpty())
+    }
+
+    /**
+     * A list item cut off at the edge of a scrolled list can lose its text in the accessibility
+     * tree; the label check then reports it as unnamed. The same item is checked in full on the
+     * next page, so only these results are left out.
+     */
+    private object CutOffAtListEdge : TypeSafeMatcher<AccessibilityViewCheckResult>() {
+        override fun describeTo(description: Description) {
+            description.appendText("label check on an item cut off at the edge of a scrolled list")
+        }
+
+        override fun matchesSafely(item: AccessibilityViewCheckResult): Boolean =
+            item.accessibilityHierarchyCheck == SpeakableTextPresentCheck::class.java &&
+                item.element?.isAgainstScrollableEdge() == true
     }
 
     // ---- checks ------------------------------------------------------------------------------

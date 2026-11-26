@@ -150,13 +150,18 @@ fun FamilyScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reduce
             }
         }
         item(key = "members") {
-            Row(
-                Modifier.fillMaxWidth().padding(top = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("Personen", Modifier.weight(1f), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = c.text)
-                OutlinedButton(onClick = { adding = true }) { Text("Person hinzufügen") }
+            // With large fonts the button goes on its own line; beside it the heading had 15 dp (P1-4).
+            val large = largeFont()
+            Column(Modifier.fillMaxWidth().padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("Personen", Modifier.weight(1f), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = c.text)
+                    if (!large) OutlinedButton(onClick = { adding = true }) { Text("Person hinzufügen") }
+                }
+                if (large) OutlinedButton(onClick = { adding = true }) { Text("Person hinzufügen") }
             }
         }
         shown.forEach { member ->
