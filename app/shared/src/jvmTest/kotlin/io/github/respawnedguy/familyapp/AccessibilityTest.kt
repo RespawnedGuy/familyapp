@@ -14,6 +14,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.runDesktopComposeUiTest
 import io.github.respawnedguy.familyapp.domain.ItemStatus
 import io.github.respawnedguy.familyapp.presentation.AppModel
 import io.github.respawnedguy.familyapp.preview.rememberPreviewModel
@@ -41,19 +42,21 @@ class AccessibilityTest {
 
     /**
      * Everything tappable must offer at least 48 × 48 dp (Material; WCAG 2.5.8 asks 24 dp).
-     * Uses the laid-out size, not the visible part: nodes cut off by the window edge or scrolled
-     * out of view are still checked at their real size.
+     * Touch bounds include the extra area Material adds around 40 dp buttons. The window is a
+     * phone width but very tall, so no node is cut off by the window edge.
      */
     private fun ComposeUiTest.smallTouchTargets(): List<String> {
         val minPx = 47.5f * density.density
         return onAllNodes(hasClickAction()).fetchSemanticsNodes()
-            .filter { it.size.width < minPx || it.size.height < minPx }
+            .filter { it.touchBoundsInRoot.width < minPx || it.touchBoundsInRoot.height < minPx }
             .map { node ->
-                val w = node.size.width / density.density
-                val h = node.size.height / density.density
+                val w = node.touchBoundsInRoot.width / density.density
+                val h = node.touchBoundsInRoot.height / density.density
                 "${label(node)} (${w.toInt()} × ${h.toInt()} dp)"
             }
     }
+
+    private fun tallPhone(block: ComposeUiTest.() -> Unit) = runDesktopComposeUiTest(width = 411, height = 4000) { block() }
 
     private fun label(node: SemanticsNode): String {
         val c = node.config
@@ -65,13 +68,13 @@ class AccessibilityTest {
     }
 
     @Test
-    fun touchTargetsOnTodayAreLargeEnough() = runComposeUiTest {
+    fun touchTargetsOnTodayAreLargeEnough() = tallPhone {
         showApp()
         assertEquals(emptyList(), smallTouchTargets())
     }
 
     @Test
-    fun touchTargetsInSettingsAreLargeEnough() = runComposeUiTest {
+    fun touchTargetsInSettingsAreLargeEnough() = tallPhone {
         val model = showApp()
         runOnIdle { model.openSettings() }
         waitForIdle()
