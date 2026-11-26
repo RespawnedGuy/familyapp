@@ -18,15 +18,17 @@ import android.view.Window
  * emulator job compares both (app/scripts/emulator-perf.sh), so the in-app number on a real
  * phone can be trusted.
  *
- * The end is taken from [FrameMetrics] of the first drawn frame (vsync plus total frame time),
- * not from the first `onPreDraw`: on Android 16 the CI saw the first pre-draw about 1 s before
- * Android counted the frame as drawn, while on Android 8 both were within 20 ms.
+ * The end is the first real draw (`OnDrawListener`, then the front of the main queue, as
+ * Square's Papa library does), not the first `onPreDraw`: on Android 16 the CI saw the first
+ * pre-draw about 1 s before Android logged "Displayed", on Android 8 within 20 ms. The end of the
+ * first frame from [FrameMetrics] came 0.3–0.5 s after "Displayed" in the emulator (software
+ * rendering). Both are logged as `probe` lines so the CI shows how the three relate.
  */
 object ColdStartProbe {
     /** Activity created this soon after the process: the process was started for this launch. */
     private const val LAUNCH_WINDOW_MS = 5_000L
 
-    /** Without frame metrics by then (no hardware rendering), the pre-draw time is used. */
+    /** Without frame metrics by then (no hardware rendering), the measurement ends anyway. */
     private const val FRAME_METRICS_TIMEOUT_MS = 5_000L
     private const val NANOS_PER_MS = 1_000_000L
 
@@ -59,6 +61,9 @@ object ColdStartProbe {
     ) : Window.OnFrameMetricsAvailableListener {
         private val handler = Handler(Looper.getMainLooper())
         private var preDrawAt = -1L
+        private var drawAt = -1L
+        private var drawSeen = false
+        private var frameEnd = -1L
         private var done = false
 
         fun start() {
@@ -70,8 +75,20 @@ object ColdStartProbe {
                     return true
                 }
             })
+            decor.viewTreeObserver.addOnDrawListener(object : ViewTreeObserver.OnDrawListener {
+                override fun onDraw() {
+                    if (drawSeen) return
+                    drawSeen = true
+                    // The frame is handed to the render thread right after onDraw returns.
+                    handler.postAtFrontOfQueue {
+                        drawAt = SystemClock.elapsedRealtime()
+                        // Removing a draw listener inside onDraw is not allowed, here it is.
+                        decor.viewTreeObserver.takeIf { it.isAlive }?.removeOnDrawListener(this)
+                    }
+                }
+            })
             runCatching { activity.window.addOnFrameMetricsAvailableListener(this, handler) }
-            handler.postDelayed({ finish(null) }, FRAME_METRICS_TIMEOUT_MS)
+            handler.postDelayed({ finish() }, FRAME_METRICS_TIMEOUT_MS)
         }
 
         override fun onFrameMetricsAvailable(window: Window, metrics: FrameMetrics, dropCount: Int) {
@@ -80,20 +97,22 @@ object ColdStartProbe {
             val endNanos = metrics.getMetric(FrameMetrics.INTENDED_VSYNC_TIMESTAMP) +
                 metrics.getMetric(FrameMetrics.TOTAL_DURATION)
             val toElapsed = SystemClock.elapsedRealtimeNanos() - System.nanoTime()
-            finish((endNanos + toElapsed) / NANOS_PER_MS)
+            frameEnd = (endNanos + toElapsed) / NANOS_PER_MS
+            finish()
         }
 
-        private fun finish(frameEnd: Long?) {
+        /** After the first frame's metrics (they arrive after its draw), or at the latest after the timeout. */
+        private fun finish() {
             if (done) return
             done = true
             runCatching { activity.window.removeOnFrameMetricsAvailableListener(this) }
             handler.removeCallbacksAndMessages(null)
-            val end = frameEnd ?: preDrawAt.takeIf { it > 0 } ?: return
+            fun since(t: Long) = if (t > 0) t - processStart else -1
             Log.i(
                 FamilyApplication.PERF_TAG,
-                "probe trigger=$trigger preDraw=${if (preDrawAt > 0) preDrawAt - processStart else -1} " +
-                    "frame=${frameEnd?.let { it - processStart } ?: -1}",
+                "probe trigger=$trigger preDraw=${since(preDrawAt)} draw=${since(drawAt)} frame=${since(frameEnd)}",
             )
+            val end = listOf(drawAt, preDrawAt).firstOrNull { it > 0 } ?: return
             app.model.recordColdStart(trigger, end - processStart)
             // Tells Android the app is usable from here (shown as "Fully drawn" in logcat).
             activity.reportFullyDrawn()
