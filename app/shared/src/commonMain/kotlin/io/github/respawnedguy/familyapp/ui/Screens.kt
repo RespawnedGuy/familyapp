@@ -1,5 +1,6 @@
 package io.github.respawnedguy.familyapp.ui
 
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.heading
 import io.github.respawnedguy.familyapp.domain.ReminderPlanner
@@ -62,11 +63,15 @@ fun TodayScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reduced
     val inbox = Views.inbox(data)
     val mine = Views.mine(data)
     val planner = remember { ReminderPlanner() }
+    val paired = LocalSync.current?.controller?.status?.collectAsState()?.value?.paired ?: false
     val urgent = planner.urgent(data, model.today())
     LazyColumn(Modifier.fillMaxSize(), contentPadding = ListPadding) {
         // What matters today waits here instead of in many notifications (Nils, 26.11.2026).
         if (urgent.isNotEmpty()) {
             item(key = "urgent") { UrgentCard(urgent, data, planner) }
+        }
+        if (Views.showLocalOnlyHint(data, paired)) {
+            item(key = "local-only") { LocalOnlyCard(model) }
         }
         item(key = "h-inbox") { SectionHeader("Eingang", inbox.size) }
         if (inbox.isEmpty()) {
@@ -92,6 +97,32 @@ fun TodayScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reduced
                 Modifier.fillMaxWidth().padding(top = 16.dp),
                 color = c.textSecondary, fontSize = 14.sp,
             )
+        }
+    }
+}
+
+/** P1-11: one quiet card, no notification; "Später" puts it aside for 30 more entries. */
+@Composable
+private fun LocalOnlyCard(model: AppModel) {
+    val c = LocalFamilyColors.current
+    Column(
+        Modifier.fillMaxWidth().padding(top = 12.dp).clip(RoundedCornerShape(16.dp)).background(c.card).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            "Nur auf diesem Handy", Modifier.semantics { heading() },
+            fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.text,
+        )
+        Text(
+            "Geht das Handy verloren, sind deine Einträge weg. Eine verschlüsselte Sicherung in einen Ordner " +
+                "oder ein zweites gekoppeltes Gerät verhindert das.",
+            fontSize = 14.sp, color = c.textSecondary,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = { model.openSettings(); model.chooseBackupFolder() }) {
+                Text("Sicherung einrichten")
+            }
+            TextButton(onClick = { model.dismissLocalOnlyHint() }) { Text("Später") }
         }
     }
 }

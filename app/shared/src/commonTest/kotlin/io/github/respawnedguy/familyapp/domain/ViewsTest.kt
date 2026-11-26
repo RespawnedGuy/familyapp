@@ -82,4 +82,16 @@ class ViewsTest {
         )
         assertEquals(1, Views.doneThisWeek(d, friday))
     }
+
+    @Test
+    fun localOnlyHintAppearsFromTenEntriesAndWaitsThirtyMoreAfterBeingPutAside() {
+        fun many(n: Int, settings: Settings = Settings()) =
+            data(*(1..n).map { item("i$it", ItemStatus.OPEN) }.toTypedArray()).copy(settings = settings)
+        assertEquals(false, Views.showLocalOnlyHint(many(9), paired = false))
+        assertEquals(true, Views.showLocalOnlyHint(many(10), paired = false))
+        assertEquals(false, Views.showLocalOnlyHint(many(10), paired = true), "a second device holds a copy")
+        assertEquals(false, Views.showLocalOnlyHint(many(10, Settings(backupFolder = "ordner")), paired = false))
+        assertEquals(false, Views.showLocalOnlyHint(many(39, Settings(localOnlyHintDismissedAt = 10)), paired = false))
+        assertEquals(true, Views.showLocalOnlyHint(many(40, Settings(localOnlyHintDismissedAt = 10)), paired = false))
+    }
 }

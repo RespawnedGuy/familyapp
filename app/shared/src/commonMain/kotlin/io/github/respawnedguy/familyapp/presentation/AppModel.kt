@@ -169,6 +169,10 @@ class AppModel(
 
     fun setRemindersOn(on: Boolean) = repo.setRemindersOn(on)
 
+    fun notificationsBlocked(): Boolean = platform.notificationsBlocked()
+
+    fun dismissLocalOnlyHint() = repo.dismissLocalOnlyHint()
+
     fun setConcerns(item: Item, memberId: String?) {
         repo.setConcerns(item.id, memberId)
     }

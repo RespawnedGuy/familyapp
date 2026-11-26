@@ -51,6 +51,9 @@ interface PlatformServices {
     /** Asks the system for permission to show notifications where that is needed (Android 13+). */
     fun requestNotificationPermission()
 
+    /** True when the system blocks this app's notifications, so reminders cannot arrive (FMEA F4). */
+    fun notificationsBlocked(): Boolean = false
+
     /** Human-readable name of a backup folder reference. */
     fun describeFolder(folder: String): String
 }
