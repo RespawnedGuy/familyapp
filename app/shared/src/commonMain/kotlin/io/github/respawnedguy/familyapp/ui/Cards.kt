@@ -42,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -289,7 +290,9 @@ fun TaskRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                Modifier.size(48.dp).clip(CircleShape).clickable { model.complete(item) },
+                // A label for screen readers; ATF reported this button as unnamed (P1-4).
+                Modifier.size(48.dp).clip(CircleShape).clickable { model.complete(item) }
+                    .semantics { contentDescription = "Als erledigt markieren" },
                 contentAlignment = Alignment.Center,
             ) {
                 Box(Modifier.size(24.dp).dashedBorder(c.textSecondary, 12.dp, 2.dp))

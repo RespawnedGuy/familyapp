@@ -21,12 +21,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.text.TextAutoSize
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -71,7 +67,13 @@ fun PersonDot(member: Member?, size: Dp = 28.dp, modifier: Modifier = Modifier) 
             contentAlignment = Alignment.Center,
         ) {
             val questionSize = with(LocalDensity.current) { (size * DOT_QUESTION_SCALE).toSp() }
-            Text("?", color = c.textSecondary, fontSize = questionSize, fontWeight = FontWeight.Bold)
+            Text(
+                "?",
+                color = c.textSecondary,
+                fontSize = questionSize,
+                lineHeight = questionSize,
+                fontWeight = FontWeight.Bold,
+            )
         }
         return
     }
@@ -80,34 +82,17 @@ fun PersonDot(member: Member?, size: Dp = 28.dp, modifier: Modifier = Modifier) 
             .clearAndSetSemantics { contentDescription = member.name },
         contentAlignment = Alignment.Center,
     ) {
+        val initialSize = with(LocalDensity.current) { (size * DOT_INITIAL_SCALE).toSp() }
         Text(
             member.initial,
             color = if (c.dark) Color(0xFF151513) else Color.White,
             // The dot has a fixed size, so its initial must not grow with the system font size
             // (it would be cut off at 200 %, P1-4). The name is read out via contentDescription.
-            fontSize = with(LocalDensity.current) { (size * DOT_INITIAL_SCALE).toSp() },
+            fontSize = initialSize,
+            lineHeight = initialSize,
             fontWeight = FontWeight.Bold,
         )
     }
-}
-
-/**
- * One-line label in a slot of fixed width (bottom bars, top bar). It grows with the system font
- * size like any text, but shrinks to fit the slot instead of splitting the word in the middle
- * (quality plan P1-4). [minPhysical] is the smallest size, independent of the font size setting.
- */
-@Composable
-fun FitLabel(text: String, style: TextStyle, modifier: Modifier = Modifier, minPhysical: Float = 9f) {
-    val fontScale = LocalDensity.current.fontScale
-    val merged = LocalTextStyle.current.merge(TextStyle(textAlign = TextAlign.Center)).merge(style)
-    BasicText(
-        text,
-        modifier,
-        style = merged,
-        softWrap = false,
-        maxLines = 1,
-        autoSize = TextAutoSize.StepBased(minFontSize = (minPhysical / fontScale).sp, maxFontSize = merged.fontSize),
-    )
 }
 
 fun Modifier.dashedBorder(color: Color, radius: Dp, width: Dp = 1.5.dp): Modifier = drawBehind {

@@ -176,9 +176,13 @@ private fun BottomRow(state: CaptureState, model: AppModel) {
                 SheetAction(stringResource(Res.string.capture_type)) { model.switchCapture(CaptureAction.TEXT) }
             }
         }
-        Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+        // The whole column (button and "Foto") is one target, so screen readers read its label (ATF, P1-4).
+        Column(
+            Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).clickable { model.switchCapture(CaptureAction.PHOTO) },
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Box(
-                Modifier.size(64.dp).clip(CircleShape).background(c.accent).clickable { model.switchCapture(CaptureAction.PHOTO) },
+                Modifier.size(64.dp).clip(CircleShape).background(c.accent),
                 contentAlignment = Alignment.Center,
             ) { Icon(FamilyIcons.Camera, contentDescription = null, tint = c.onAccent, modifier = Modifier.size(30.dp)) }
             FitLabel(

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.LayoutInfo
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
@@ -146,6 +147,9 @@ class LargeFontScreensTest(private val case: Case) {
         val texts = mutableListOf<TextNode>()
         runOnUiThread {
             for (node in nodes) {
+                // Lists compose items ahead of time (prefetch) without placing them; such nodes
+                // report position 0 and would show up as text on top of other text.
+                if (!isOnScreen(node)) continue
                 val layouts = mutableListOf<TextLayoutResult>()
                 node.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.invoke(layouts)
                 val layout = layouts.firstOrNull()
@@ -231,6 +235,15 @@ class LargeFontScreensTest(private val case: Case) {
                 if (hyphenated) notes += "$label: Silbentrennung $where" else problems += "$label: Wort mitten getrennt $where"
             }
         }
+    }
+
+    private fun isOnScreen(node: SemanticsNode): Boolean {
+        var info: LayoutInfo? = node.layoutInfo
+        while (info != null) {
+            if (!info.isAttached || !info.isPlaced) return false
+            info = info.parentInfo
+        }
+        return true
     }
 
     private fun viewportOf(node: SemanticsNode): Rect? {
