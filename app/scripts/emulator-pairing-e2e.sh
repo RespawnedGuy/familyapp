@@ -21,6 +21,7 @@ fail() { echo "FEHLER $1"; FAILED=1; }
 HERE="$(cd "$(dirname "$0")" && pwd)"
 SIZE="$(adb shell wm size | grep -o '[0-9]*x[0-9]*' | tail -1)"; W="${SIZE%x*}"; H="${SIZE#*x}"
 swipe_up() { adb shell input swipe $((W / 2)) $((H * 3 / 4)) $((W / 2)) $((H / 3)) 300; sleep 1; }
+swipe_down() { adb shell input swipe $((W / 2)) $((H / 3)) $((W / 2)) $((H * 3 / 4)) 300; sleep 1; }
 dump() {
   for _ in 1 2 3; do
     adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 && adb pull /sdcard/ui.xml "$OUT/ui.xml" >/dev/null 2>&1 && return 0
@@ -40,10 +41,10 @@ tap_text() { # <regex> <seconds>
   wait_text "$1" "$2" || return 1
   adb shell input tap $(python3 "$HERE/ui-tap.py" "$OUT/ui.xml" "$1" "$PKG")
 }
-scroll_to() { # <regex>: swipes up until the text is on screen
-  for _ in 1 2 3 4 5 6 7 8; do
+scroll_to() { # <regex>: scrolls down the page, then back up, until the text is on screen
+  for dir in up up up up up up up up down down down down down down down down; do
     seen "$1" && return 0
-    swipe_up
+    if [ $dir = up ]; then swipe_up; else swipe_down; fi
   done
   wait_text "$1" 2
 }
