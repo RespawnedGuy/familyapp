@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -215,7 +216,7 @@ private fun Confirm(s: PairingState.Confirm, sync: SyncUi) {
     Button(
         onClick = { sync.controller.answer(true, choice) },
         enabled = !s.inviting || choice != null,
-        modifier = Modifier.fillMaxWidth().height(52.dp),
+        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
     ) { Text("Stimmt") }
     OutlinedButton(onClick = { sync.controller.answer(false) }, modifier = Modifier.fillMaxWidth()) {
         Text("Stimmt nicht")
@@ -245,7 +246,7 @@ private fun Done(s: PairingState.Done, data: FamilyData, sync: SyncUi, model: Ap
             modifier = Modifier.fillMaxWidth(),
         ) { Text("Sicherung und Wiederherstellungscode einrichten") }
     }
-    Button(onClick = { sync.controller.cancelPairing() }, modifier = Modifier.fillMaxWidth().height(52.dp)) {
+    Button(onClick = { sync.controller.cancelPairing() }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
         Text("Fertig")
     }
 }
@@ -273,7 +274,7 @@ fun JoinFamilyForm(sync: SyncUi, initialName: String, hasOwnData: Boolean, onBac
         Button(
             onClick = { sync.platform.scanQr { code -> if (code != null) sync.controller.join(code, name) } },
             enabled = name.isNotBlank(),
-            modifier = Modifier.fillMaxWidth().height(52.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
         ) { Text("Weiter zum Scannen") }
         OutlinedTextField(
             value = pasted, onValueChange = { pasted = it }, singleLine = true,

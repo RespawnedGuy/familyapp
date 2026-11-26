@@ -50,6 +50,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -180,9 +181,10 @@ private fun BottomRow(state: CaptureState, model: AppModel) {
                 Modifier.size(64.dp).clip(CircleShape).background(c.accent).clickable { model.switchCapture(CaptureAction.PHOTO) },
                 contentAlignment = Alignment.Center,
             ) { Icon(FamilyIcons.Camera, contentDescription = null, tint = c.onAccent, modifier = Modifier.size(30.dp)) }
-            Text(
+            FitLabel(
                 stringResource(Res.string.common_photo),
-                color = c.text, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp),
+                TextStyle(color = c.text, fontSize = 12.sp),
+                Modifier.padding(top = 2.dp, start = 2.dp, end = 2.dp),
             )
         }
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
@@ -194,11 +196,10 @@ private fun BottomRow(state: CaptureState, model: AppModel) {
 @Composable
 private fun SheetAction(label: String, onClick: () -> Unit) {
     val c = LocalFamilyColors.current
-    Text(
+    FitLabel(
         label,
-        modifier = Modifier.clip(RoundedCornerShape(24.dp)).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp),
-        color = c.accent,
-        fontSize = 15.sp,
-        fontWeight = FontWeight.SemiBold,
+        TextStyle(color = c.accent, fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
+        Modifier.clip(RoundedCornerShape(24.dp)).clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 14.dp),
     )
 }

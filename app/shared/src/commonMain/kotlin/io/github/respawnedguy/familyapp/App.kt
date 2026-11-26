@@ -60,6 +60,8 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
@@ -74,6 +76,7 @@ import io.github.respawnedguy.familyapp.presentation.Tab
 import io.github.respawnedguy.familyapp.sync.SyncUi
 import io.github.respawnedguy.familyapp.ui.CaptureSheet
 import io.github.respawnedguy.familyapp.ui.FamilyIcons
+import io.github.respawnedguy.familyapp.ui.FitLabel
 import io.github.respawnedguy.familyapp.ui.FamilyScreen
 import io.github.respawnedguy.familyapp.ui.FamilyTheme
 import io.github.respawnedguy.familyapp.ui.JoinFamilyForm
@@ -186,7 +189,7 @@ private fun Onboarding(model: AppModel) {
                 keyboardActions = KeyboardActions(onDone = { model.createFamily(name) }),
                 modifier = Modifier.fillMaxWidth(),
             )
-            Button(onClick = { model.createFamily(name) }, enabled = name.isNotBlank(), modifier = Modifier.fillMaxWidth().height(52.dp)) {
+            Button(onClick = { model.createFamily(name) }, enabled = name.isNotBlank(), modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
                 Text(stringResource(Res.string.onboarding_start), fontSize = 16.sp)
             }
             Text(
@@ -194,7 +197,7 @@ private fun Onboarding(model: AppModel) {
                 fontSize = 13.sp, color = c.textTertiary,
             )
             if (sync != null) {
-                OutlinedButton(onClick = { invited = true }, modifier = Modifier.fillMaxWidth().height(52.dp)) {
+                OutlinedButton(onClick = { invited = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
                     Text(stringResource(Res.string.onboarding_invited), fontSize = 16.sp)
                 }
             }
@@ -303,7 +306,12 @@ private fun TopBar(title: String, data: FamilyData, onAvatar: () -> Unit) {
         Modifier.fillMaxWidth().statusBarsPadding().padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, Modifier.weight(1f), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = c.text)
+        FitLabel(
+            title,
+            TextStyle(color = c.text, fontSize = 24.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Start),
+            Modifier.weight(1f),
+            minPhysical = 18f,
+        )
         Box(
             Modifier.size(48.dp).clip(CircleShape).clickable(onClickLabel = settings, onClick = onAvatar)
                 .semantics { contentDescription = settings },
@@ -340,10 +348,10 @@ private fun BottomBar(selected: Tab?, inboxCount: Int, first: CaptureAction, mod
                 }
                 Icon(icon, contentDescription = null, tint = c.onAccent, modifier = Modifier.size(30.dp))
             }
-            Text(
+            FitLabel(
                 capture,
-                fontSize = 12.sp, color = c.text, fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.offset(y = (-6).dp),
+                TextStyle(color = c.text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
+                Modifier.offset(y = (-6).dp).padding(horizontal = 2.dp),
             )
         }
         NavItem(Tab.UPCOMING, FamilyIcons.Upcoming, selected == Tab.UPCOMING) { model.select(Tab.UPCOMING) }
@@ -380,11 +388,14 @@ private fun RowScope.NavItem(tab: Tab, icon: ImageVector, selected: Boolean, bad
                 )
             }
         }
-        Text(
+        FitLabel(
             stringResource(tab.label),
-            fontSize = 12.sp,
-            color = if (selected) c.text else c.textSecondary,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            TextStyle(
+                color = if (selected) c.text else c.textSecondary,
+                fontSize = 12.sp,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            ),
+            Modifier.padding(horizontal = 2.dp),
         )
     }
 }

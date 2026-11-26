@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -300,12 +301,15 @@ fun UpcomingScreen(data: FamilyData, model: AppModel) {
                 ) {
                     Text(
                         DateFormat.short(item.due),
-                        Modifier.width(84.dp),
+                        // Minimum, not fixed: at 200 % "24.11." is wider than 84 dp
+                        // and would run into the title (P1-4).
+                        Modifier.widthIn(min = 84.dp).padding(end = 8.dp),
                         color = if (overdue != null && item.status == ItemStatus.OPEN) c.overdue else c.textSecondary,
                         fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                     )
                     Column(Modifier.weight(1f)) {
-                        Text(item.title, color = c.text, fontSize = 15.sp, maxLines = 2)
+                        // No line limit: this row cannot be opened, so a shortened title could never be read in full.
+                        Text(item.title, color = c.text, fontSize = 15.sp)
                         val note = buildList {
                             if (item.status == ItemStatus.INBOX) add("noch nicht bestätigt")
                             if (overdue != null && item.status == ItemStatus.OPEN) add(overdue)
