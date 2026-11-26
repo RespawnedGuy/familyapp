@@ -60,6 +60,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -305,7 +306,12 @@ private fun TopBar(title: String, data: FamilyData, onAvatar: () -> Unit) {
         Modifier.fillMaxWidth().statusBarsPadding().padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        FitLabel(title, c.text, 24.sp, Modifier.weight(1f), FontWeight.Bold, minPhysical = 18f, textAlign = TextAlign.Start)
+        FitLabel(
+            title,
+            TextStyle(color = c.text, fontSize = 24.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Start),
+            Modifier.weight(1f),
+            minPhysical = 18f,
+        )
         Box(
             Modifier.size(48.dp).clip(CircleShape).clickable(onClickLabel = settings, onClick = onAvatar)
                 .semantics { contentDescription = settings },
@@ -342,7 +348,11 @@ private fun BottomBar(selected: Tab?, inboxCount: Int, first: CaptureAction, mod
                 }
                 Icon(icon, contentDescription = null, tint = c.onAccent, modifier = Modifier.size(30.dp))
             }
-            FitLabel(capture, c.text, 12.sp, Modifier.offset(y = (-6).dp).padding(horizontal = 2.dp), FontWeight.SemiBold)
+            FitLabel(
+                capture,
+                TextStyle(color = c.text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
+                Modifier.offset(y = (-6).dp).padding(horizontal = 2.dp),
+            )
         }
         NavItem(Tab.UPCOMING, FamilyIcons.Upcoming, selected == Tab.UPCOMING) { model.select(Tab.UPCOMING) }
         NavItem(Tab.SEARCH, FamilyIcons.Search, selected == Tab.SEARCH) { model.select(Tab.SEARCH) }
@@ -380,10 +390,12 @@ private fun RowScope.NavItem(tab: Tab, icon: ImageVector, selected: Boolean, bad
         }
         FitLabel(
             stringResource(tab.label),
-            if (selected) c.text else c.textSecondary,
-            12.sp,
+            TextStyle(
+                color = if (selected) c.text else c.textSecondary,
+                fontSize = 12.sp,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            ),
             Modifier.padding(horizontal = 2.dp),
-            if (selected) FontWeight.SemiBold else FontWeight.Normal,
         )
     }
 }

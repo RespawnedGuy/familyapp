@@ -107,7 +107,8 @@ fun FamilyTheme(content: @Composable () -> Unit) {
         MaterialTheme(colorScheme = scheme, shapes = shapes) {
             // Long German words ("Steuererklärung") in narrow columns at 200 % font size get a
             // hyphen instead of a bare break in the middle of the word (P1-4).
-            CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(hyphens = Hyphens.Auto), content = content)
+            val hyphenated = LocalTextStyle.current.copy(hyphens = Hyphens.Auto)
+            CompositionLocalProvider(LocalTextStyle provides hyphenated, content = content)
         }
     }
 }

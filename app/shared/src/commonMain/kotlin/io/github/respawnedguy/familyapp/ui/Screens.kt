@@ -301,7 +301,8 @@ fun UpcomingScreen(data: FamilyData, model: AppModel) {
                 ) {
                     Text(
                         DateFormat.short(item.due),
-                        // Minimum, not fixed: at 200 % "24.11." is wider than 84 dp and would run into the title (P1-4).
+                        // Minimum, not fixed: at 200 % "24.11." is wider than 84 dp
+                        // and would run into the title (P1-4).
                         Modifier.widthIn(min = 84.dp).padding(end = 8.dp),
                         color = if (overdue != null && item.status == ItemStatus.OPEN) c.overdue else c.textSecondary,
                         fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
