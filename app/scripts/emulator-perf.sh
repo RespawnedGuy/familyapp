@@ -108,16 +108,21 @@ for p in ("Symbol", "Erfassen"):
         print(f"FEHLER {p}: App hat nur {len(b)} von {runs} Kaltstarts gemessen"); failed = True
     else:
         print(f"OK    {p}: App hat {len(b)} von {runs} Kaltstarts gemessen")
-    # Instrument check 2: both instruments agree. The app starts counting at process start (a bit
-    # after Android's launch timestamp) and stops just before the frame is drawn, so it reads
-    # somewhat lower. A gross gap means the probe measures the wrong span.
+    # Instrument check 2: both instruments agree. Android counts from the launch intent, the app
+    # from the process start request (a little later), so the app may read slightly lower; more
+    # than 200 ms lower means it misses part of the wait (flattering numbers, the old first-pre-draw
+    # bug read 1 s low on Android 16). The app ends after the main thread has finished its first
+    # draw; Android 12+ logs "Displayed" earlier than that (in the Android 16 emulator 0.2–0.5 s,
+    # FrameMetrics agree with the app). Reading higher is the safe side for the targets, so only a
+    # gross excess (above 1.5 × TotalTime) counts as the wrong span.
     pairs = [(int(r["android_total_ms"]), int(r["app_cold_start_ms"])) for r in rows
              if r["path"] == p and r["android_total_ms"] and r["app_cold_start_ms"]]
     if len(pairs) >= 3:
-        diff = statistics.median(t - x for t, x in pairs)
+        diff = statistics.median(x - t for t, x in pairs)
         ratio = statistics.median(x / t for t, x in pairs if t > 0)
-        msg = f"{p}: App liegt im Median {diff:.0f} ms unter Android ({ratio:.0%} von TotalTime)"
-        if diff < -200 or ratio < 0.3:
+        side = "über" if diff >= 0 else "unter"
+        msg = f"{p}: App liegt im Median {abs(diff):.0f} ms {side} Android ({ratio:.0%} von TotalTime)"
+        if diff < -200 or ratio > 1.5:
             print("FEHLER " + msg + " – Messpunkt prüfen"); failed = True
         else:
             print("OK    " + msg)

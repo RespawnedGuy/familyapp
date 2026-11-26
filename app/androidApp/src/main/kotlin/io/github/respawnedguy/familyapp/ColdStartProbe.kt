@@ -13,16 +13,17 @@ import android.view.ViewTreeObserver
 import android.view.Window
 
 /**
- * Cold start (quality plan P1-10): from the process start request until the first frame is
- * rendered, the span Android reports as "Displayed …" and `am start -W` as TotalTime. The
- * emulator job compares both (app/scripts/emulator-perf.sh), so the in-app number on a real
- * phone can be trusted.
+ * Cold start (quality plan P1-10): from the process start request until the main thread has
+ * finished the first draw, i.e. until the first frame is rendered and the app can react. The
+ * emulator job compares it with Android's "Displayed …" / `am start -W` TotalTime
+ * (app/scripts/emulator-perf.sh), so the in-app number on a real phone can be trusted.
  *
  * The end is the first real draw (`OnDrawListener`, then the front of the main queue, as
  * Square's Papa library does), not the first `onPreDraw`: on Android 16 the CI saw the first
- * pre-draw about 1 s before Android logged "Displayed", on Android 8 within 20 ms. The end of the
- * first frame from [FrameMetrics] came 0.3–0.5 s after "Displayed" in the emulator (software
- * rendering). Both are logged as `probe` lines so the CI shows how the three relate.
+ * pre-draw about 1 s before "Displayed", on Android 8 within 20 ms. On Android 16 (emulator,
+ * software rendering) the draw end and the end of the first frame from [FrameMetrics] agree with
+ * each other but come 0.2–0.5 s after "Displayed", so the app reads somewhat higher there: the
+ * safe side for the targets. All three are logged as `probe` lines so the CI shows how they relate.
  */
 object ColdStartProbe {
     /** Activity created this soon after the process: the process was started for this launch. */
