@@ -128,18 +128,10 @@
     <ID>MaxLineLength:AndroidSpeech.kt$AndroidSpeech.Callbacks$runCatching { SpeechRecognizer.createOnDeviceSpeechRecognizer(context).triggerModelDownload(intent(true)) }</ID>
     <ID>MaxLineLength:AndroidSpeech.kt$AndroidSpeech.Callbacks$target.onError("Das deutsche Sprachpaket fehlt noch auf dem Handy. Der Download ist angestoßen; bis dahin tippen.")</ID>
     <ID>MaxLineLength:AndroidTextStore.kt$AndroidTextStore$File(file.parentFile, "${file.nameWithoutExtension}-unlesbar-${System.currentTimeMillis()}.json").writeText(text)</ID>
-    <ID>MaxLineLength:App.kt$"Kein Konto, keine E-Mail. Damit ist deine Familie angelegt, weitere Personen fügst du unter „Familie“ hinzu."</ID>
     <ID>MaxLineLength:App.kt$)</ID>
     <ID>MaxLineLength:App.kt$Button</ID>
     <ID>MaxLineLength:App.kt$Modifier.offset(y = (-10).dp).size(60.dp).shadow(6.dp, CircleShape).clip(CircleShape).background(c.accent)</ID>
     <ID>MaxLineLength:App.kt$Modifier.padding(12.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(c.text).padding(start = 16.dp, end = 4.dp)</ID>
-    <ID>MaxLineLength:App.kt$OutlinedTextField(value = code, onValueChange = { code = it }, singleLine = true, label = { Text("z. B. 7K3M-Q9TB-…") })</ID>
-    <ID>MaxLineLength:App.kt$Text("Erfassen", fontSize = 12.sp, color = c.text, fontWeight = FontWeight.SemiBold, modifier = Modifier.offset(y = (-6).dp))</ID>
-    <ID>MaxLineLength:App.kt$Text("Wie heißt du?", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = c.text, modifier = Modifier.padding(top = 24.dp))</ID>
-    <ID>MaxLineLength:App.kt$Text(label, fontSize = 12.sp, color = if (selected) c.text else c.textSecondary, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal)</ID>
-    <ID>MaxLineLength:App.kt$TextButton(onClick = { model.undo(f) }) { Text("Rückgängig", color = c.background, fontWeight = FontWeight.Bold) }</ID>
-    <ID>MaxLineLength:App.kt$confirmButton = { TextButton(onClick = { model.restoreWithCode(code) }, enabled = code.isNotBlank()) { Text("Öffnen") } }</ID>
-    <ID>MaxLineLength:App.kt$if (request.wrong) "Dieser Code öffnet die Sicherung nicht. Bitte genau prüfen." else "Gib den Code ein, den du beim Einrichten der Sicherung aufgeschrieben hast."</ID>
     <ID>MaxLineLength:App.kt$keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done)</ID>
     <ID>MaxLineLength:App.kt$val</ID>
     <ID>MaxLineLength:App.kt$val enter = if (reducedMotion) fadeIn(tween(0)) else slideInVertically(tween(Motion.FEEDBACK_MS, easing = Motion.Standard)) { it } + fadeIn()</ID>
@@ -157,7 +149,6 @@
     <ID>MaxLineLength:CaptureSheet.kt$)</ID>
     <ID>MaxLineLength:CaptureSheet.kt$.</ID>
     <ID>MaxLineLength:CaptureSheet.kt$Box(Modifier.align(Alignment.CenterHorizontally).width(32.dp).height(4.dp).clip(CircleShape).background(c.outline))</ID>
-    <ID>MaxLineLength:CaptureSheet.kt$Button(onClick = { model.saveText(text) }, enabled = text.isNotBlank(), modifier = Modifier.align(Alignment.End)) { Text("Speichern") }</ID>
     <ID>MaxLineLength:CaptureSheet.kt$Modifier.size(64.dp).clip(CircleShape).background(c.accent).clickable { model.switchCapture(CaptureAction.PHOTO) }</ID>
     <ID>MaxLineLength:CaptureSheet.kt$keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done)</ID>
     <ID>MaxLineLength:CaptureSheet.kt$modifier = Modifier.clip(RoundedCornerShape(24.dp)).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp)</ID>
