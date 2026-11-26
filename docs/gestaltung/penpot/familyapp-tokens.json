@@ -1,0 +1,140 @@
+{
+  "FamilyApp/Basis": {
+    "radius": {
+      "card": {
+        "$value": "16",
+        "$type": "borderRadius",
+        "$description": "Karten, Chips, kleine und mittlere Flächen (Shapes.small/medium)"
+      },
+      "sheet": {
+        "$value": "28",
+        "$type": "borderRadius",
+        "$description": "Blätter und Dialoge (Shapes.large)"
+      }
+    }
+  },
+  "FamilyApp/Hell": {
+    "color": {
+      "background": {
+        "$value": "#F6F5F2",
+        "$type": "color"
+      },
+      "card": {
+        "$value": "#FFFFFF",
+        "$type": "color"
+      },
+      "text": {
+        "$value": "#1D1C1A",
+        "$type": "color"
+      },
+      "textSecondary": {
+        "$value": "#5C5A55",
+        "$type": "color"
+      },
+      "textTertiary": {
+        "$value": "#6E6B65",
+        "$type": "color"
+      },
+      "accent": {
+        "$value": "#0E6B66",
+        "$type": "color"
+      },
+      "onAccent": {
+        "$value": "#FFFFFF",
+        "$type": "color"
+      },
+      "overdue": {
+        "$value": "#B3261E",
+        "$type": "color"
+      },
+      "dueSoon": {
+        "$value": "#8A5300",
+        "$type": "color"
+      },
+      "outline": {
+        "$value": "#D9D6CF",
+        "$type": "color"
+      },
+      "person": {
+        "1": {
+          "$value": "#2F5DA8",
+          "$type": "color"
+        },
+        "2": {
+          "$value": "#A84B0C",
+          "$type": "color"
+        },
+        "3": {
+          "$value": "#7B3FA0",
+          "$type": "color"
+        },
+        "4": {
+          "$value": "#2C7A4B",
+          "$type": "color"
+        }
+      }
+    }
+  },
+  "FamilyApp/Dunkel": {
+    "color": {
+      "background": {
+        "$value": "#151513",
+        "$type": "color"
+      },
+      "card": {
+        "$value": "#201F1C",
+        "$type": "color"
+      },
+      "text": {
+        "$value": "#ECEAE4",
+        "$type": "color"
+      },
+      "textSecondary": {
+        "$value": "#B0ADA6",
+        "$type": "color"
+      },
+      "textTertiary": {
+        "$value": "#B0ADA6",
+        "$type": "color"
+      },
+      "accent": {
+        "$value": "#5FC4BC",
+        "$type": "color"
+      },
+      "onAccent": {
+        "$value": "#0B2E2C",
+        "$type": "color"
+      },
+      "overdue": {
+        "$value": "#FF8A80",
+        "$type": "color"
+      },
+      "dueSoon": {
+        "$value": "#F2B85B",
+        "$type": "color"
+      },
+      "outline": {
+        "$value": "#3A3934",
+        "$type": "color"
+      },
+      "person": {
+        "1": {
+          "$value": "#8FB0EC",
+          "$type": "color"
+        },
+        "2": {
+          "$value": "#F0A06A",
+          "$type": "color"
+        },
+        "3": {
+          "$value": "#C9A0E6",
+          "$type": "color"
+        },
+        "4": {
+          "$value": "#7FCB9B",
+          "$type": "color"
+        }
+      }
+    }
+  }
+}
