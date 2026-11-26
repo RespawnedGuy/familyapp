@@ -19,8 +19,8 @@ Die Farben in der Datei stimmen garantiert mit der App überein: Ein Test (`Penp
 
 1. **Entwerfen:** Bildschirm oder Baustein zusammenschieben. Farben immer über die Tokens wählen (Linksklick auf ein Token = Füllfarbe), dann kann Claude sie eindeutig `LocalFamilyColors` zuordnen. Ebenen sinnvoll benennen („InboxCard“, „Chip Wer“), das erleichtert die Übertragung.
 2. **Übergeben**, eine der zwei Arten:
-   - **Mit MCP (empfohlen, auf Nils' PC):** Claude liest das Board direkt aus Penpot, siehe Abschnitt 3.
-   - **Ohne MCP (geht überall, auch aus einem Projekt-Thread):** Board als PNG exportieren (*Export → PNG, 2×*) und im Thread hochladen; bei kniffligen Stellen zusätzlich aus dem Reiter **Inspect** den Code (CSS) kopieren.
+   - **Mit MCP (empfohlen, auch in Projekt-Threads):** Claude liest das Board direkt aus Penpot, siehe Abschnitt 3.
+   - **Ohne MCP (Ausweichweg):** Board als PNG exportieren (*Export → PNG, 2×*) und im Thread hochladen; bei kniffligen Stellen zusätzlich aus dem Reiter **Inspect** den Code (CSS) kopieren.
 3. **Umsetzen:** Claude baut den Entwurf mit den vorhandenen Bausteinen (`InboxCard`, `PersonChip`, `FamilyIcons`, …) in Compose, öffnet einen PR, Nils prüft im Hot-Reload-Fenster oder auf dem Handy.
 
 Auch umgekehrt möglich: Claude zeichnet einen bestehenden Bildschirm aus dem Code nach Penpot, als Ausgangspunkt für Änderungen.
@@ -36,8 +36,8 @@ Kein Node.js, kein Terminal-Server, kein Plugin per Adresse laden.
 1. In Penpot: **Your account → Integrations → MCP Server** → Status einschalten → Key erzeugen. Der Key wird nur einmal angezeigt, es gibt einen pro Person; neu erzeugen macht den alten sofort ungültig.
 2. Die angezeigte Server-URL kopieren. Sie hat die Form `https://design.penpot.app/mcp/stream?userToken=…` und **enthält den Key**. Deshalb wie ein Passwort behandeln: nicht in Chats, Threads oder ins Repo kopieren.
 3. Bei Claude eintragen, eine der Arten:
-   - **claude.ai / Claude-App:** *Einstellungen → Connectors → Add custom connector* ([claude.ai/customize/connectors](https://claude.ai/customize/connectors)), Name „Penpot“, URL einfügen. So empfiehlt es Penpot für Claude Desktop.
-   - **Claude Code auf dem PC** (Terminal): `claude mcp add --transport http penpot "<URL>"` (URL in Anführungszeichen wegen `?`).
+   - **claude.ai / Claude-App:** *Einstellungen → Connectors → Add custom connector* ([claude.ai/customize/connectors](https://claude.ai/customize/connectors)), Name „Penpot“, URL einfügen. So empfiehlt es Penpot für Claude Desktop. **Das ist bei uns eingerichtet (26.11.2026):** Der Connector gilt für das ganze Konto, also in allen Claude-Desktop-Apps und auch in den Projekt-Threads (dort geprüft, Claude konnte die geöffnete Penpot-Datei lesen).
+   - Nur falls die Kommandozeile *Claude Code* installiert ist (nicht Teil von Claude Desktop): `claude mcp add --transport http penpot "<URL>"`. Fehlt sie, meldet PowerShell „Die Benennung "claude" wurde nicht … erkannt“; dann einfach den Connector-Weg nehmen.
 4. In Penpot die Datei öffnen → **File → MCP Server → Connect**. Der Penpot-Tab muss offen und aktiv bleiben (nur ein Tab gleichzeitig); Claude arbeitet immer auf der gerade geöffneten Seite.
 
 Grenzen laut Penpot: Der Remote-Server hat keinen Zugriff auf lokale Dateien (Bilder von der Festplatte importieren geht nicht, Export nicht direkt in eine Datei). Für den Weg Entwurf → Compose reicht das. Penpot rät, mit lesenden Aufträgen zu beginnen; Schreiben ist möglich. MCP ausschalten oder trennen stoppt alle Änderungen sofort.
