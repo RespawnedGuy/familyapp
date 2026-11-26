@@ -454,7 +454,7 @@ class SyncController(
     }
 
     private suspend fun askInviter(prompt: PairingPrompt): JoinAs? {
-        val (choices, suggested) = withContext(repoDispatcher) { choicesFor(prompt.other.personName) }
+        val (choices, suggested) = withContext(repoDispatcher) { choicesFor(prompt.other) }
         val answer = CompletableDeferred<JoinAs?>()
         pairingAnswer = answer
         _pairing.value = PairingState.Confirm(prompt.code, prompt.other, inviting = true, choices, suggested)
@@ -466,15 +466,16 @@ class SyncController(
     }
 
     /** Possible owners of the new device; a person with the same name is suggested (the inviter confirms). */
-    private fun choicesFor(personName: String): Pair<List<JoinAs>, JoinAs> {
+    private fun choicesFor(other: PairHello): Pair<List<JoinAs>, JoinAs> {
         val d = repo.current
         val self = d.self
-        val name = personName.trim()
+        val name = other.personName.trim()
         val existing = d.members.filter { it.id != d.selfId && !it.hasDevice }.map { JoinAs.Existing(it.id, it.name) }
         val myself = JoinAs.Myself(self?.name ?: deviceName)
         val new = JoinAs.NewPerson(name.ifEmpty { "Neue Person" })
         val choices = existing + listOfNotNull(new.takeIf { name.isNotEmpty() }, myself, JoinAs.HouseDevice)
-        val suggested = existing.firstOrNull { it.name.equals(name, ignoreCase = true) }
+        val suggested = JoinAs.HouseDevice.takeIf { other.houseDevice }
+            ?: existing.firstOrNull { it.name.equals(name, ignoreCase = true) }
             ?: myself.takeIf { self != null && self.name.equals(name, ignoreCase = true) }
             ?: choices.first()
         return choices to suggested
@@ -501,12 +502,12 @@ class SyncController(
     // ---- Pairing: new device -----------------------------------------------------------------
 
     /** Scanned or pasted code. [personName] is shown to the inviter ("Lisa möchte beitreten"). */
-    fun join(code: String, personName: String) {
+    fun join(code: String, personName: String, houseDevice: Boolean = false) {
         scope.launch {
             val inv = Invitation.decode(code) ?: return@launch fail("Das ist kein FamilyApp-Code.")
             if (now() > inv.expiresAtMs) return@launch fail(EXPIRED)
             _pairing.value = PairingState.Working("Verbinde mit ${inv.inviterName} …")
-            val result = runCatchingPairing { joinVia(inv, personName.trim()) }
+            val result = runCatchingPairing { joinVia(inv, personName.trim(), houseDevice) }
             if (result == null && _pairing.value is PairingState.Working) {
                 fail("${inv.inviterName}s Gerät war nicht erreichbar. $NETWORK_HINT")
             }
@@ -514,7 +515,7 @@ class SyncController(
     }
 
     /** Returns null if no address of the invitation was reachable. */
-    private suspend fun joinVia(inv: Invitation, personName: String): Unit? {
+    private suspend fun joinVia(inv: Invitation, personName: String, houseDevice: Boolean): Unit? {
         val raw = inv.addresses.firstNotNullOfOrNull { address ->
             runCatchingPairing {
                 withContext(io) { transport.connect(address, CONNECT_TIMEOUT_MS, PAIR_READ_TIMEOUT_MS) }
@@ -522,7 +523,7 @@ class SyncController(
         } ?: return null
         try {
             val channel = withContext(io) { Handshake.initiate(raw, Purpose.PAIR, inv.secretBytes(), crypto) }
-            val mine = withContext(repoDispatcher) { ownPairHello(personName) }
+            val mine = withContext(repoDispatcher) { ownPairHello(personName).copy(houseDevice = houseDevice) }
             val welcome = withContext(io) { PairingProtocol.join(channel, crypto, inv, mine) { askJoiner(it) } }
             if (welcome == null) fail(CANCELLED) else adopt(welcome)
         } catch (e: PairingException) {

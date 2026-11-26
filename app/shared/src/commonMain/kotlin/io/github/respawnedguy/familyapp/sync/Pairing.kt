@@ -41,7 +41,13 @@ data class Invitation(
 
 /** First encrypted message of both sides during pairing: who is there. */
 @Serializable
-data class PairHello(val deviceId: String, val deviceName: String, val personName: String)
+data class PairHello(
+    val deviceId: String,
+    val deviceName: String,
+    val personName: String,
+    /** A device without a person (house device); the inviter gets that as suggestion. */
+    val houseDevice: Boolean = false,
+)
 
 /** Decision of one side after both people compared the code. */
 @Serializable
