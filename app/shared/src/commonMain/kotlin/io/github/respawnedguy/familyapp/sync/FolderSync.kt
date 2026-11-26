@@ -66,7 +66,8 @@ class FolderSync(private val crypto: SyncCrypto, private val key: ByteArray) {
         var problem: String? = null
         val others = mutableListOf<String>()
         files.list(STATE_DIR).filter { STATE_NAME.matches(it) && it != ownName }.forEach { name ->
-            val bytes = files.read(STATE_DIR, name) ?: return@forEach
+            // Oversized or unreadable (threat model OR-3): skip this file, the others still sync.
+            val bytes = runCatching { files.read(STATE_DIR, name) }.getOrNull() ?: return@forEach
             val other = runCatching { decode(open(STATE_MAGIC, name, bytes)) }.getOrNull()
                 ?: return@forEach // other family, broken or half-synced file: try again next round
             others += other.device.name
@@ -91,7 +92,7 @@ class FolderSync(private val crypto: SyncCrypto, private val key: ByteArray) {
         }
         var fetched = 0
         me.missingPhotos().filter { "$it$PHOTO_EXT" in present }.forEach { name ->
-            val sealed = files.read(PHOTO_DIR, "$name$PHOTO_EXT") ?: return@forEach
+            val sealed = runCatching { files.read(PHOTO_DIR, "$name$PHOTO_EXT") }.getOrNull() ?: return@forEach
             val bytes = runCatching { open(PHOTO_MAGIC, name, sealed) }.getOrNull() ?: return@forEach
             me.writePhoto(name, bytes)
             fetched++

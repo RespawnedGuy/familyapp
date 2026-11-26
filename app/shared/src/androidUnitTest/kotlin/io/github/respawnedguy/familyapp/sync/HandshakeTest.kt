@@ -77,6 +77,14 @@ class HandshakeTest {
         assertFailsWith<SyncAuthException> { crypto.newEphemeralKey().agree(ByteArray(10)) }
     }
 
+    /** Threat model NE-8: a public key that is not on P-256 (invalid-curve attack) is refused. */
+    @Test
+    fun publicKeyOffTheCurveIsRefused() {
+        val valid = crypto.newEphemeralKey().publicKey
+        val offCurve = valid.copyOf().also { it[it.size - 1] = (it[it.size - 1].toInt() xor 1).toByte() }
+        assertFailsWith<SyncAuthException> { crypto.newEphemeralKey().agree(offCurve) }
+    }
+
     @Test
     fun hkdfMatchesRfc5869TestCase1() {
         fun hex(s: String) = s.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
