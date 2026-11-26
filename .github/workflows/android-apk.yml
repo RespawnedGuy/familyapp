@@ -258,6 +258,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
       RELEASES_REPO_TOKEN: ${{ secrets.RELEASES_REPO_TOKEN }}
+      # Branch names come from the PR author: pass them as data, never expand them into the script.
+      BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
     steps:
       - uses: actions/download-artifact@v5
         with:
@@ -295,7 +297,7 @@ jobs:
             PRERELEASE=false
             BODY="Installierbare APK für Android 8.0 und neuer. Anleitung: docs/android-installieren.md. Prüfberichte (Signatur, Manifest, Emulator Android 8 und 16, Leistung) hängen an."
           else
-            BRANCH="${{ github.head_ref || github.ref_name }}"
+            BRANCH="$BRANCH_NAME"
             TAG="ci-$(echo "$BRANCH" | tr -c 'a-zA-Z0-9.-' '-' | sed 's/-*$//')"
             NAME="CI-Testbuild $BRANCH (nicht auf dem Handy installieren)"
             PRERELEASE=true
