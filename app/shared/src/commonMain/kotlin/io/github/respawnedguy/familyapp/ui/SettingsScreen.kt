@@ -27,6 +27,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.respawnedguy.familyapp.AppInfo
 import io.github.respawnedguy.familyapp.domain.CaptureAction
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import io.github.respawnedguy.familyapp.domain.FamilyData
 import io.github.respawnedguy.familyapp.presentation.AppModel
 import io.github.respawnedguy.familyapp.update.UpdateController
@@ -83,7 +87,7 @@ fun SettingsScreen(data: FamilyData, model: AppModel, updates: UpdateController?
 
         SettingsGroup("Sicherung in Ordner") {
             Text(
-                "Die Daten liegen geschützt im App-Speicher. Zusätzlich kann die App nach jeder Änderung eine lesbare Sicherung (JSON) in einen Ordner deiner Wahl schreiben, z. B. einen Synology-Drive-Ordner. Fotos sind nicht enthalten.",
+                "Die Daten liegen geschützt im App-Speicher. Zusätzlich schreibt die App nach jeder Änderung eine verschlüsselte Sicherung mit allen Fotos in einen Ordner deiner Wahl, z. B. einen Synology-Drive-Ordner.",
                 fontSize = 13.sp, color = c.textSecondary,
             )
             val folder = s.backupFolder
@@ -100,8 +104,22 @@ fun SettingsScreen(data: FamilyData, model: AppModel, updates: UpdateController?
                 }
                 TextButton(onClick = { model.stopBackups() }) { Text("Sicherung beenden") }
             }
-            OutlinedButton(onClick = { model.restoreFromFile() }) { Text("Aus Sicherung wiederherstellen") }
-            Text("Wiederherstellen ersetzt alle Daten auf diesem Handy durch die gewählte Sicherung.", fontSize = 12.sp, color = c.textTertiary)
+            s.backupCode?.let { code ->
+                Text("Wiederherstellungscode", fontSize = 14.sp, color = c.text, fontWeight = FontWeight.SemiBold)
+                Text(code, fontSize = 20.sp, color = c.text, fontFamily = FontFamily.Monospace, modifier = Modifier.semantics { contentDescription = code.toList().joinToString(" ") })
+                Text(
+                    "Schreib ihn auf Papier. Ohne diesen Code lässt sich die Sicherung auf einem neuen Handy nicht öffnen, auch nicht von uns.",
+                    fontSize = 12.sp, color = c.textTertiary,
+                )
+            }
+            OutlinedButton(onClick = { model.restoreFromFolder() }) { Text("Aus Sicherung wiederherstellen") }
+            Text(
+                "Wähle den Ordner, in dem die Sicherung liegt. Der jetzige Stand wird vorher aufbewahrt und lässt sich zurückholen.",
+                fontSize = 12.sp, color = c.textTertiary,
+            )
+            if (model.hasRestoreSnapshot()) {
+                TextButton(onClick = { model.restoreSnapshot() }) { Text("Stand vor der Wiederherstellung zurückholen") }
+            }
         }
 
         SettingsGroup("Messwerte (nur lokal)") {

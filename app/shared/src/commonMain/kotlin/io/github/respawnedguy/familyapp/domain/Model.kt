@@ -69,6 +69,10 @@ data class Item(
     val doneOn: LocalDate? = null,
     /** Taps spent on this card while it was in the inbox (local metric, design doc "Prüfung" 4). */
     val inboxTaps: Int = 0,
+    /** Member who marked it done. Transparency: nothing gets done secretly (KONZEPT, Phase 5). */
+    val doneBy: String? = null,
+    /** Member who made the last change (ISO 25010 accountability, QA-6). Null for data from schema 1. */
+    val changedBy: String? = null,
     val stamp: Stamp,
 ) {
     val hasFixedDate: Boolean get() = due != null
@@ -87,19 +91,38 @@ data class Settings(
     /** Off by default: speech stays on the device; online recognition (Google) only if switched on. */
     val allowOnlineSpeech: Boolean = false,
     val backupFolder: String? = null,
+    /**
+     * Recovery code that encrypts the backup (P0-3, design D7). Created when a backup folder is
+     * chosen; without it a backup cannot be opened. Lives only in private app storage and on paper.
+     */
+    val backupCode: String? = null,
     val lastBackupMs: Long? = null,
     val lastBackupError: String? = null,
     val latency: List<LatencySample> = emptyList(),
 )
 
-/** Everything stored on this device. Sync (ADR 0003) will exchange members and items by [Stamp]. */
+@Serializable
+enum class RecordKind { ITEM, MEMBER }
+
+/**
+ * Marks a deleted record (ADR 0002: tombstones). Without it, sync would bring a deleted item back
+ * from a device that still has it. Holds no content: deleted means the text is gone.
+ */
+@Serializable
+data class Tombstone(val id: String, val kind: RecordKind, val stamp: Stamp, val deletedBy: String? = null)
+
+/** Current version of the stored format. Older files are upgraded by [io.github.respawnedguy.familyapp.data.FamilyJson]. */
+const val CURRENT_SCHEMA = 2
+
+/** Everything stored on this device. Sync (ADR 0003) will exchange members, items and tombstones by [Stamp]. */
 @Serializable
 data class FamilyData(
-    val schema: Int = 1,
+    val schema: Int = CURRENT_SCHEMA,
     val deviceId: String,
     val selfId: String? = null,
     val members: List<Member> = emptyList(),
     val items: List<Item> = emptyList(),
+    val tombstones: List<Tombstone> = emptyList(),
     val settings: Settings = Settings(),
 ) {
     val self: Member? get() = members.firstOrNull { it.id == selfId }

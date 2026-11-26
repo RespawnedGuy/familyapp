@@ -119,7 +119,8 @@ fun FamilyScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reduce
                                 if (load.overdue > 0) Box(Modifier.weight(load.overdue.toFloat()).fillMaxHeight().background(c.overdue))
                             }
                         }
-                        val text = if (load.overdue > 0) "${load.open} · ${load.overdue} überfällig" else "${load.open} offen"
+                        val open = if (load.overdue > 0) "${load.open} · ${load.overdue} überfällig" else "${load.open} offen"
+                        val text = if (load.doneThisWeek > 0) "$open · ${load.doneThisWeek} erledigt" else open
                         Text(
                             text, Modifier.padding(start = 8.dp),
                             color = if (load.overdue > 0) c.overdue else c.textSecondary, fontSize = 13.sp,
@@ -301,7 +302,7 @@ fun SearchScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?) {
                     Column(Modifier.weight(1f)) {
                         Text(item.title, color = c.text, fontSize = 15.sp, maxLines = 2)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            StatusLabel(item)
+                            StatusLabel(item, data)
                             item.due?.let { Text(DateFormat.short(it), color = c.textTertiary, fontSize = 12.sp) }
                             Text(ago(item.createdMs, model.repo.now()), color = c.textTertiary, fontSize = 12.sp)
                         }

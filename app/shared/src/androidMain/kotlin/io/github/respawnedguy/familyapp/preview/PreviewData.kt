@@ -17,7 +17,9 @@ import io.github.respawnedguy.familyapp.domain.Settings
 import io.github.respawnedguy.familyapp.domain.Source
 import io.github.respawnedguy.familyapp.domain.Stamp
 import io.github.respawnedguy.familyapp.presentation.AppModel
+import io.github.respawnedguy.familyapp.presentation.BackupContent
 import io.github.respawnedguy.familyapp.presentation.PlatformServices
+import io.github.respawnedguy.familyapp.presentation.RestoreRead
 import io.github.respawnedguy.familyapp.presentation.SpeechInput
 import kotlinx.coroutines.Dispatchers
 import kotlinx.datetime.LocalDate
@@ -138,8 +140,9 @@ private object PreviewPlatform : PlatformServices {
     override fun reducedMotion(): Boolean = true
     override fun takePhoto(onResult: (String?) -> Unit) = onResult(null)
     override fun pickBackupFolder(onResult: (String?) -> Unit) = onResult(null)
-    override fun writeBackup(folder: String, text: String): String? = null
-    override fun pickRestoreFile(onResult: (String?) -> Unit) = onResult(null)
+    override fun writeBackup(folder: String, backup: BackupContent): String? = null
+    override fun readBackup(folder: String, code: String?): RestoreRead = RestoreRead.Failed("Vorschau")
+    override fun newRecoveryCode(): String = "7K3M-Q9TB-X2WD-H5NC-R8PF"
     override fun describeFolder(folder: String): String = folder
 }
 

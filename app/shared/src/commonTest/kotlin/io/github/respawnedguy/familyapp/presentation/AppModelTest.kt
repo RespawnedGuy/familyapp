@@ -32,12 +32,29 @@ private class FakePlatform(override val speech: SpeechInput?) : PlatformServices
     var elapsed = 0L
     var photoCallback: ((String?) -> Unit)? = null
     val backups = mutableListOf<String>()
+    val backupCodes = mutableListOf<String>()
+
+    /** What the backup folder holds, keyed by the code that opens it. */
+    var stored: Pair<String, String>? = null
     override fun elapsedMs() = elapsed
     override fun reducedMotion() = false
     override fun takePhoto(onResult: (String?) -> Unit) { photoCallback = onResult }
     override fun pickBackupFolder(onResult: (String?) -> Unit) = onResult("ordner")
-    override fun writeBackup(folder: String, text: String): String? { backups += text; return null }
-    override fun pickRestoreFile(onResult: (String?) -> Unit) = onResult(null)
+    override fun writeBackup(folder: String, backup: BackupContent): String? {
+        backups += backup.json
+        backupCodes += backup.code
+        stored = backup.code to backup.json
+        return null
+    }
+    override fun readBackup(folder: String, code: String?): RestoreRead {
+        val (key, json) = stored ?: return RestoreRead.Failed("leer")
+        return when (code) {
+            null -> RestoreRead.NeedsCode
+            key -> RestoreRead.Ok(json, emptyMap())
+            else -> RestoreRead.WrongCode
+        }
+    }
+    override fun newRecoveryCode() = "ABCD-EFGH-JKMN-PQRS-TVWX"
     override fun describeFolder(folder: String) = folder
 }
 
@@ -189,5 +206,39 @@ class AppModelTest {
         m.setAssignee(b, m.repo.current.selfId!!)
         m.setDue(b, null)
         assertEquals(1 to 2, m.oneTapShare())
+    }
+
+    @Test
+    fun choosingABackupFolderCreatesTheRecoveryCodeOnce() = runTest {
+        val platform = FakePlatform(FakeSpeech())
+        val m = model(platform = platform)
+        runCurrent()
+        m.chooseBackupFolder()
+        m.chooseBackupFolder()
+        runCurrent()
+        assertEquals("ABCD-EFGH-JKMN-PQRS-TVWX", m.repo.current.settings.backupCode)
+        assertEquals(setOf("ABCD-EFGH-JKMN-PQRS-TVWX"), platform.backupCodes.toSet())
+    }
+
+    @Test
+    fun restoreOnANewPhoneAsksForTheCodeAndRetriesAfterAWrongOne() = runTest {
+        val platform = FakePlatform(FakeSpeech())
+        val old = model(platform = platform)
+        old.chooseBackupFolder()
+        old.saveText("Turnschuhe")
+        old.backupNow()
+        runCurrent()
+
+        val fresh = model(platform = platform)
+        fresh.repo.setBackupCode("FALSCH")
+        fresh.restoreFromFolder()
+        runCurrent()
+        assertEquals(RestoreCodeRequest("ordner", wrong = true), fresh.restoreCode.value)
+        fresh.restoreWithCode("ABCD-EFGH-JKMN-PQRS-TVWX")
+        runCurrent()
+        assertNull(fresh.restoreCode.value)
+        assertTrue(fresh.repo.current.items.any { it.title == "Turnschuhe" })
+        assertEquals("ABCD-EFGH-JKMN-PQRS-TVWX", fresh.repo.current.settings.backupCode)
+        assertTrue(fresh.feedback.value!!.message.startsWith("Sicherung wiederhergestellt."))
     }
 }

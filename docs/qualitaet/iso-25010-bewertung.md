@@ -6,7 +6,7 @@
 
 ## Was diese Bewertung anders macht
 
-1. **Gemessen statt geschätzt.** Die Befunde stützen sich auf Messungen am Code: Testlauf mit Zeilen- und Zweigabdeckung (JaCoCo), statische Prüfung (detekt 1.23.8), Kontrastberechnung aller Theme-Farben nach WCAG-Formel, eine Kapazitätsmessung des Speicherformats und eine Fehlerinjektion beim Schreiben. Alles liegt reproduzierbar in [`messung/`](messung/).
+1. **Gemessen statt geschätzt.** Die Befunde stützen sich auf Messungen am Code: Testlauf mit Zeilen- und Zweigabdeckung (JaCoCo), statische Prüfung (detekt 1.23.8), Kontrastberechnung aller Theme-Farben nach WCAG-Formel, eine Kapazitätsmessung des Speicherformats und eine Fehlerinjektion beim Schreiben. Alles liegt reproduzierbar in [`tools/quality-check/`](../../tools/quality-check/).
 2. **Die Mental-Load- und HITL-Grundsätze sind als prüfbare Qualitätsanforderungen formuliert** (Abschnitt 2) und den ISO-Merkmalen zugeordnet. So wird „schnell rein, komplett später“ zu etwas, das ein Test brechen kann.
 3. **Der Plan hat für jeden Punkt ein Abnahmekriterium und ein Werkzeug**, und er ist nach Risiko sortiert (Datenverlust und Sicherheit vor Komfort), nicht nach ISO-Kapitel.
 
@@ -35,16 +35,16 @@ Bewertet wird gegen zwei Ziele, weil die App gerade zwischen beiden steht:
 
 ### 1.3 Messungen
 
-Alle Messungen laufen in der Cloud ohne Android SDK: [`messung/build.gradle.kts`](messung/build.gradle.kts) kompiliert die Compose-freien Schichten `domain`, `data`, `presentation`, `update` aus `app/shared/src/commonMain` als Kotlin/JVM und startet dieselben Tests aus `commonTest`. Befehl im Ordner `docs/qualitaet/messung`: `gradle test detekt`.
+Alle Messungen laufen in der Cloud ohne Android SDK: [`tools/quality-check/build.gradle.kts`](../../tools/quality-check/build.gradle.kts) kompiliert die Compose-freien Schichten `domain`, `data`, `presentation`, `update` aus `app/shared/src/commonMain` als Kotlin/JVM und startet dieselben Tests aus `commonTest`. Befehl im Ordner `tools/quality-check`: `gradle check`. Die Werte unten sind der Stand vor der Umsetzung (25.11.2026); der Stand danach steht in Abschnitt 6.
 
 | # | Messung | Ergebnis |
 | --- | --- | --- |
 | M1 | Unit-Tests der App (`commonTest` ohne `AppInfoTest`, der Compose braucht) | **86 Tests, 0 Fehler** |
 | M2 | Abdeckung (JaCoCo) auf diesen Schichten | Zeilen **87 %**, Zweige **54 %**. domain 93/54, data 86/58, presentation 78/43, update 88/67 (Zeilen/Zweige in %). UI-Schicht (`ui/`, `App.kt`, rund 1.600 Zeilen) hat **keine** Unit- oder Compose-Tests, nur den Emulator-Smoke-Test |
 | M3 | detekt 1.23.8, Standardregeln, App-Code | 337 Befunde: 129 MagicNumber, 111 MaxLineLength, 50 FunctionNaming (Fehlalarm: Composables heißen groß), 13 UnusedPrivateMember (zum Teil Previews), 7 SwallowedException, 6 LongParameterList, 6 TooManyFunctions, 5 ReturnCount, 3 LongMethod, 3 CyclomaticComplexMethod (`FamilyScreen` 18, `SwipeToDecide` 18, `GermanDateParser.find` 16) |
-| M4 | Kontrast aller Text-/Grundfarben (WCAG-Formel, [Skript](messung/contrast.py)) | Alle Textpaare ≥ 4,5:1 (kleinster Wert: Personenfarbe 4 hell auf Grund 4,82:1, `textTertiary` hell auf Grund 4,87:1). Initialen auf Personen-Punkten: hell ≥ 5,26:1, dunkel ≥ 8,35:1. Rahmen `outline` gegen Karte nur 1,45:1 |
-| M5 | Kapazität des Speicherformats ([Probe](messung/probes/CapacityProbe.kt)), JVM in der Cloud, nicht Handy | 1.000 Einträge: 456 KB JSON, Schreiben 10 ms, Lesen 38 ms. 5.000: 2,3 MB, 31 / 49 ms. 20.000: 9,2 MB, 75 / 138 ms. Ansichten (Eingang, Lastkarte, Demnächst, Suche) zusammen ≤ 26 ms bei 20.000 |
-| M6 | Fehlerinjektion: Speicher wirft beim Schreiben „No space left on device“ ([Probe](messung/probes/WriteFailureProbe.kt)) | Die Ausnahme verlässt den Speicher-Coroutine-Job. Auf Android (`MainScope()` ohne Handler) beendet das den Prozess. Mit Handler wird danach **nie wieder gespeichert**, auch wenn wieder Platz ist (1 Schreibversuch für 2 Änderungen) |
+| M4 | Kontrast aller Text-/Grundfarben (WCAG-Formel, [Skript](../../tools/quality-check/contrast.py)) | Alle Textpaare ≥ 4,5:1 (kleinster Wert: Personenfarbe 4 hell auf Grund 4,82:1, `textTertiary` hell auf Grund 4,87:1). Initialen auf Personen-Punkten: hell ≥ 5,26:1, dunkel ≥ 8,35:1. Rahmen `outline` gegen Karte nur 1,45:1 |
+| M5 | Kapazität des Speicherformats ([Probe](../../tools/quality-check/probes/CapacityProbe.kt)), JVM in der Cloud, nicht Handy | 1.000 Einträge: 456 KB JSON, Schreiben 10 ms, Lesen 38 ms. 5.000: 2,3 MB, 31 / 49 ms. 20.000: 9,2 MB, 75 / 138 ms. Ansichten (Eingang, Lastkarte, Demnächst, Suche) zusammen ≤ 26 ms bei 20.000 |
+| M6 | Fehlerinjektion: Speicher wirft beim Schreiben „No space left on device“ (Probe, inzwischen der Test `RepositoryRobustnessTest`) | Die Ausnahme verlässt den Speicher-Coroutine-Job. Auf Android (`MainScope()` ohne Handler) beendet das den Prozess. Mit Handler wird danach **nie wieder gespeichert**, auch wenn wieder Platz ist (1 Schreibversuch für 2 Änderungen) |
 | M7 | Code-Durchsicht aller App-Dateien (rund 4.000 Zeilen), CI-Workflow, Skripte | Befunde mit Datei und Zeile in Abschnitt 3 |
 
 Nicht gemessen (braucht ein Gerät oder das Android SDK): Kaltstart, Latenz Kachel bis Mikrofon auf echter Hardware, Speicher- und Akkuverbrauch, TalkBack-Durchgang, Layout bei 200 % Schrift. Diese stehen als Messaufgaben im Plan.
@@ -193,7 +193,7 @@ Sortiert nach Risiko. Jeder Punkt nennt Ziel, Abnahmekriterium und Werkzeug. Auf
 | --- | --- | --- | --- | --- | --- |
 | P0-1 | **Schreibfehler abfangen**: Speichern läuft in `runCatching` mit Wiederholung; Fehler wird als dauerhafter Hinweis gezeigt („Speichern fehlgeschlagen, Speicher voll?“); nächste Änderung versucht es erneut | `WriteFailureProbe` wird zum echten Test: nach einem Fehler und freiem Speicher sind beide Änderungen auf Platte, kein Absturz | `commonTest`, Fake-`TextStore` | Fehlertoleranz, Safety | 0,5 |
 | P0-2 | **Wiederherstellen absichern**: vorher automatischer Schnappschuss, danach 6-s-Rückgängig plus Eintrag „Vorigen Stand zurückholen“ in den Einstellungen; Warnung, wenn die Sicherung älter ist als der neueste Stempel auf dem Gerät | Test: Wiederherstellen einer älteren Sicherung, danach Rückgängig, Stand identisch zum Ausgang | `commonTest` | Benutzerfehlerschutz, Wiederherstellbarkeit | 1 |
-| P0-3 | **Sicherung verschlüsseln** mit dem Wiederherstellungscode (D7): Schlüssel aus Code per Argon2id, Inhalt XChaCha20-Poly1305 (libsodium, wie ADR 0003 für das Produkt verlangt). Bis dahin: Hinweis „Sicherung ist lesbar, nicht in geteilte Ordner legen“ | Test wie `PlaintextScanTest` im Sync-Spike: kein Titel, kein Name im Sicherungsbyte-Strom; Wiederherstellen mit falschem Code scheitert verständlich | libsodium-Bindung für KMP (Auswahl prüfen), `commonTest` | Vertraulichkeit | 2 |
+| P0-3 | **Sicherung verschlüsseln** mit dem Wiederherstellungscode (D7). Umgesetzt mit AES-256-GCM und HKDF-SHA256 aus dem JDK statt libsodium (siehe Abschnitt 6) | Test wie `PlaintextScanTest` im Sync-Spike: kein Titel, kein Name im Sicherungsbyte-Strom; Wiederherstellen mit falschem Code scheitert verständlich | libsodium-Bindung für KMP (Auswahl prüfen), `commonTest` | Vertraulichkeit | 2 |
 | P0-4 | **Fotos in die Sicherung** (ZIP mit JSON + Bildern) und **verwaiste Fotos löschen** beim Löschen eines Eintrags und beim Start | Test: Eintrag mit Foto löschen, Datei ist weg; Sicherung → Neuinstallation → Wiederherstellen, Foto sichtbar (Emulator-Skript) | `commonTest`, `emulator-smoke.sh` | Wiederherstellbarkeit, Ressourcen | 1 |
 | P0-5 | **Zurechenbarkeit**: `changedBy` (Mitglied) in jeden `Stamp`, `doneBy` am Eintrag; Anzeige „erledigt von Lisa“ und in der Lastkarte | Test: jede Repository-Aktion setzt `changedBy = selfId`; UI zeigt „von …“ bei Erledigtem | `commonTest` | Zurechenbarkeit (QA-6) | 1 |
 | P0-6 | **Grabsteine statt hartem Löschen** (ADR 0002 sieht sie vor). Ohne sie kommen gelöschte Einträge beim ersten Sync zurück | Test: Löschen erzeugt Grabstein mit Stempel; Ansichten zeigen nichts; Zusammenführen zweier Stände (vorbereitet) lässt Gelöschtes gelöscht | `commonTest` | Korrektheit, Integrität | 0,5 |
@@ -232,4 +232,28 @@ Sortiert nach Risiko. Jeder Punkt nennt Ziel, Abnahmekriterium und Werkzeug. Auf
 2. **Parallel als CI-PR:** P1-2 und P1-3 (Baseline, kein Code-Umbau nötig).
 3. **Danach:** P1-1 (Eskalation) und P1-4/P1-6 (Barrierefreiheit), dann Sync (P2-1, P2-2).
 
-Wiederholung dieser Bewertung: nach jedem Minor-Release die Messungen in [`messung/`](messung/) neu laufen lassen und die Tabelle in 1.3 fortschreiben.
+Wiederholung dieser Bewertung: nach jedem Minor-Release die Messungen in [`tools/quality-check/`](../../tools/quality-check/) neu laufen lassen und die Tabelle in 1.3 fortschreiben.
+
+## 6 Umsetzungsstand
+
+### 26.11.2026: P0 komplett, P1-2 und P1-3 als CI-Tor, Teile von P1-8
+
+Nils hat den Plan am 26.11. freigegeben („Go“).
+
+| # | Umgesetzt | Beleg |
+| --- | --- | --- |
+| P0-1 | `FamilyRepository.persist` fängt jeden Schreibfehler ab, `saveProblem` zeigt einen bleibenden Hinweis mit „Erneut speichern“; jede spätere Änderung versucht es wieder. `AndroidTextStore` räumt eine halb geschriebene Temp-Datei weg, der iOS-Speicher meldet Fehler statt sie zu verschlucken | `RepositoryRobustnessTest.failedWriteIsReportedAndLaterChangesAreSavedAgain`, `retrySaveWritesTheCurrentState` |
+| P0-2 | Vor dem Wiederherstellen wird der jetzige Stand als Datei aufbewahrt (`familyapp-vor-wiederherstellung.json`); 6 s Rückgängig und dauerhaft „Stand vor der Wiederherstellung zurückholen“ in den Einstellungen; Hinweis, wenn die Sicherung älter ist. Datensätze behalten beim Wiederherstellen ihre Stempel, damit eine alte Sicherung später keinen Sync gewinnt | `restoreOfAnOlderBackupWarnsAndCanBeUndone`, `stateBeforeRestoreCanBeBroughtBackLater`, `restoreKeepsStampsSoAnOldBackupCannotWinASync` |
+| P0-3 | Sicherung im Ordner ist verschlüsselt: Format „FAB1“, AES-256-GCM, Schlüssel per HKDF-SHA256 aus dem Wiederherstellungscode, Dateiname als zusätzliche Authentisierung. Der Code (20 Zeichen Crockford-Base32, rund 100 Bit) entsteht beim Wählen des Ordners und steht in den Einstellungen. Ein langsamer Passwort-Hash ist unnötig, weil der Code zufällig ist und kein ausgedachtes Passwort; das hält die Sicherung mit vielen Fotos schnell. Die alte lesbare `familyapp-sicherung.json` wird nach der ersten verschlüsselten Sicherung gelöscht, kann aber weiter wiederhergestellt werden | `BackupFolderTest` (u. a. `nothingReadableEndsUpInTheFolder`, `wrongOrMissingCodeIsReportedNotGuessed`, `changedFileIsRejected`) |
+| P0-4 | Fotos liegen verschlüsselt in `familyapp-fotos/` neben der Sicherung, jedes nur einmal geschrieben und entfernt, wenn kein Eintrag es mehr braucht. Wiederherstellen packt sie in den App-Speicher und biegt die Pfade um. Verwaiste Fotos im App-Speicher werden beim Start gelöscht (älter als 1 Stunde, damit Rückgängig in der Sitzung funktioniert) | `roundTripRestoresDataAndPhotos`, `unusedPhotosAndThePlainOldBackupAreRemoved`, `restoredPhotosPointToTheUnpackedFiles`, `orphanPhotosAreFoundButFreshOnesAreKept` |
+| P0-5 | `changedBy` an jedem Eintrag, `doneBy` beim Erledigen. Die Suche zeigt „erledigt von Lisa“, die Lastkarte zählt pro Person, was diese Woche erledigt wurde | `everyChangeRecordsWhoMadeIt`, `loadChartCountsWhatEachPersonFinishedThisWeek` |
+| P0-6 | Löschen eines Eintrags oder einer Person hinterlässt einen Grabstein ohne Inhalt; Rückgängig entfernt ihn wieder | `deleteLeavesATombstoneAndUndoRevivesTheItem`, `removingAMemberLeavesATombstone` |
+| P0-7 | Speicherformat jetzt `schema = 2`, `FamilyJson.decode` hebt ältere Dateien an und verweigert Dateien einer neueren App (statt beim nächsten Schreiben Felder zu verlieren). Golden File von Schema 1, erzeugt mit dem Code von `main` @ `fe577d5`. Emulator-Test prüft zusätzlich, dass ein Eintrag das Update übersteht | `FamilyJsonMigrationTest`, `emulator-smoke.sh` („Eintrag übersteht das Update“) |
+| P1-2, P1-3 | Workflow `quality.yml`: Tests, Abdeckungs-Untergrenze (Zeilen 88 %, Zweige 55 %) und detekt mit Baseline (280 Altbefunde), schlägt bei neuen Befunden fehl. Gegenprobe: eine Datei mit verschluckter Ausnahme lässt `detekt` scheitern | `tools/quality-check`, `gradle check` |
+| P1-8 (Teil) | Teilen nimmt nur `content://`-Adressen fremder Apps an und höchstens 20 MB; Fotonamen aus einer Sicherung können den Fotoordner nicht verlassen | `photoNamesFromABackupCannotEscapeThePhotoFolder`; Teilen-Prüfung nur im Code, Emulator-Test fehlt noch |
+
+Messwerte danach (`gradle check` am 26.11.2026): 112 App-Tests grün (vorher 86), Abdeckung Zeilen 89 %, Zweige 56 % (vorher 87 / 54).
+
+Abweichung vom Gestaltungsdoc: Der Wiederherstellungscode (D7) erscheint jetzt schon, wenn jemand einen Sicherungsordner wählt, nicht erst nach dem ersten Pairing. Ohne Code gäbe es keine verschlüsselte Sicherung. Die Karte „Sichere deinen Wiederherstellungscode“ nach Pairing oder 10 Einträgen bleibt für alle, die keinen Ordner gewählt haben.
+
+Noch offen aus P1: P1-1 Benachrichtigungen und Eskalation, P1-4 Compose-UI-Tests mit Barrierefreiheitsprüfung, P1-5 Datumsparser-Korpus, P1-6 Barrierefreiheit beheben, P1-7 Texte in Ressourcen, P1-8 Bedrohungsmodell, P1-9 FMEA, P1-10 Referenzmessung.

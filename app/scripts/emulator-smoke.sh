@@ -99,6 +99,9 @@ echo "-- Update-Probe (versionCode +1, gleicher Schlüssel) darüber installiere
 R="$(adb install -r "$PROBE" 2>&1)"; echo "$R"
 PROBE_VC="$(vc)"
 if echo "$R" | grep -q Success && [ "$PROBE_VC" -gt "$NEW_VC" ]; then pass "Update auf versionCode $PROBE_VC"; else fail "Update-Probe abgelehnt"; fi
+# Quality plan P0-7: data written before an update must still be there afterwards.
+adb shell am start -W -n "$PKG/.MainActivity" >/dev/null 2>&1
+wait_text "Hausschuhe b.s Donnerstag.*" 20 && pass "Eintrag übersteht das Update" || fail "Eintrag nach Update weg"
 
 echo
 [ $FAILED -eq 0 ] && echo "ERGEBNIS API $API: alle Prüfungen bestanden" || echo "ERGEBNIS API $API: mindestens eine Prüfung fehlgeschlagen"

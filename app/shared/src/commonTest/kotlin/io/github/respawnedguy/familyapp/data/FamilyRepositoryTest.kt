@@ -191,7 +191,7 @@ class FamilyRepositoryTest {
         r.capture("A", Source.TEXT)
         val backup = r.exportBackup()
         val other = repo()
-        assertNull(other.restoreBackup(backup))
+        assertNull(other.restoreBackup(backup).error)
         assertEquals(r.current.items, other.current.items)
         assertEquals(r.current.members, other.current.members)
         assertFalse(other.current.deviceId == r.current.deviceId)
@@ -200,8 +200,8 @@ class FamilyRepositoryTest {
     @Test
     fun restoreRejectsForeignFiles() = runTest {
         val r = family()
-        assertNotNull(r.restoreBackup("""{"hello":1}"""))
-        assertNotNull(r.restoreBackup("kein json"))
+        assertNotNull(r.restoreBackup("""{"hello":1}""").error)
+        assertNotNull(r.restoreBackup("kein json").error)
         assertEquals(3, r.current.members.size)
     }
 

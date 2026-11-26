@@ -346,13 +346,15 @@ fun ItemDialog(item: Item, model: AppModel, photos: PhotoLoader?, onClose: () ->
     )
 }
 
+/** Status with the person who finished it: done work is visible to everyone (P0-5). */
 @Composable
-fun StatusLabel(item: Item) {
+fun StatusLabel(item: Item, data: FamilyData? = null) {
     val c = LocalFamilyColors.current
+    val by = data?.member(item.doneBy)?.let { " von ${it.name}" }.orEmpty()
     val text = when (item.status) {
         ItemStatus.INBOX -> "im Eingang"
         ItemStatus.OPEN -> "offen"
-        ItemStatus.DONE -> "erledigt"
+        ItemStatus.DONE -> "erledigt$by"
         ItemStatus.IRRELEVANT -> "irrelevant"
     }
     Text(text, color = c.textTertiary, fontSize = 12.sp, modifier = Modifier.heightIn(min = 16.dp))
