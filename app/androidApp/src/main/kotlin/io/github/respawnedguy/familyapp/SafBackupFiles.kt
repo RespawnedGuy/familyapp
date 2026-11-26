@@ -5,6 +5,7 @@ import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.DocumentsContract.Document
 import io.github.respawnedguy.familyapp.data.BackupFiles
+import io.github.respawnedguy.familyapp.data.BoundedRead
 
 /**
  * [BackupFiles] over a folder the person picked with the Storage Access Framework (Synology Drive,
@@ -43,8 +44,9 @@ class SafBackupFiles(private val resolver: ContentResolver, private val tree: Ur
         return children(dir).filter { it.third != Document.MIME_TYPE_DIR }.map { it.second }
     }
 
+    /** Size-limited: the folder is shared with other devices and services (threat model OR-3). */
     override fun read(sub: String?, name: String): ByteArray? =
-        find(sub, name)?.let { uri -> resolver.openInputStream(uri)?.use { it.readBytes() } }
+        find(sub, name)?.let { uri -> resolver.openInputStream(uri)?.use { BoundedRead.readAtMost(it) } }
 
     override fun write(sub: String?, name: String, data: ByteArray) {
         val uri = find(sub, name)

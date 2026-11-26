@@ -30,10 +30,11 @@
         </intent>
     </queries>
 
-    <!-- Family data will be end-to-end encrypted; no unencrypted cloud backup. -->
+    <!-- No cloud backup and no copy to a new phone: the family key stays on the paired device (threat model GE-2). -->
     <application
         android:name=".FamilyApplication"
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:label="@string/app_name"

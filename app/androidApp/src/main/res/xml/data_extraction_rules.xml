@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+: allowBackup="false" stops the cloud backup, but not the transfer to a new phone
+  (cable or WLAN when setting it up). That would copy the family key and the device ID: two
+  phones with the same identity overwrite each other's file in the shared folder, and the key
+  leaves the paired device (threat model GE-2, docs/qualitaet/bedrohungsmodell.md).
+  A new phone starts empty and is paired by QR code; the data comes back by sync or backup.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>
