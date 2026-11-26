@@ -39,14 +39,18 @@ class AccessibilityTest {
         return model
     }
 
-    /** Everything tappable must offer at least 48 × 48 dp (Material; WCAG 2.5.8 asks 24 dp). */
+    /**
+     * Everything tappable must offer at least 48 × 48 dp (Material; WCAG 2.5.8 asks 24 dp).
+     * Uses the laid-out size, not the visible part: nodes cut off by the window edge or scrolled
+     * out of view are still checked at their real size.
+     */
     private fun ComposeUiTest.smallTouchTargets(): List<String> {
         val minPx = 47.5f * density.density
         return onAllNodes(hasClickAction()).fetchSemanticsNodes()
-            .filter { it.touchBoundsInRoot.width < minPx || it.touchBoundsInRoot.height < minPx }
+            .filter { it.size.width < minPx || it.size.height < minPx }
             .map { node ->
-                val w = node.touchBoundsInRoot.width / density.density
-                val h = node.touchBoundsInRoot.height / density.density
+                val w = node.size.width / density.density
+                val h = node.size.height / density.density
                 "${label(node)} (${w.toInt()} × ${h.toInt()} dp)"
             }
     }

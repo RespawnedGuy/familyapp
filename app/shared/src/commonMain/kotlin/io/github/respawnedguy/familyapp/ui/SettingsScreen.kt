@@ -102,7 +102,7 @@ fun SettingsScreen(data: FamilyData, model: AppModel, updates: UpdateController?
         SettingsGroup("Erinnerungen") {
             // Whole row is one switch for screen readers and a large touch target (P1-6).
             Row(
-                Modifier.fillMaxWidth().toggleable(
+                Modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(
                     value = s.remindersOn,
                     role = Role.Switch,
                     onValueChange = { model.setRemindersOn(it) },
