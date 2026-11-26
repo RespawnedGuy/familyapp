@@ -144,7 +144,8 @@ class SyncController(
             },
             scope.launch {
                 // Own changes go out shortly after they happen, while the other device is still open.
-                repo.data.map { Triple(it.members, it.items, it.tombstones) }.distinctUntilChanged().drop(1)
+                repo.data.map { listOf(it.members, it.items, it.tombstones, it.recipes, it.shopping) }
+                    .distinctUntilChanged().drop(1)
                     .debounce(CHANGE_DELAY_MS).collect { syncAll() }
             },
         )

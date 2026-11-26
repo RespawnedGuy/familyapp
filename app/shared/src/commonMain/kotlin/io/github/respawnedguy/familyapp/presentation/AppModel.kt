@@ -14,6 +14,7 @@ import io.github.respawnedguy.familyapp.domain.Metric
 import io.github.respawnedguy.familyapp.domain.MetricSummary
 import io.github.respawnedguy.familyapp.domain.ResourceUsage
 import io.github.respawnedguy.familyapp.domain.Source
+import io.github.respawnedguy.familyapp.domain.recipe.RecipeImport
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.withContext
@@ -70,6 +71,9 @@ class AppModel(
     private val _capture = MutableStateFlow<CaptureState>(CaptureState.Closed)
     val capture: StateFlow<CaptureState> = _capture.asStateFlow()
 
+    /** Kitchen library: recipes, cooking mode, shopping list (docs/kochbibliothek.md). */
+    val kitchen = KitchenModel(repo, platform) { message, undo -> show(message, undo) }
+
     /** Pending latency measurement: which trigger, started when (monotonic ms). */
     private var latencyStart: Pair<String, Long>? = null
 
@@ -86,17 +90,20 @@ class AppModel(
 
     fun select(tab: Tab) {
         _settingsOpen.value = false
+        kitchen.close()
         _tab.value = tab
     }
 
     fun openSettings() {
+        kitchen.close()
         _settingsOpen.value = true
     }
 
-    /** System back: sheet, then settings, then back to "Heute". False means: leave the app. */
+    /** System back: sheet, then settings, then the kitchen, then back to "Heute". False means: leave the app. */
     fun handleBack(): Boolean = when {
         _capture.value != CaptureState.Closed -> { dismissCapture(); true }
         _settingsOpen.value -> { _settingsOpen.value = false; true }
+        kitchen.back() -> true
         _tab.value != Tab.TODAY -> { _tab.value = Tab.TODAY; true }
         else -> false
     }
@@ -304,13 +311,21 @@ class AppModel(
      */
     fun captureShared(text: String?, photoPath: String?, rejected: ShareRejection? = null) {
         if (repo.current.selfId == null) return
-        if (text.isNullOrBlank() && photoPath == null) {
-            rejected?.let { show("Bild nicht übernommen. ${it.reason}") }
-            return
+        when {
+            text.isNullOrBlank() && photoPath == null -> rejected?.let { show("Bild nicht übernommen. ${it.reason}") }
+            // A recipe (caption with ingredients and steps, or an Instagram post link) goes to the
+            // kitchen library as a suggestion instead of the inbox; undo is on the feedback bar.
+            text != null && isSharedRecipe(text, photoPath, rejected) -> kitchen.recipes.importShared(text)
+            else -> {
+                val message = rejected?.let { "Gespeichert ohne Bild. ${it.reason}" } ?: SAVED
+                save(text.orEmpty(), Source.SHARE, photoPath, message)
+            }
         }
-        val message = rejected?.let { "Gespeichert ohne Bild. ${it.reason}" } ?: SAVED
-        save(text.orEmpty(), Source.SHARE, photoPath, message)
     }
+
+    /** Only plain text can be a recipe; a shared image always stays a capture with its photo. */
+    private fun isSharedRecipe(text: String, photoPath: String?, rejected: ShareRejection?): Boolean =
+        photoPath == null && rejected == null && RecipeImport.isRecipe(text)
 
     private fun save(text: String, source: Source, photoPath: String? = null, message: String = SAVED) {
         val item = repo.capture(text, source, photoPath)
@@ -422,7 +437,7 @@ class AppModel(
     private fun startAutoBackup() {
         scope.launch {
             // Only real family data triggers a backup; recording the backup itself must not loop.
-            repo.data.map { Triple(it.selfId, it.members, it.items) }
+            repo.data.map { listOf(it.selfId, it.members, it.items, it.recipes, it.shopping) }
                 .distinctUntilChanged()
                 .drop(1)
                 .debounce(AUTO_BACKUP_DELAY_MS)

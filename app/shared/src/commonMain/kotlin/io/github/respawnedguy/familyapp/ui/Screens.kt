@@ -176,6 +176,8 @@ fun FamilyScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reduce
     val shown = data.members.filter { filter == null || it.id == filter }
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = ListPadding) {
+        // Kitchen library lives under "Familie", without a tab of its own (docs/kochbibliothek.md).
+        item { KitchenEntryCard(data, model) }
         item(key = "load") {
             Column(
                 Modifier.fillMaxWidth().padding(top = 12.dp).clip(RoundedCornerShape(16.dp)).background(c.card).padding(16.dp),

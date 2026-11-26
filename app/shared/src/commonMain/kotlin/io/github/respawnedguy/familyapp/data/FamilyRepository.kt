@@ -17,7 +17,10 @@ import io.github.respawnedguy.familyapp.domain.PERSON_COLOR_COUNT
 import io.github.respawnedguy.familyapp.domain.RecordKind
 import io.github.respawnedguy.familyapp.domain.Settings
 import io.github.respawnedguy.familyapp.domain.Source
+import io.github.respawnedguy.familyapp.domain.Stamp
 import io.github.respawnedguy.familyapp.domain.Tombstone
+import io.github.respawnedguy.familyapp.domain.recipe.Recipe
+import io.github.respawnedguy.familyapp.domain.recipe.ShoppingEntry
 import io.github.respawnedguy.familyapp.domain.readyToConfirm
 import io.github.respawnedguy.familyapp.sync.SyncMerge
 import io.github.respawnedguy.familyapp.sync.SyncRecords
@@ -39,6 +42,8 @@ class Undo internal constructor(
     internal val itemsBefore: Map<String, Item?>,
     internal val membersBefore: Map<String, Member?> = emptyMap(),
     internal val wholeBefore: FamilyData? = null,
+    internal val recipesBefore: Map<String, Recipe?> = emptyMap(),
+    internal val shoppingBefore: Map<String, ShoppingEntry?> = emptyMap(),
 )
 
 /** Result of restoring a backup: an error text, or the undo handle plus a note for the person. */
@@ -87,7 +92,7 @@ class FamilyRepository(
         }
         val initial = loaded ?: FamilyData(deviceId = newId())
         clock = HybridClock(initial.deviceId, now)
-        (initial.members.map { it.stamp } + initial.items.map { it.stamp }).forEach(clock::observe)
+        allStamps(initial).forEach(clock::observe)
         _data = MutableStateFlow(initial)
         data = _data.asStateFlow()
         scope.launch(ioDispatcher) {
@@ -120,6 +125,18 @@ class FamilyRepository(
     private fun update(change: (FamilyData) -> FamilyData) {
         _data.value = change(_data.value)
     }
+
+    /** The kitchen library: recipes and the shopping list, on the same state and clock. */
+    val recipeStore: RecipeRepository by lazy { RecipeRepository(this) }
+    val shoppingStore: ShoppingRepository by lazy { ShoppingRepository(this) }
+
+    internal fun edit(change: (FamilyData) -> FamilyData) = update(change)
+
+    internal fun tick(): Stamp = clock.tick()
+
+    internal fun nextId(): String = newId()
+
+    internal fun day(): LocalDate = today()
 
     // ---- Family and members ------------------------------------------------------------------
 
@@ -300,7 +317,13 @@ class FamilyRepository(
             }
             // A record that comes back must not stay marked as deleted.
             val revived = undo.itemsBefore.filterValues { it != null }.keys + undo.membersBefore.filterValues { it != null }.keys
-            d.copy(items = items, members = members, tombstones = d.tombstones.filterNot { it.id in revived })
+            d.copy(
+                items = items,
+                members = members,
+                tombstones = d.tombstones.filterNot { it.id in revived },
+                recipes = recipeStore.revert(d.recipes, undo.recipesBefore),
+                shopping = shoppingStore.revert(d.shopping, undo.shoppingBefore),
+            )
         }
     }
 
@@ -310,7 +333,7 @@ class FamilyRepository(
      * edits on other devices. The clock has seen all stamps, so the next local change is newer.
      */
     private fun restoreWhole(before: FamilyData) {
-        (before.members.map { it.stamp } + before.items.map { it.stamp } + before.tombstones.map { it.stamp }).forEach(clock::observe)
+        allStamps(before).forEach(clock::observe)
         update {
             before.copy(
                 deviceId = it.deviceId,
@@ -412,8 +435,11 @@ class FamilyRepository(
         return if (newestBackup < newestHere) "Achtung: Die Sicherung ist älter als die Daten auf diesem Handy." else null
     }
 
-    private fun newestStamp(d: FamilyData): Long? =
-        (d.members.map { it.stamp.wallMs } + d.items.map { it.stamp.wallMs } + d.tombstones.map { it.stamp.wallMs }).maxOrNull()
+    private fun newestStamp(d: FamilyData): Long? = allStamps(d).maxOfOrNull { it.wallMs }
+
+    private fun allStamps(d: FamilyData): List<Stamp> =
+        d.members.map { it.stamp } + d.items.map { it.stamp } + d.tombstones.map { it.stamp } +
+            d.recipes.map { it.stamp } + d.shopping.map { it.stamp }
 
     // ---- Sync between family devices (ADR 0003, ADR 0006) ---------------------------------------
 
@@ -451,6 +477,8 @@ class FamilyRepository(
         records.members.forEach { clock.observe(it.stamp) }
         records.items.forEach { clock.observe(it.stamp) }
         records.tombstones.forEach { clock.observe(it.stamp) }
+        records.recipes.forEach { clock.observe(it.stamp) }
+        records.shopping.forEach { clock.observe(it.stamp) }
     }
 
     companion object {

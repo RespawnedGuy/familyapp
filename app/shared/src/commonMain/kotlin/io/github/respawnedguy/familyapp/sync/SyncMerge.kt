@@ -6,16 +6,24 @@ import io.github.respawnedguy.familyapp.domain.Item
 import io.github.respawnedguy.familyapp.domain.Member
 import io.github.respawnedguy.familyapp.domain.Stamp
 import io.github.respawnedguy.familyapp.domain.Tombstone
+import io.github.respawnedguy.familyapp.domain.recipe.Recipe
+import io.github.respawnedguy.familyapp.domain.recipe.ShoppingEntry
 import kotlinx.serialization.Serializable
 
-/** Members, items and tombstones one device sends another: only what the other side lacks. */
+/**
+ * Records one device sends another: only what the other side lacks. Recipes and shopping entries
+ * are extra fields that older app versions skip when reading (ignoreUnknownKeys), so a family can
+ * update one phone after the other.
+ */
 @Serializable
 data class SyncRecords(
     val members: List<Member> = emptyList(),
     val items: List<Item> = emptyList(),
     val tombstones: List<Tombstone> = emptyList(),
+    val recipes: List<Recipe> = emptyList(),
+    val shopping: List<ShoppingEntry> = emptyList(),
 ) {
-    val size: Int get() = members.size + items.size + tombstones.size
+    val size: Int get() = members.size + items.size + tombstones.size + recipes.size + shopping.size
 }
 
 /**
@@ -39,6 +47,8 @@ object SyncMerge {
         data.members.forEach { put(it.id, it.stamp) }
         data.items.forEach { put(it.id, it.stamp) }
         data.tombstones.forEach { put(it.id, it.stamp) }
+        data.recipes.forEach { put(it.id, it.stamp) }
+        data.shopping.forEach { put(it.id, it.stamp) }
         return out
     }
 
@@ -53,6 +63,8 @@ object SyncMerge {
             members = data.members.filter { wanted(it.id, it.stamp) },
             items = data.items.filter { wanted(it.id, it.stamp) },
             tombstones = data.tombstones.filter { wanted(it.id, it.stamp) },
+            recipes = data.recipes.filter { wanted(it.id, it.stamp) },
+            shopping = data.shopping.filter { wanted(it.id, it.stamp) },
         )
     }
 
@@ -101,15 +113,41 @@ object SyncMerge {
                 changed++
             }
         }
+        // Deleting a recipe or entry is a newer version with deleted = true, so plain last-writer-wins covers it.
+        val (recipes, recipesChanged) = newestWins(data.recipes, incoming.recipes, Recipe::id, Recipe::stamp)
+        val (shopping, shoppingChanged) =
+            newestWins(data.shopping, incoming.shopping, ShoppingEntry::id, ShoppingEntry::stamp)
+        changed += recipesChanged + shoppingChanged
         if (changed == 0) return Applied(data, 0)
         return Applied(
             data.copy(
                 members = members.values.toList(),
                 items = items.values.toList(),
                 tombstones = tombstones.values.toList(),
+                recipes = recipes,
+                shopping = shopping,
             ),
             changed,
         )
+    }
+
+    /** Last writer wins per id for records that delete themselves (recipes, shopping entries). */
+    private fun <T> newestWins(
+        local: List<T>,
+        incoming: List<T>,
+        id: (T) -> String,
+        stamp: (T) -> Stamp,
+    ): Pair<List<T>, Int> {
+        val byId = local.associateByTo(LinkedHashMap(), id)
+        var changed = 0
+        incoming.forEach { record ->
+            val known = byId[id(record)]
+            if (known == null || stamp(record) > stamp(known)) {
+                byId[id(record)] = record
+                changed++
+            }
+        }
+        return byId.values.toList() to changed
     }
 
     /** Photo file names that items here point to, for asking another device for missing files. */
@@ -144,11 +182,25 @@ object SyncMerge {
                 stamp = restamp(),
             )
         }
-        val familyIds = (family.members.map { it.id } + family.items.map { it.id }).toSet()
+        val recipes = local.recipes.map { r ->
+            r.copy(createdBy = map(r.createdBy) ?: r.createdBy, changedBy = map(r.changedBy), stamp = restamp())
+        }
+        val shopping = local.shopping.map { e ->
+            e.copy(
+                createdBy = map(e.createdBy) ?: e.createdBy,
+                changedBy = map(e.changedBy),
+                checkedBy = map(e.checkedBy),
+                stamp = restamp(),
+            )
+        }
+        val familyIds = (family.members.map { it.id } + family.items.map { it.id } +
+            family.recipes.map { it.id } + family.shopping.map { it.id }).toSet()
         return local.copy(
             selfId = selfMemberId,
             members = family.members + keptMembers.filter { it.id !in familyIds },
             items = family.items + carried.filter { it.id !in familyIds },
+            recipes = family.recipes + recipes.filter { it.id !in familyIds },
+            shopping = family.shopping + shopping.filter { it.id !in familyIds },
             tombstones = family.tombstones + local.tombstones.filter { t -> family.tombstones.none { it.id == t.id } },
         )
     }
