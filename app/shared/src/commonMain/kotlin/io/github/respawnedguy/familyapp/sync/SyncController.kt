@@ -532,6 +532,11 @@ class SyncController(
             fail(e.message ?: "Kopplung fehlgeschlagen.")
         } catch (e: SyncAuthException) {
             fail("Kopplung fehlgeschlagen: ${e.message}")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (@Suppress("TooGenericExceptionCaught", "SwallowedException") e: Exception) {
+            // Reached, but the connection broke or timed out: not "unreachable".
+            fail("Die Verbindung zu ${inv.inviterName}s Gerät ist abgebrochen. Bitte neu koppeln.")
         } finally {
             raw.close()
         }

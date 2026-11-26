@@ -92,13 +92,14 @@ else
   fail "Prüfzahlen fehlen oder unterscheiden sich"
 fi
 seen "Hausgerät \(keine Person\)" && pass "Hausgerät als Besitzer angeboten" || fail "Auswahl \"Hausgerät\" fehlt"
-tap_text "Stimmt" 5
+# Small screens: the buttons sit below the owner choices.
+scroll_to "Stimmt" && tap_text "Stimmt" 5
 wait "$JOIN_PID"; JOIN_EXIT=$?
 cat "$OUT/peer-join-api$API.txt"
 [ $JOIN_EXIT -eq 0 ] && pass "Hausgerät ist gekoppelt" || fail "Hausgerät meldet Fehler beim Koppeln (Exit $JOIN_EXIT)"
 wait_text "Gekoppelt" 15 && pass "App meldet \"Gekoppelt\"" || fail "App zeigt kein \"Gekoppelt\""
-tap_text "Fertig" 10
-scroll_to ".*CI-Hausgeraet.*" && pass "Hausgerät steht in der Geräteliste" || fail "Hausgerät fehlt in der Geräteliste"
+scroll_to "Fertig" && tap_text "Fertig" 5
+scroll_to "(?!.*möchte).*CI-Hausgeraet.*" && pass "Hausgerät steht in der Geräteliste" || fail "Hausgerät fehlt in der Geräteliste"
 
 echo "-- Abgleich in beide Richtungen"
 "$PEER" add "$HOUSE" "Turnbeutel packen" >/dev/null
