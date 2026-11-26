@@ -117,9 +117,9 @@ fun SettingsScreen(data: FamilyData, model: AppModel, updates: UpdateController?
                 Column(Modifier.weight(1f)) {
                     Text("An Fristen erinnern", fontSize = 15.sp, color = c.text)
                     Text(
-                        "Um 8 Uhr am Tag der Frist und am Tag danach, wenn sie noch offen ist. " +
-                            "Ist sie dann immer noch offen, erfahren es alle. " +
-                            "Mehrere Fristen kommen als eine Nachricht.",
+                        "Höchstens eine Nachricht am Tag, um 8 Uhr, wenn eine Frist fällig oder abgelaufen ist. " +
+                            "Was genau, steht beim Öffnen unter „Heute wichtig“. " +
+                            "Bleibt eine Frist liegen, erfahren es einen Tag später alle.",
                         fontSize = 12.sp, color = c.textTertiary,
                     )
                 }

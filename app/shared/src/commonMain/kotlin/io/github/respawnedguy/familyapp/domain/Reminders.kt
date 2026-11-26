@@ -20,26 +20,22 @@ enum class ReminderKind {
 
 data class Reminder(val itemId: String, val title: String, val kind: ReminderKind, val at: LocalDateTime)
 
-/** One notification for everything that falls due at the same moment (bundling, QA-9). */
+/**
+ * One notification for everything that falls due at the same moment. Nils, 26.11.2026: as few
+ * system notifications as possible, never one per item; the details wait in the app, so the
+ * person decides when to sit down and organise instead of hearing a constant background hum.
+ * Hence a short title, no item titles (also nothing private on the lock screen).
+ */
 data class ReminderBundle(val at: LocalDateTime, val reminders: List<Reminder>) {
     val title: String
         get() = when {
-            reminders.size > 1 -> "${reminders.size} Fristen brauchen einen Blick"
-            reminders.single().kind == ReminderKind.DUE_TODAY -> "Heute fällig: ${reminders.single().title}"
-            else -> "Frist abgelaufen: ${reminders.single().title}"
+            reminders.size > 1 -> "${reminders.size} Fristen brauchen heute einen Blick"
+            reminders.single().kind == ReminderKind.DUE_TODAY -> "Dringende Frist heute"
+            else -> "Eine Frist ist abgelaufen"
         }
 
     /** Neutral wording (ADR 0003): this device may not know yet that someone else finished it. */
-    val text: String
-        get() = if (reminders.size == 1) {
-            when (reminders.single().kind) {
-                ReminderKind.DUE_TODAY -> "Du kümmerst dich darum."
-                ReminderKind.MISSED -> "Die Frist war gestern. Stand prüfen oder neues Datum setzen."
-                ReminderKind.ESCALATED -> "Die Frist ist abgelaufen. Stand prüfen."
-            }
-        } else {
-            reminders.joinToString(" · ") { it.title }
-        }
+    val text: String get() = "Details siehst du in der App."
 }
 
 /**
@@ -50,7 +46,8 @@ data class ReminderBundle(val at: LocalDateTime, val reminders: List<Reminder>) 
  * Rules that keep it from becoming new mental load:
  * - only items with a date, only while open or still in the inbox (done/irrelevant never remind),
  * - at most three reminders per item, never daily nagging,
- * - all reminders at [hour] in the morning, so nothing arrives in the quiet hours (21–7 h).
+ * - all reminders at [hour] in the morning, so nothing arrives in the quiet hours (21–7 h),
+ * - everything of one morning is a single notification, so at most one per day.
  */
 class ReminderPlanner(private val hour: Int = 8) {
 
@@ -78,6 +75,28 @@ class ReminderPlanner(private val hour: Int = 8) {
     fun dueBetween(data: FamilyData, after: LocalDateTime?, now: LocalDateTime): List<ReminderBundle> =
         all(data).filter { it.at <= now && (after == null || it.at > after) && (after != null || it.at == now) }
             .groupBy { it.at }.map { (at, list) -> ReminderBundle(at, list) }
+
+    /**
+     * What the app shows on top of "Heute" when it is opened: per item the latest stage reached by
+     * [today], so the same rules decide what is urgent in the app and in the notification.
+     */
+    fun urgent(data: FamilyData, today: LocalDate): List<Reminder> =
+        all(data).filter { it.at.date <= today }.groupBy { it.itemId }.map { (_, list) -> list.last() }
+            .sortedWith(compareBy<Reminder> { it.kind == ReminderKind.ESCALATED }.thenBy { it.at })
+
+    /** One line under "Heute wichtig": why the item is listed, without blame. */
+    fun reason(reminder: Reminder, data: FamilyData): String {
+        val item = data.items.firstOrNull { it.id == reminder.itemId }
+        val due = item?.due?.let { "Frist war " + DateFormat.short(it) } ?: "Frist abgelaufen"
+        return when (reminder.kind) {
+            ReminderKind.DUE_TODAY -> "heute fällig, bei dir"
+            ReminderKind.MISSED -> "$due, bei dir"
+            ReminderKind.ESCALATED -> {
+                val who = item?.takeIf { it.status == ItemStatus.OPEN }?.let { data.member(it.assignee) }
+                if (who == null) "$due, noch niemand zuständig" else "$due, ${who.name} kümmert sich"
+            }
+        }
+    }
 
     /** When the next reminder falls due after [now], or null if there is none. */
     fun next(data: FamilyData, now: LocalDateTime): LocalDateTime? = all(data).firstOrNull { it.at > now }?.at

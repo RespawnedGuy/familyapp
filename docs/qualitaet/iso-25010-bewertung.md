@@ -63,9 +63,10 @@ Die Grundsätze aus [KONZEPT.md](../KONZEPT.md) und den Entscheidungen von Nils,
 | QA-6 | Transparenz: Jede Statusänderung ist einer Person zuordenbar (wer hat erledigt, wer übernommen) | Security: Zurechenbarkeit | Unit-Test | **Lücke**: `Item` hat `createdBy`, aber kein `doneBy`/`changedBy`; `Stamp` kennt nur das Gerät |
 | QA-7 | Fehlbedienung ist ohne Dialog rückgängig zu machen | Benutzerfehlerschutz | Unit-Test | erfüllt für Karten (6-s-Rückgängig), **nicht** für „Wiederherstellen“ |
 | QA-8 | ≥ 80 % der Vorschläge ohne Änderung bestätigt (ohne Cloud-KI) | Funktionale Angemessenheit | Telemetrie lokal | Ein-Tap-Quote wird in den Einstellungen gezählt, Ziel dort 70 %; Abweichung zum Konzept (80 %) klären |
-| QA-9 | Die App darf keinen neuen Mental Load erzeugen: Benachrichtigungen gebündelt, Ruhezeiten, Eskalation erst Zuständige, +1 Tag alle | Safety: Gefahrenwarnung; Nutzerbindung | Unit-Test mit Fake-Uhr | **fehlt** (keine Benachrichtigungen im Code) |
+| QA-9 | Die App darf keinen neuen Mental Load erzeugen: Benachrichtigungen gebündelt, Ruhezeiten, Eskalation erst Zuständige, +1 Tag alle | Safety: Gefahrenwarnung; Nutzerbindung | Unit-Test mit Fake-Uhr | erfüllt seit P1-1 (`ReminderPlannerTest`), siehe Abschnitt 6 |
 | QA-10 | Alles wirkt ohne Cloud-KI und ohne Server; Spracherkennung standardmäßig auf dem Gerät | Vertraulichkeit, Verfügbarkeit | Code-Prüfung, APK-Prüfung | erfüllt (`allowOnlineSpeech = false`, einzige Internetnutzung ist der Updater) |
 | QA-11 | Beide Erwachsene sehen denselben Stand (Sync) | Funktionale Vollständigkeit, Interoperabilität | Konvergenztest | **fehlt in der App** (Spike vorhanden) |
+| QA-12 | So wenig Benachrichtigungen wie möglich: höchstens eine Systemnachricht pro Tag, ohne Eintragsdetails; Wichtiges beim Öffnen der App (Nils, 26.11.2026) | Interaktionsfähigkeit, Sicherheit (Gefahrlosigkeit) | Test mit Fake-Uhr: ≤ 1 Nachricht pro Tag | erfüllt (`ReminderPlannerTest`) |
 
 QA-6, QA-9 und QA-11 sind die drei Stellen, an denen die App das Kernversprechen gegen Mental Load noch nicht halten kann. Ohne Sync pflegt eine Person die App für alle, also genau das Risiko „App wird zur Managerin-Rolle“ aus dem Konzept.
 
@@ -265,8 +266,8 @@ Nils hat P1 am 26.11. gestartet („go“).
 | Frist fällig → Zuständige | Wer sich kümmert, bekommt um 8 Uhr am Tag der Frist „Heute fällig: …“ und, falls noch offen, am Tag danach „Frist abgelaufen“ | `ownDeadlineRemindsOnTheDayAndOnceMoreWhenMissed` |
 | +1 Tag → alle | Alle anderen Geräte, die die Frist kennen, melden sie einen Tag nach der verpassten Frist (Tag +2). Hat niemand die Karte übernommen oder liegt sie noch im Eingang, melden alle gleich am Tag +1 | `someoneElsesDeadlineReachesMeOneDayAfterItWasMissed`, `deadlineWithoutAnyoneInChargeReachesEveryoneRightAfterIt` |
 | Kein Nörgeln | Höchstens drei Meldungen pro Eintrag, nie täglich; Erledigtes, Irrelevantes und Einträge ohne Datum melden nie; alles um 8 Uhr, also nie in der Ruhezeit 21–7 Uhr | `finishedDismissedAndUndatedItemsNeverRemind`, `nothingArrivesInTheQuietHours` |
-| Bündelung | Was zur selben Zeit fällig ist, kommt als eine Meldung („2 Fristen brauchen einen Blick“); eine feste Meldungs-ID ersetzt die vorige statt zu stapeln. War das Handy aus, fasst der nächste Lauf alles Verpasste zu einer Meldung zusammen, je Eintrag nur der neueste Stand | `remindersAtTheSameMomentAreBundledIntoOne`, `runsMissedWhileThePhoneWasOffBecomeOneNotificationWithTheNewestStatePerItem` |
-| Neutraler Text | „Stand prüfen“ statt Vorwurf, weil das Gerät ohne Sync nicht wissen kann, ob jemand anderes es schon erledigt hat | `singleReminderTextIsNeutral` |
+| Bündelung | Was zur selben Zeit fällig ist, kommt als eine Meldung („2 Fristen brauchen heute einen Blick“); eine feste Meldungs-ID ersetzt die vorige statt zu stapeln. War das Handy aus, fasst der nächste Lauf alles Verpasste zu einer Meldung zusammen, je Eintrag nur der neueste Stand | `remindersAtTheSameMomentAreBundledIntoOne`, `runsMissedWhileThePhoneWasOffBecomeOneNotificationWithTheNewestStatePerItem` |
+| Neutraler Text | Kein Vorwurf, weil das Gerät ohne Sync nicht wissen kann, ob jemand anderes es schon erledigt hat | `notificationIsShortNeutralAndNamesNoItem` |
 | Kein Altlasten-Schwall | Beim ersten Lauf wird nur „jetzt“ als geprüft vermerkt; alte Fristen melden sich nicht nachträglich | `firstRunShowsNothingOldButPlansTheNextAlarm` |
 | Erlaubnis im richtigen Moment | Android 13+ fragt einmal, wenn die erste Frist bestätigt wird, nicht beim ersten Start; nie, wenn Erinnerungen aus sind | `notificationPermissionIsAskedOnceWhenTheFirstDeadlineIsConfirmed`, `switchedOffRemindersNeverAskForThePermission` |
 | Abschaltbar | Einstellungen → „An Fristen erinnern“ (ganze Zeile ist ein Schalter); aus = kein Wecker, keine Meldung | `switchedOffMeansNoNotificationAndNoAlarm` |
@@ -277,4 +278,31 @@ Grenzen: Ohne Sync erinnert ein Gerät nur an Fristen, die es selbst kennt; bis 
 
 Messwerte danach (`gradle check`): 127 App-Tests grün, Abdeckung Zeilen 89 %, Zweige 57 %.
 
-Noch offen aus P1: P1-4 Compose-UI-Tests mit Barrierefreiheitsprüfung, P1-5 Datumsparser-Korpus, P1-6 Barrierefreiheit beheben, P1-7 Texte in Ressourcen, P1-8 Bedrohungsmodell, P1-9 FMEA, P1-10 Referenzmessung.
+Nachgeschärft am 26.11.2026 nach Nils' Prämisse „so wenig Benachrichtigungen wie möglich; wichtige Infos beim Starten der App, nicht über den Tag verteilt; bewusst organisieren statt Hintergrundrauschen“ (QA-12, neu):
+
+| Regel | Umsetzung | Beleg |
+| --- | --- | --- |
+| Höchstens eine Systemnachricht pro Tag | Alle Stufen fallen auf 8 Uhr und werden zu einer Nachricht gebündelt; zehn Fristen in allen Stufen ergeben pro Morgen höchstens eine | `atMostOneNotificationPerDayWhateverTheStages` |
+| Kurz, ohne Einzelheiten | Nur „Dringende Frist heute“, „Eine Frist ist abgelaufen“ oder „N Fristen brauchen heute einen Blick“, dazu „Details siehst du in der App.“ Kein Eintragstitel, also auch nichts Privates auf dem Sperrbildschirm | `notificationIsShortNeutralAndNamesNoItem` |
+| Details beim Öffnen | Oben auf „Heute“ steht die Karte „Heute wichtig“ mit jeder dringenden Frist und dem Grund („heute fällig, bei dir“, „Frist war Mi 25.11., Lisa kümmert sich“, „noch niemand zuständig“). Dieselben Regeln wie die Nachricht, nur der neueste Stand je Eintrag, eigene zuerst | `appShowsTheLatestStagePerItemOwnThingsFirst`, `appLinesSayWhyWithoutBlame` |
+| Eskalationsstufen | Bleiben als Regel, wer wann davon erfährt, erzeugen aber keine eigene Nachricht mehr, sondern zählen in der einen Morgennachricht mit | wie oben |
+
+QA-12 (neu): Die App sendet höchstens eine Systemnachricht pro Tag und Gerät, ohne Eintragsdetails; alles Weitere zeigt sie beim Öffnen. Messgröße: Nachrichten pro Tag ≤ 1 (Test mit Fake-Uhr).
+
+### 26.11.2026: P1-6 Barrierefreiheit, P1-4 begonnen
+
+| Lücke aus 3.4 | Umsetzung |
+| --- | --- |
+| Chips 40 dp | Entscheidungs-Chips mindestens 48 dp hoch; ebenso Kartentitel, Schalterzeilen, Personenart im Personendialog (jetzt eine Radiogruppe) und Farbfelder (44 → 48 dp) |
+| Feste Höhe der unteren Leiste | Mindesthöhe 80 dp statt fester Höhe, ebenso die untere Zeile im Erfassen-Blatt |
+| Rückmeldeleiste ohne Ansage | Höfliche Live-Region; TalkBack sagt „Gespeichert.“ an (WCAG 4.1.3) |
+| Feste 6 s für „Rückgängig“ | Anzeigedauer über die empfohlene Zeit des Systems (`calculateRecommendedTimeoutMillis`, Android-Einstellung „Zeit zum Reagieren“), WCAG 2.2.1 |
+| Tabs ohne Auswahl | Tabs sind `selectable` mit `Role.Tab`; TalkBack sagt „ausgewählt“ |
+| Keine Überschriften | Abschnitts- und Einstellungstitel sind Überschriften; mit TalkBack springt man von Abschnitt zu Abschnitt |
+| Radio-Zeilen | „Erster Tap auf Erfassen“ ist eine Radiogruppe, die ganze Zeile ist das Ziel |
+
+Prüfung (Anfang von P1-4): `AccessibilityTest` in `app/shared/src/jvmTest` stellt die echten Bildschirme „Heute“ und „Einstellungen“ mit Beispieldaten in einem 411 dp breiten Fenster dar. Er prüft, dass jedes antippbare Element mindestens 48 × 48 dp Tippfläche hat, dass genau der aktive Tab als ausgewählt gilt, dass es Überschriften gibt und dass die Rückmeldung in einer Live-Region steht. Läuft im CI-Job `build` (`:shared:jvmTest`). Der erste Lauf fand echte Lücken (Schalterzeile 24 dp, Personenart als kleiner Text), die jetzt behoben sind.
+
+Noch nicht geprüft: Prüfungen des Accessibility Test Framework auf Android (Kontrast, Beschriftung) und Screenshots bei Schriftgröße 2,0; beides braucht den Emulator-Job. Ein TalkBack-Durchgang durch Nils steht aus.
+
+Noch offen aus P1: P1-4 Rest (Android-Prüfungen, Screenshots bei 200 % Schrift), P1-5 Datumsparser-Korpus, P1-7 Texte in Ressourcen, P1-8 Bedrohungsmodell, P1-9 FMEA, P1-10 Referenzmessung.

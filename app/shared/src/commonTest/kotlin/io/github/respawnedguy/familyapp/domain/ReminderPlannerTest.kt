@@ -51,7 +51,7 @@ class ReminderPlannerTest {
         val d = data(item("a", "nils"), item("b", "nils"), item("c", "lisa"))
         val bundles = planner.dueBetween(d, after = at(26, 20), now = at(27, 9))
         assertEquals(1, bundles.size)
-        assertEquals("2 Fristen brauchen einen Blick", bundles.single().title)
+        assertEquals("2 Fristen brauchen heute einen Blick", bundles.single().title)
     }
 
     @Test
@@ -76,10 +76,35 @@ class ReminderPlannerTest {
     }
 
     @Test
-    fun singleReminderTextIsNeutral() {
-        val bundle = planner.dueBetween(data(item("a", "lisa")), after = at(28), now = at(29)).single()
-        assertEquals("Frist abgelaufen: Aufgabe a", bundle.title)
-        assertEquals("Die Frist ist abgelaufen. Stand prüfen.", bundle.text)
+    fun notificationIsShortNeutralAndNamesNoItem() {
+        val escalated = planner.dueBetween(data(item("a", "lisa")), after = at(28), now = at(29)).single()
+        assertEquals("Eine Frist ist abgelaufen", escalated.title)
+        assertEquals("Details siehst du in der App.", escalated.text)
+        val dueToday = planner.dueBetween(data(item("a", "nils")), after = at(26, 20), now = at(27, 9)).single()
+        assertEquals("Dringende Frist heute", dueToday.title)
+        assertTrue("Aufgabe" !in escalated.title + escalated.text + dueToday.title, "no item title on the lock screen")
+    }
+
+    @Test
+    fun atMostOneNotificationPerDayWhateverTheStages() {
+        // Ten deadlines in all stages: each morning brings one notification, never more.
+        val items = (1..10).map { i -> item("i$i", listOf("nils", "lisa", null)[i % 3], due = LocalDate(2026, 11, 20 + i % 4)) }
+        val d = data(*items.toTypedArray())
+        (21..30).forEach { day ->
+            assertTrue(planner.dueBetween(d, after = at(day - 1, 9), now = at(day, 9)).size <= 1, "day $day")
+        }
+    }
+
+    @Test
+    fun appShowsTheLatestStagePerItemOwnThingsFirst() {
+        val d = data(
+            item("mine", "nils"),
+            item("hers", "lisa", due = LocalDate(2026, 11, 25)),
+            item("later", "nils", due = LocalDate(2026, 12, 3)),
+        )
+        val urgent = planner.urgent(d, LocalDate(2026, 11, 28))
+        assertEquals(listOf("mine" to ReminderKind.MISSED, "hers" to ReminderKind.ESCALATED), urgent.map { it.itemId to it.kind })
+        assertTrue(planner.urgent(d, LocalDate(2026, 11, 26)).isEmpty(), "nothing urgent before the first stage")
     }
 
     @Test
@@ -96,7 +121,7 @@ class ReminderPlannerTest {
         val run = planner.check(d, checked = at(26, 20), now = at(29, 9))
         val shown = run.show!!.reminders
         assertEquals(listOf("a" to ReminderKind.MISSED, "b" to ReminderKind.ESCALATED), shown.map { it.itemId to it.kind })
-        assertEquals("2 Fristen brauchen einen Blick", run.show!!.title)
+        assertEquals("2 Fristen brauchen heute einen Blick", run.show!!.title)
         assertNull(run.next)
     }
 
@@ -104,5 +129,18 @@ class ReminderPlannerTest {
     fun switchedOffMeansNoNotificationAndNoAlarm() {
         val d = data(item("a", "nils")).let { it.copy(settings = it.settings.copy(remindersOn = false)) }
         assertEquals(ReminderCheck(null, null), planner.check(d, checked = at(26, 20), now = at(27, 9)))
+    }
+
+    @Test
+    fun appLinesSayWhyWithoutBlame() {
+        val d = data(
+            item("a", "nils"),
+            item("b", "lisa", due = LocalDate(2026, 11, 25)),
+            item("c", null, ItemStatus.INBOX, LocalDate(2026, 11, 26)),
+        )
+        val lines = planner.urgent(d, LocalDate(2026, 11, 27)).associate { it.itemId to planner.reason(it, d) }
+        assertEquals("heute fällig, bei dir", lines["a"])
+        assertEquals("Frist war Mi 25.11., Lisa kümmert sich", lines["b"])
+        assertEquals("Frist war Do 26.11., noch niemand zuständig", lines["c"])
     }
 }

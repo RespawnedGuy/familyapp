@@ -1,5 +1,10 @@
 package io.github.respawnedguy.familyapp.ui
 
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.heading
+import io.github.respawnedguy.familyapp.domain.ReminderPlanner
+import io.github.respawnedguy.familyapp.domain.ReminderKind
+import io.github.respawnedguy.familyapp.domain.Reminder
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.selectable
@@ -56,7 +61,13 @@ fun TodayScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reduced
     val c = LocalFamilyColors.current
     val inbox = Views.inbox(data)
     val mine = Views.mine(data)
+    val planner = remember { ReminderPlanner() }
+    val urgent = planner.urgent(data, model.today())
     LazyColumn(Modifier.fillMaxSize(), contentPadding = ListPadding) {
+        // What matters today waits here instead of in many notifications (Nils, 26.11.2026).
+        if (urgent.isNotEmpty()) {
+            item(key = "urgent") { UrgentCard(urgent, data, planner) }
+        }
         item(key = "h-inbox") { SectionHeader("Eingang", inbox.size) }
         if (inbox.isEmpty()) {
             item(key = "e-inbox") { EmptyNote("Alles sortiert. Darüber musst du gerade nicht nachdenken.") }
@@ -81,6 +92,27 @@ fun TodayScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reduced
                 Modifier.fillMaxWidth().padding(top = 16.dp),
                 color = c.textSecondary, fontSize = 14.sp,
             )
+        }
+    }
+}
+
+@Composable
+private fun UrgentCard(urgent: List<Reminder>, data: FamilyData, planner: ReminderPlanner) {
+    val c = LocalFamilyColors.current
+    Column(
+        Modifier.fillMaxWidth().padding(top = 12.dp).clip(RoundedCornerShape(16.dp)).background(c.card).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            "Heute wichtig", Modifier.semantics { heading() },
+            fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.text,
+        )
+        urgent.forEach { r ->
+            Column(Modifier.semantics(mergeDescendants = true) {}) {
+                Text(r.title, fontSize = 15.sp, color = c.text, fontWeight = FontWeight.Medium)
+                val color = if (r.kind == ReminderKind.DUE_TODAY) c.textSecondary else c.overdue
+                Text(planner.reason(r, data), fontSize = 13.sp, color = color)
+            }
         }
     }
 }
