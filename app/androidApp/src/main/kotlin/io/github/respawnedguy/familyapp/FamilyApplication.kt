@@ -102,10 +102,14 @@ class FamilyApplication : Application() {
      * Contains only metric, trigger and milliseconds, never family data.
      */
     private fun logMeasurements(repo: FamilyRepository) {
-        val before = repo.current.settings.latency.lastOrNull()
+        // Compares whole lists: two samples recorded within one frame arrive as one state update.
+        var logged = repo.current.settings.latency.toSet()
         scope.launch {
-            repo.data.map { it.settings.latency.lastOrNull() }.distinctUntilChanged().collect { s ->
-                if (s != null && s != before) Log.i(PERF_TAG, "metric=${s.metric} trigger=${s.trigger} ms=${s.ms}")
+            repo.data.map { it.settings.latency }.distinctUntilChanged().collect { samples ->
+                samples.filterNot { it in logged }.forEach { s ->
+                    Log.i(PERF_TAG, "metric=${s.metric} trigger=${s.trigger} ms=${s.ms}")
+                }
+                logged = samples.toSet()
             }
         }
     }

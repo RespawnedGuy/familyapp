@@ -69,6 +69,10 @@ for path in Symbol Erfassen; do
     read -r total app cap <<< "$row"
     [ "$total" = "-" ] && total=""; [ "$app" = "-" ] && app=""; [ "$cap" = "-" ] && cap=""
     echo "   Lauf $i: Android ${total:-?} ms · App ${app:-?} ms${cap:+ · bis Aufnahme läuft $cap ms}"
+    # First run of each path: show what Android and the app logged, to explain any gap between them.
+    if [ "$i" = 1 ]; then
+      adb logcat -d 2>/dev/null | tr -d '\r' | grep -E "FamilyPerf|Displayed|Fully drawn|Start proc .*$PKG" | sed 's/^/      | /' | head -12
+    fi
     echo "$path,$i,${total:-},${app:-},${cap:-}" >> "$CSV"
   done
 done
