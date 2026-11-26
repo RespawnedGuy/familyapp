@@ -22,3 +22,7 @@ local.properties
 *.keystore
 *.p12
 /_signing/
+
+# Python bytecode
+__pycache__/
+*.pyc
