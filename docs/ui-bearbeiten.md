@@ -34,7 +34,7 @@ Alle Pfade unter `app/shared/src/commonMain/kotlin/io/github/respawnedguy/family
 | Farben (hell/dunkel), Personenfarben, Ecken, Animationsdauer | `ui/Theme.kt` | `LightFamilyColors`, `DarkFamilyColors`, `Motion` |
 | Symbole | `ui/Icons.kt` | `FamilyIcons` |
 
-Texte stehen direkt im Code (z. B. `Text("Alles sortiert …")`), Größen in `dp` (Abstände) und `sp` (Schrift). Logik (was passiert beim Tippen) liegt in `presentation/AppModel.kt`, die Daten in `domain/` und `data/`: für reine Optik muss man dort nichts anfassen.
+Texte ziehen gerade nach und nach in die Datei `app/shared/src/commonMain/composeResources/values/strings.xml` um (Qualitätsplan P1-7). Schon umgestellt sind der Rahmen in `App.kt` und das Erfassen-Blatt: dort steht im Code `stringResource(Res.string.capture_listening)`, der Wortlaut („Ich höre zu …“) steht in der `strings.xml`. Einen Text ändern heißt dann nur diese Zeile in der XML-Datei ändern; Vorschau und Hot Reload zeigen ihn sofort. Neue Texte bekommen dort einen Namen nach dem Muster `<bildschirm>_<was>`. In den übrigen Dateien stehen Texte noch direkt im Code (z. B. `Text("Alles sortiert …")`). Größen in `dp` (Abstände) und `sp` (Schrift). Logik (was passiert beim Tippen) liegt in `presentation/AppModel.kt`, die Daten in `domain/` und `data/`: für reine Optik muss man dort nichts anfassen.
 
 ## 3. Vorschau öffnen
 
