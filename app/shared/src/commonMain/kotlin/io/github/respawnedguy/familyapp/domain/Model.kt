@@ -99,6 +99,12 @@ data class Settings(
     val lastBackupMs: Long? = null,
     val lastBackupError: String? = null,
     val latency: List<LatencySample> = emptyList(),
+    /** Reminders and staged escalation for deadlines (P1-1). On by default, switchable in settings. */
+    val remindersOn: Boolean = true,
+    /** Until when reminders were already handled (epoch ms), so none is shown twice. */
+    val remindersCheckedMs: Long? = null,
+    /** The app asked once for the notification permission (Android 13+); never nag again. */
+    val notificationsAsked: Boolean = false,
 )
 
 @Serializable

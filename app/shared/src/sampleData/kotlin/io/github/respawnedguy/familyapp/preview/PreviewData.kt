@@ -143,6 +143,7 @@ private object PreviewPlatform : PlatformServices {
     override fun writeBackup(folder: String, backup: BackupContent): String? = null
     override fun readBackup(folder: String, code: String?): RestoreRead = RestoreRead.Failed("Vorschau")
     override fun newRecoveryCode(): String = "7K3M-Q9TB-X2WD-H5NC-R8PF"
+    override fun requestNotificationPermission() {}
     override fun describeFolder(folder: String): String = folder
 }
 

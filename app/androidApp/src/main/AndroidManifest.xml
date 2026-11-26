@@ -12,6 +12,11 @@
     <!-- Speech capture. Asked on first use of "Erfassen", not at install. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
+    <!-- Deadline reminders (P1-1). Asked when the first deadline is confirmed, not at install. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Plans the next reminder again after a restart; nothing runs in the background otherwise. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
@@ -79,6 +84,12 @@
             android:name="com.journeyapps.barcodescanner.CaptureActivity"
             android:screenOrientation="fullSensor"
             tools:replace="android:screenOrientation" />
+        <receiver android:name=".ReminderReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <!-- Hands one photo file to the camera app; nothing else is exposed. -->
         <provider

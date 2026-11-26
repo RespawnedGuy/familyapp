@@ -102,5 +102,7 @@ private object IosPlatform : PlatformServices {
         return (1..20).map { alphabet[(arc4random_uniform(alphabet.length.toUInt())).toInt()] }
             .chunked(4).joinToString("-") { it.joinToString("") }
     }
+    // Local notifications on iOS come with the iOS port; nothing to ask for yet.
+    override fun requestNotificationPermission() = Unit
     override fun describeFolder(folder: String): String = folder
 }

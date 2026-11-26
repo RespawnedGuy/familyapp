@@ -1,5 +1,8 @@
 package io.github.respawnedguy.familyapp
 
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.platform.LocalAccessibilityManager
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -275,7 +278,8 @@ private fun TopBar(title: String, data: FamilyData, onAvatar: () -> Unit) {
 private fun BottomBar(selected: Tab?, inboxCount: Int, first: CaptureAction, model: AppModel) {
     val c = LocalFamilyColors.current
     Row(
-        Modifier.fillMaxWidth().background(c.card).navigationBarsPadding().height(80.dp),
+        // Minimum instead of fixed height: labels must not be cut off at 200 % font size (P1-6).
+        Modifier.fillMaxWidth().background(c.card).navigationBarsPadding().heightIn(min = 80.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         NavItem("Heute", FamilyIcons.Today, selected == Tab.TODAY, badge = inboxCount) { model.select(Tab.TODAY) }
@@ -308,7 +312,7 @@ private fun BottomBar(selected: Tab?, inboxCount: Int, first: CaptureAction, mod
 private fun RowScope.NavItem(label: String, icon: ImageVector, selected: Boolean, badge: Int = 0, onClick: () -> Unit) {
     val c = LocalFamilyColors.current
     Column(
-        Modifier.weight(1f).height(80.dp).clickable(onClick = onClick).semantics { role = Role.Tab },
+        Modifier.weight(1f).heightIn(min = 80.dp).selectable(selected = selected, role = Role.Tab, onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -335,9 +339,14 @@ private fun FeedbackBar(feedback: Feedback?, model: AppModel, reducedMotion: Boo
     val c = LocalFamilyColors.current
     var last by remember { mutableStateOf<Feedback?>(null) }
     if (feedback != null) last = feedback
+    // People who set a longer "time to take action" in the system get it here too (WCAG 2.2.1).
+    val a11y = LocalAccessibilityManager.current
     LaunchedEffect(feedback?.id) {
         val f = feedback ?: return@LaunchedEffect
-        delay(Motion.UNDO_VISIBLE_MS)
+        val visible = a11y?.calculateRecommendedTimeoutMillis(
+            Motion.UNDO_VISIBLE_MS, containsIcons = false, containsText = true, containsControls = f.undo != null,
+        ) ?: Motion.UNDO_VISIBLE_MS
+        delay(visible)
         model.dismissFeedback(f.id)
     }
     val enter = if (reducedMotion) fadeIn(tween(0)) else slideInVertically(tween(Motion.FEEDBACK_MS, easing = Motion.Standard)) { it } + fadeIn()
@@ -345,7 +354,9 @@ private fun FeedbackBar(feedback: Feedback?, model: AppModel, reducedMotion: Boo
     AnimatedVisibility(feedback != null, modifier = modifier, enter = enter, exit = exit) {
         val f = last ?: return@AnimatedVisibility
         Row(
-            Modifier.padding(12.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(c.text).padding(start = 16.dp, end = 4.dp),
+            // Polite live region: TalkBack reads "Gespeichert." without the person looking for it (WCAG 4.1.3).
+            Modifier.padding(12.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(c.text).padding(start = 16.dp, end = 4.dp)
+                .semantics { liveRegion = LiveRegionMode.Polite },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(f.message, Modifier.weight(1f).padding(vertical = 14.dp), color = c.background, fontSize = 14.sp)

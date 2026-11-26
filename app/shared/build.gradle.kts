@@ -89,3 +89,11 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 }
+
+// Failed assertions show their message in the CI log (the HTML report is not uploaded).
+tasks.withType<Test>().configureEach {
+    testLogging {
+        events("failed")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+}

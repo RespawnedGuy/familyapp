@@ -423,9 +423,11 @@ class SyncController(
 
     /** The person compared the digits. On the inviting device [joinAs] says who the new device belongs to. */
     fun answer(accept: Boolean, joinAs: JoinAs? = null) {
+        // State first: the protocol may resume on another thread at once and set Done or Failed,
+        // which must not be overwritten by "waiting".
+        if (accept) _pairing.value = PairingState.Working("Warte auf das andere Gerät …")
         pairingAnswer?.complete(if (accept) joinAs else null)
         joinAnswer?.complete(accept)
-        if (accept) _pairing.value = PairingState.Working("Warte auf das andere Gerät …")
     }
 
     private suspend fun answerPairing(pending: Handshake.Pending) {

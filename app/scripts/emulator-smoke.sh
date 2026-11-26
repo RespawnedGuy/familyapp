@@ -77,6 +77,8 @@ adb exec-out screencap -p > "$OUT/screen-api$API.png" || true
 
 echo "-- Kernweg: Familie anlegen, per Text erfassen, Karte mit einem Tap bestätigen, Neustart"
 adb shell pm grant "$PKG" android.permission.RECORD_AUDIO >/dev/null 2>&1 || true
+# Android 13+: the app asks once when the first deadline is confirmed; granted here so no system dialog covers the screen.
+adb shell pm grant "$PKG" android.permission.POST_NOTIFICATIONS >/dev/null 2>&1 || true
 if tap_text "@EditText" 20; then
   sleep 1; adb shell input text "Nils"; sleep 1
   # Enter = "Fertig" on the keyboard. On small screens the open keyboard can cover the button.
@@ -99,6 +101,9 @@ wait_text ".*bis (Morgen|Do [0-9]{2}\.[0-9]{2}\.).*" 5 && pass "Regel hat das Da
 adb exec-out screencap -p > "$OUT/screen-inbox-api$API.png" || true
 tap_text "Mach ich" 10 && pass "Karte mit einem Tap bestätigt" || fail "\"Mach ich\" fehlt"
 wait_text "Alles sortiert.*" 10 && pass "Eingang danach leer" || fail "Eingang nicht leer"
+# Quality plan P1-1: a confirmed deadline plans a reminder alarm (after a 2 s debounce).
+sleep 4
+adb shell dumpsys alarm | grep -q "$PKG" && pass "Erinnerung für die Frist geplant" || fail "kein Erinnerungs-Wecker geplant"
 adb shell am force-stop "$PKG"
 adb shell am start -W -n "$PKG/.MainActivity" >/dev/null 2>&1
 sleep 2; hide_update_banner

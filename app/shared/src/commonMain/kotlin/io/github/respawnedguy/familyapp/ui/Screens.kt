@@ -1,5 +1,9 @@
 package io.github.respawnedguy.familyapp.ui
 
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -201,24 +205,31 @@ private fun MemberDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, singleLine = true)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(selected = kind == MemberKind.ADULT, onClick = { kind = MemberKind.ADULT })
-                    Text("Erwachsen", Modifier.clickable { kind = MemberKind.ADULT })
-                    Spacer(Modifier.width(12.dp))
-                    RadioButton(selected = kind == MemberKind.CHILD, onClick = { kind = MemberKind.CHILD })
-                    Text("Kind", Modifier.clickable { kind = MemberKind.CHILD })
+                // One radio group with whole-option targets of at least 48 dp (P1-6).
+                Row(Modifier.selectableGroup(), verticalAlignment = Alignment.CenterVertically) {
+                    listOf(MemberKind.ADULT to "Erwachsen", MemberKind.CHILD to "Kind").forEach { (k, label) ->
+                        Row(
+                            Modifier.heightIn(min = 48.dp)
+                                .selectable(selected = kind == k, role = Role.RadioButton) { kind = k }
+                                .padding(end = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(selected = kind == k, onClick = null)
+                            Text(label, Modifier.padding(start = 8.dp))
+                        }
+                    }
                 }
                 if (member != null) {
                     Text("Farbe", fontSize = 13.sp, color = c.textSecondary)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         (0 until PERSON_COLOR_COUNT).forEach { i ->
                             Box(
-                                Modifier.size(44.dp).clip(RoundedCornerShape(22.dp))
+                                Modifier.size(48.dp).clip(RoundedCornerShape(24.dp))
                                     .background(if (i == color) c.text else c.card)
                                     .clickable { color = i }
                                     .padding(4.dp),
                                 contentAlignment = Alignment.Center,
-                            ) { PersonDot(member.copy(colorIndex = i, name = name.ifBlank { member.name }), 36.dp) }
+                            ) { PersonDot(member.copy(colorIndex = i, name = name.ifBlank { member.name }), 40.dp) }
                         }
                     }
                 }

@@ -104,6 +104,10 @@ class AndroidPlatform(private val app: FamilyApplication) : PlatformServices {
 
     override fun newRecoveryCode(): String = BackupCrypto.newCode()
 
+    override fun requestNotificationPermission() {
+        activity?.requestNotifications()
+    }
+
     /** Deletes photo files no item uses any more (P0-4); runs once at app start. */
     fun cleanOrphanPhotos(data: FamilyData) {
         runCatching {

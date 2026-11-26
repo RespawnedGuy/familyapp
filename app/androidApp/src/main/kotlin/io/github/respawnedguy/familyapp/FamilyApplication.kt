@@ -38,13 +38,15 @@ class FamilyApplication : Application() {
     lateinit var pairing: AndroidPairing
         private set
     val syncUi: SyncUi get() = SyncUi(sync, pairing)
+    lateinit var reminders: AndroidReminders
+        private set
+    val scope = MainScope()
 
     /** True until the first capture intent was handled: then the process start is the trigger time. */
     var coldStart = true
 
     override fun onCreate() {
         super.onCreate()
-        val scope = MainScope()
         platform = AndroidPlatform(this)
         val repo = FamilyRepository(
             store = AndroidTextStore(File(filesDir, "familyapp.json")),
@@ -74,6 +76,7 @@ class FamilyApplication : Application() {
         )
         pairing = AndroidPairing(platform)
         runCatching { SyncWorker.schedule(this) }
+        reminders = AndroidReminders(this, repo).also { it.follow(scope) }
         publishShortcut()
     }
 
