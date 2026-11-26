@@ -12,6 +12,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
+import com.journeyapps.barcodescanner.ScanContract
 import io.github.respawnedguy.familyapp.ui.AndroidPhotoLoader
 import io.github.respawnedguy.familyapp.update.AndroidUpdatePlatform
 import io.github.respawnedguy.familyapp.update.UpdateController
@@ -28,6 +29,7 @@ class MainActivity : ComponentActivity() {
 
     val takePicture = registerForActivityResult(ActivityResultContracts.TakePicture()) { ok -> app.platform.onPhotoResult(ok) }
     val openTree = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri -> app.platform.onFolderPicked(uri) }
+    val scanQr = registerForActivityResult(ScanContract()) { result -> app.pairing.onScanned(result.contents) }
     private val micPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         micCallback?.invoke(granted)
         micCallback = null
@@ -79,8 +81,20 @@ class MainActivity : ComponentActivity() {
                 photos = AndroidPhotoLoader,
                 reducedMotion = reducedMotion,
                 updates = updates,
+                sync = app.syncUi,
             )
         }
+    }
+
+    /** Direct sync only while the app is visible: Android does not let a background app keep listening. */
+    override fun onStart() {
+        super.onStart()
+        app.sync.start()
+    }
+
+    override fun onStop() {
+        app.sync.stop()
+        super.onStop()
     }
 
     override fun onDestroy() {

@@ -164,7 +164,8 @@ class SyncController(
     }
 
     private fun onDiscovered(address: String) {
-        if (address in discovered) return
+        val own = port?.let { p -> transport.localAddresses().map { "$it:$p" } }.orEmpty()
+        if (address in discovered || address in own) return
         discovered += address
         scope.launch { syncAll() }
     }
@@ -313,6 +314,7 @@ class SyncController(
 
     private suspend fun remember(outcome: SyncOutcome, address: String?) = updateState { s ->
         val other = outcome.other
+        if (other.deviceId == repo.current.deviceId) return@updateState s // found itself in the WLAN
         val known = s.devices.firstOrNull { it.deviceId == other.deviceId }
         val addresses = (listOfNotNull(address) + other.addresses + known?.addresses.orEmpty())
             .distinct().take(MAX_ADDRESSES)

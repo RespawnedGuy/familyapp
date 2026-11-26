@@ -45,4 +45,13 @@ interface PairingPlatform {
 
     /** Opens the camera scanner; returns the scanned text, or null if cancelled. */
     fun scanQr(onResult: (String?) -> Unit)
+
+    /** Lets the person pick the shared sync folder; returns its platform reference or null. */
+    fun pickFolder(onResult: (String?) -> Unit)
+
+    /** Human-readable name of a folder reference. */
+    fun describeFolder(reference: String): String
 }
+
+/** Everything the screens need for pairing and sync; null where the platform cannot sync (desktop, iOS for now). */
+class SyncUi(val controller: SyncController, val platform: PairingPlatform)

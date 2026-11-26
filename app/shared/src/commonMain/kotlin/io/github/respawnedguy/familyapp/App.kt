@@ -33,10 +33,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -65,10 +67,14 @@ import io.github.respawnedguy.familyapp.presentation.AppModel
 import io.github.respawnedguy.familyapp.presentation.Feedback
 import io.github.respawnedguy.familyapp.presentation.RestoreCodeRequest
 import io.github.respawnedguy.familyapp.presentation.Tab
+import io.github.respawnedguy.familyapp.sync.SyncUi
 import io.github.respawnedguy.familyapp.ui.CaptureSheet
 import io.github.respawnedguy.familyapp.ui.FamilyIcons
 import io.github.respawnedguy.familyapp.ui.FamilyScreen
 import io.github.respawnedguy.familyapp.ui.FamilyTheme
+import io.github.respawnedguy.familyapp.ui.JoinFamilyForm
+import io.github.respawnedguy.familyapp.ui.LocalSync
+import io.github.respawnedguy.familyapp.ui.PairingOverlay
 import io.github.respawnedguy.familyapp.ui.LocalFamilyColors
 import io.github.respawnedguy.familyapp.ui.Motion
 import io.github.respawnedguy.familyapp.ui.PersonDot
@@ -86,6 +92,7 @@ import kotlinx.coroutines.delay
  * Root of the shared UI (Android now, iOS later). Navigation A from the design doc:
  * Heute · Familie · Erfassen (centre) · Demnächst · Suchen, settings behind the own avatar.
  */
+@Suppress("LongParameterList") // the root takes every platform service once
 @Composable
 fun App(
     versionName: String,
@@ -93,17 +100,22 @@ fun App(
     photos: PhotoLoader?,
     reducedMotion: Boolean,
     updates: UpdateController? = null,
+    /** Pairing and sync (ADR 0003, 0006); null where the platform cannot sync yet. */
+    sync: SyncUi? = null,
 ) {
     FamilyTheme {
         val c = LocalFamilyColors.current
         val data by model.repo.data.collectAsState()
-        Box(Modifier.fillMaxSize().background(c.background)) {
-            if (data.selfId == null) {
-                Onboarding(model)
-            } else {
-                Main(data, model, photos, reducedMotion, updates, versionName)
+        CompositionLocalProvider(LocalSync provides sync) {
+            Box(Modifier.fillMaxSize().background(c.background)) {
+                if (data.selfId == null) {
+                    Onboarding(model)
+                } else {
+                    Main(data, model, photos, reducedMotion, updates, versionName)
+                }
+                if (sync != null) PairingOverlay(sync, data, model)
+                if (updates != null) UpdateBanner(updates, Modifier.align(Alignment.TopCenter))
             }
-            if (updates != null) UpdateBanner(updates, Modifier.align(Alignment.TopCenter))
         }
     }
 }
@@ -120,31 +132,42 @@ object AppInfo {
 private fun Onboarding(model: AppModel) {
     val c = LocalFamilyColors.current
     var name by remember { mutableStateOf("") }
+    var invited by remember { mutableStateOf(false) }
+    val sync = LocalSync.current
     Column(
         Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()
             .verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
     ) {
         Spacer(Modifier.height(48.dp))
-        Text(AppInfo.NAME, fontSize = 32.sp, fontWeight = FontWeight.Bold, color = c.text)
-        Text(AppInfo.tagline, fontSize = 17.sp, color = c.textSecondary)
-        Text("Wie heißt du?", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = c.text, modifier = Modifier.padding(top = 24.dp))
-        OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
-            placeholder = { Text("Dein Vorname") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { model.createFamily(name) }),
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Button(onClick = { model.createFamily(name) }, enabled = name.isNotBlank(), modifier = Modifier.fillMaxWidth().height(52.dp)) {
-            Text("Los geht's", fontSize = 16.sp)
+        if (invited && sync != null) {
+            JoinFamilyForm(sync, name, hasOwnData = false) { invited = false }
+        } else {
+            Text(AppInfo.NAME, fontSize = 32.sp, fontWeight = FontWeight.Bold, color = c.text)
+            Text(AppInfo.tagline, fontSize = 17.sp, color = c.textSecondary)
+            Text("Wie heißt du?", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = c.text, modifier = Modifier.padding(top = 24.dp))
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                placeholder = { Text("Dein Vorname") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { model.createFamily(name) }),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Button(onClick = { model.createFamily(name) }, enabled = name.isNotBlank(), modifier = Modifier.fillMaxWidth().height(52.dp)) {
+                Text("Los geht's", fontSize = 16.sp)
+            }
+            Text(
+                "Kein Konto, keine E-Mail. Damit ist deine Familie angelegt, weitere Personen fügst du unter „Familie“ hinzu.",
+                fontSize = 13.sp, color = c.textTertiary,
+            )
+            if (sync != null) {
+                OutlinedButton(onClick = { invited = true }, modifier = Modifier.fillMaxWidth().height(52.dp)) {
+                    Text("Ich wurde eingeladen", fontSize = 16.sp)
+                }
+            }
         }
-        Text(
-            "Kein Konto, keine E-Mail. Damit ist deine Familie angelegt, weitere Personen fügst du unter „Familie“ hinzu.",
-            fontSize = 13.sp, color = c.textTertiary,
-        )
         model.repo.loadProblem?.let { Text(it, fontSize = 13.sp, color = c.overdue) }
     }
 }

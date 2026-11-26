@@ -111,4 +111,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     // FileProvider: hands the camera app one file to write the photo into.
     implementation(libs.androidx.core)
+    // Pairing: QR scanner and QR drawing, offline and without Google Play services (ADR 0006).
+    implementation(libs.zxing.android.embedded)
+    // Sync in the background every 15 minutes (shared folder, house device).
+    implementation(libs.androidx.work.runtime)
 }

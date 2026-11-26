@@ -11,6 +11,9 @@ kotlinx-serialization = "1.9.0"
 kotlinx-coroutines = "1.10.2"
 kotlinx-datetime = "0.7.1"
 androidx-core = "1.16.0"
+# QR code scanner without Google Play services (ZXing), brings zxing core for drawing QR codes.
+zxing-android-embedded = "4.3.0"
+androidx-work = "2.10.0"
 android-compileSdk = "36"
 android-targetSdk = "36"
 android-minSdk = "26"
@@ -21,6 +24,8 @@ androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtim
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 androidx-core = { module = "androidx.core:core", version.ref = "androidx-core" }
+zxing-android-embedded = { module = "com.journeyapps:zxing-android-embedded", version.ref = "zxing-android-embedded" }
+androidx-work-runtime = { module = "androidx.work:work-runtime-ktx", version.ref = "androidx-work" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
