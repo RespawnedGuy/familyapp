@@ -1,5 +1,13 @@
 package io.github.respawnedguy.familyapp.ui
 
+import io.github.respawnedguy.familyapp.resources.urgent_title
+import io.github.respawnedguy.familyapp.resources.local_only_later
+import io.github.respawnedguy.familyapp.resources.local_only_setup
+import io.github.respawnedguy.familyapp.resources.local_only_text
+import io.github.respawnedguy.familyapp.resources.local_only_title
+import org.jetbrains.compose.resources.stringResource
+import io.github.respawnedguy.familyapp.resources.Res
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.heading
 import io.github.respawnedguy.familyapp.domain.ReminderPlanner
@@ -63,11 +71,15 @@ fun TodayScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reduced
     val inbox = Views.inbox(data)
     val mine = Views.mine(data)
     val planner = remember { ReminderPlanner() }
+    val paired = LocalSync.current?.controller?.status?.collectAsState()?.value?.paired ?: false
     val urgent = planner.urgent(data, model.today())
     LazyColumn(Modifier.fillMaxSize(), contentPadding = ListPadding) {
         // What matters today waits here instead of in many notifications (Nils, 26.11.2026).
         if (urgent.isNotEmpty()) {
             item(key = "urgent") { UrgentCard(urgent, data, planner) }
+        }
+        if (Views.showLocalOnlyHint(data, paired)) {
+            item(key = "local-only") { LocalOnlyCard(model) }
         }
         item(key = "h-inbox") { SectionHeader("Eingang", inbox.size) }
         if (inbox.isEmpty()) {
@@ -97,6 +109,39 @@ fun TodayScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reduced
     }
 }
 
+/** P1-11: one quiet card, no notification; "Später" puts it aside for 30 more entries. */
+@Composable
+private fun LocalOnlyCard(model: AppModel) {
+    val c = LocalFamilyColors.current
+    Column(
+        Modifier.fillMaxWidth().padding(top = 12.dp).clip(RoundedCornerShape(16.dp)).background(c.card).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            stringResource(Res.string.local_only_title), Modifier.semantics { heading() },
+            fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.text,
+        )
+        Text(
+            stringResource(Res.string.local_only_text),
+            fontSize = 14.sp, color = c.textSecondary,
+        )
+        val setup: @Composable () -> Unit = {
+            OutlinedButton(onClick = { model.openSettings(); model.chooseBackupFolder() }) {
+                Text(stringResource(Res.string.local_only_setup))
+            }
+        }
+        val later: @Composable () -> Unit = {
+            TextButton(onClick = { model.dismissLocalOnlyHint() }) { Text(stringResource(Res.string.local_only_later)) }
+        }
+        // At large font sizes the two buttons do not fit side by side on narrow phones.
+        if (largeFont()) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) { setup(); later() }
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { setup(); later() }
+        }
+    }
+}
+
 @Composable
 private fun UrgentCard(urgent: List<Reminder>, data: FamilyData, planner: ReminderPlanner) {
     val c = LocalFamilyColors.current
@@ -105,7 +150,7 @@ private fun UrgentCard(urgent: List<Reminder>, data: FamilyData, planner: Remind
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
-            "Heute wichtig", Modifier.semantics { heading() },
+            stringResource(Res.string.urgent_title), Modifier.semantics { heading() },
             fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.text,
         )
         urgent.forEach { r ->

@@ -1,0 +1,47 @@
+# Public date corpus (quality plan P1-5). Made-up but typical family texts, no real data.
+# Columns: today;text;expected  expected = ISO date, empty = no date, ? = must not suggest one date (ambiguous)
+# Real transcripts belong in corpus/dates-private.csv (same format, never committed).
+2026-11-26;Elternabend am Dienstag um 19 Uhr;2026-12-01
+2026-11-26;Zahnarzt Mia am 3.12. um 15.30 Uhr;2026-12-03
+2026-11-26;Ausflug Freitag Brotdose und Regenjacke mitgeben;2026-11-27
+2026-11-26;Bis morgen Geld für den Fotografen mitgeben;2026-11-27
+2026-11-26;Laternenumzug am 11. November;2027-11-11
+2026-11-26;Rechnung Stadtwerke bezahlen bis 15.12.2026;2026-12-15
+2026-11-26;Müll rausstellen;
+2026-11-26;Kita geschlossen vom 23.12. bis 2.1.;?
+2026-11-26;Arzttermin nächste Woche ausmachen;
+2026-11-26;Geburtstag Oma 8. Januar Geschenk besorgen;2027-01-08
+2026-11-26;in zwei Wochen Reifen wechseln;2026-12-10
+2026-11-26;Turnbeutel übermorgen;2026-11-28
+2026-11-26;Elternbrief: Wandertag am Mittwoch, den 2.12.;2026-12-02
+2026-11-26;Kapitel 4.1. lesen;
+2026-11-26;Aufgabe 2.3. bis Freitag;2026-11-27
+2026-11-26;Seite 12. bis 14. üben;
+2026-11-26;Schwimmkurs ab 12. Jan. jeden Montag;?
+2026-11-26;Impfung Leo heute Nachmittag;2026-11-26
+2026-11-26;Steuererklärung bis 31.07.2027;2027-07-31
+2026-11-26;Fahrradschloss kaufen;
+2026-11-26;Hort Anmeldung bis Ende Januar;
+2026-11-26;Elterngespräch am 4. Dezember um 16 Uhr;2026-12-04
+2026-11-26;Kinderarzt U9 in 3 Wochen;2026-12-17
+2026-11-26;Termin beim Friseur Samstag 10 Uhr;2026-11-28
+2026-11-26;Musikschule Gebühr 45.50 € überweisen;
+2026-11-26;Klassenfahrt 15.-19.6.;?
+2026-11-26;Zeugnisse am 29.1.;2027-01-29
+2026-11-26;Sportfest am Do;
+2026-11-26;Mia hat am Montag frei, Leo am Dienstag;?
+2026-11-26;Bescheinigung für die Krankenkasse bis 10.12. einreichen;2026-12-10
+2026-11-26;Weihnachtsfeier im Kindergarten am 18.12. ab 15 Uhr;2026-12-18
+2026-11-26;um 7.45 Uhr Bus;
+2026-11-26;Brille abholen in einer Woche;2026-12-03
+2026-11-26;Elternabend war gestern;
+2026-11-26;Nr. 3.4. im Arbeitsheft;
+2026-12-28;Schule fängt am 7.1. wieder an;2027-01-07
+2026-12-28;Silvester Raclette vorbereiten bis Donnerstag;2026-12-31
+2027-02-27;Fasching am 1. März Kostüm;2027-03-01
+2027-07-09;Fotos vom 29.2. sortieren;
+2026-11-26;Rechnung vom 12.11., zahlbar bis 10.12.;2026-12-10
+2026-11-26;Brief vom 20.11.2026 beantworten;
+2026-11-26;Ferien von 23.12. bis 2.1.;?
+2026-11-26;Lesen bis Seite 4.;
+2026-11-26;Elternbrief vom 24. November: Bastelnachmittag am Freitag;2026-11-27
