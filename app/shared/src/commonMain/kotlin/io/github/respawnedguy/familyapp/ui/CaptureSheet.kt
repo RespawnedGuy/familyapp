@@ -50,6 +50,8 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -83,9 +85,11 @@ fun CaptureSheet(state: CaptureState, model: AppModel, reducedMotion: Boolean) {
     if (state == CaptureState.Closed || state == CaptureState.WaitingForPhoto) return
     val c = LocalFamilyColors.current
     Box(Modifier.fillMaxSize()) {
-        // Tapping outside cancels (design: "Abbrechen durch ... Tippen daneben").
+        // Tapping outside cancels (design: "Abbrechen durch ... Tippen daneben"). Hidden from screen
+        // readers, which reach "Abbrechen" in the sheet; ATF reported it as an unnamed target (P1-4).
         Box(
             Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.32f))
+                .clearAndSetSemantics {}
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { model.dismissCapture() },
         )
         Column(
@@ -175,14 +179,19 @@ private fun BottomRow(state: CaptureState, model: AppModel) {
                 SheetAction(stringResource(Res.string.capture_type)) { model.switchCapture(CaptureAction.TEXT) }
             }
         }
-        Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+        // The whole column (button and "Foto") is one target, so screen readers read its label (ATF, P1-4).
+        Column(
+            Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).clickable { model.switchCapture(CaptureAction.PHOTO) },
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Box(
-                Modifier.size(64.dp).clip(CircleShape).background(c.accent).clickable { model.switchCapture(CaptureAction.PHOTO) },
+                Modifier.size(64.dp).clip(CircleShape).background(c.accent),
                 contentAlignment = Alignment.Center,
             ) { Icon(FamilyIcons.Camera, contentDescription = null, tint = c.onAccent, modifier = Modifier.size(30.dp)) }
-            Text(
+            FitLabel(
                 stringResource(Res.string.common_photo),
-                color = c.text, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp),
+                TextStyle(color = c.text, fontSize = 12.sp),
+                Modifier.padding(top = 2.dp, start = 2.dp, end = 2.dp),
             )
         }
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
@@ -194,11 +203,10 @@ private fun BottomRow(state: CaptureState, model: AppModel) {
 @Composable
 private fun SheetAction(label: String, onClick: () -> Unit) {
     val c = LocalFamilyColors.current
-    Text(
+    FitLabel(
         label,
-        modifier = Modifier.clip(RoundedCornerShape(24.dp)).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp),
-        color = c.accent,
-        fontSize = 15.sp,
-        fontWeight = FontWeight.SemiBold,
+        TextStyle(color = c.accent, fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
+        Modifier.clip(RoundedCornerShape(24.dp)).clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 14.dp),
     )
 }

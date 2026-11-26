@@ -51,6 +51,7 @@ import io.github.respawnedguy.familyapp.domain.Member
 import io.github.respawnedguy.familyapp.domain.MemberKind
 import io.github.respawnedguy.familyapp.domain.PERSON_COLOR_COUNT
 import io.github.respawnedguy.familyapp.domain.Views
+import io.github.respawnedguy.familyapp.domain.Load
 import io.github.respawnedguy.familyapp.presentation.AppModel
 
 private val ListPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp)
@@ -139,29 +140,7 @@ fun FamilyScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reduce
                 Text("Nur feste Fristen und Termine. Antippen filtert die Liste.", fontSize = 12.sp, color = c.textTertiary)
                 loads.forEach { load ->
                     val selected = filter == load.member.id
-                    Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-                            .background(if (selected) c.background else c.card)
-                            .clickable { filter = if (selected) null else load.member.id }
-                            .padding(vertical = 6.dp, horizontal = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        PersonDot(load.member, 28.dp)
-                        Text(load.member.name, Modifier.width(72.dp).padding(start = 8.dp), color = c.text, fontSize = 14.sp, maxLines = 1)
-                        Box(Modifier.weight(1f).height(14.dp).clip(RoundedCornerShape(7.dp)).background(c.background)) {
-                            Row(Modifier.fillMaxHeight().fillMaxWidth(load.open.toFloat() / maxOpen)) {
-                                val calm = load.open - load.overdue
-                                if (calm > 0) Box(Modifier.weight(calm.toFloat()).fillMaxHeight().background(c.person(load.member.colorIndex)))
-                                if (load.overdue > 0) Box(Modifier.weight(load.overdue.toFloat()).fillMaxHeight().background(c.overdue))
-                            }
-                        }
-                        val open = if (load.overdue > 0) "${load.open} · ${load.overdue} überfällig" else "${load.open} offen"
-                        val text = if (load.doneThisWeek > 0) "$open · ${load.doneThisWeek} erledigt" else open
-                        Text(
-                            text, Modifier.padding(start = 8.dp),
-                            color = if (load.overdue > 0) c.overdue else c.textSecondary, fontSize = 13.sp,
-                        )
-                    }
+                    LoadRow(load, maxOpen, selected) { filter = if (selected) null else load.member.id }
                 }
                 val unowned = Views.unowned(data)
                 Text(
@@ -171,13 +150,19 @@ fun FamilyScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reduce
             }
         }
         item(key = "members") {
-            Row(
-                Modifier.fillMaxWidth().padding(top = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("Personen", Modifier.weight(1f), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = c.text)
-                OutlinedButton(onClick = { adding = true }) { Text("Person hinzufügen") }
+            // With large fonts the button goes on its own line; beside it the heading had 15 dp (P1-4).
+            val large = largeFont()
+            val addPerson = "Person hinzufügen"
+            Column(Modifier.fillMaxWidth().padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("Personen", Modifier.weight(1f), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = c.text)
+                    if (!large) OutlinedButton(onClick = { adding = true }) { Text(addPerson) }
+                }
+                if (large) OutlinedButton(onClick = { adding = true }) { Text(addPerson) }
             }
         }
         shown.forEach { member ->
@@ -294,18 +279,28 @@ fun UpcomingScreen(data: FamilyData, model: AppModel) {
             }
             items(week.items, key = { "u-${it.id}" }) { item ->
                 val overdue = DateFormat.overdue(item.due!!, today)
+                val large = largeFont()
                 Row(
                     Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(12.dp)).background(c.card).padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        DateFormat.short(item.due),
-                        Modifier.width(84.dp),
-                        color = if (overdue != null && item.status == ItemStatus.OPEN) c.overdue else c.textSecondary,
-                        fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                    )
+                    val overdueOpen = overdue != null && item.status == ItemStatus.OPEN
+                    val dateColor = if (overdueOpen) c.overdue else c.textSecondary
+                    val date: @Composable (Modifier) -> Unit = { m ->
+                        Text(
+                            DateFormat.short(item.due),
+                            m,
+                            color = dateColor,
+                            fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                    // With large fonts the date goes above the title; beside it the title column
+                    // would be too narrow for words like "Tabletten" (P1-4).
+                    if (!large) date(Modifier.width(84.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(item.title, color = c.text, fontSize = 15.sp, maxLines = 2)
+                        if (large) date(Modifier)
+                        // No line limit: this row cannot be opened, so a shortened title could never be read in full.
+                        Text(item.title, color = c.text, fontSize = 15.sp)
                         val note = buildList {
                             if (item.status == ItemStatus.INBOX) add("noch nicht bestätigt")
                             if (overdue != null && item.status == ItemStatus.OPEN) add(overdue)
@@ -315,6 +310,51 @@ fun UpcomingScreen(data: FamilyData, model: AppModel) {
                     PersonDot(data.member(item.assignee), 28.dp)
                 }
             }
+        }
+    }
+}
+
+/**
+ * One person in the load card. With large fonts (P1-4) name, bar and counts are stacked; side by
+ * side they would push the counts off a narrow screen.
+ */
+@Composable
+private fun LoadRow(load: Load, maxOpen: Int, selected: Boolean, onClick: () -> Unit) {
+    val c = LocalFamilyColors.current
+    val open = if (load.overdue > 0) "${load.open} · ${load.overdue} überfällig" else "${load.open} offen"
+    val counts = if (load.doneThisWeek > 0) "$open · ${load.doneThisWeek} erledigt" else open
+    val countsColor = if (load.overdue > 0) c.overdue else c.textSecondary
+    val rowModifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+        .background(if (selected) c.background else c.card)
+        .clickable(onClick = onClick)
+        .padding(vertical = 6.dp, horizontal = 4.dp)
+    if (largeFont()) {
+        Column(rowModifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                PersonDot(load.member, 28.dp)
+                Text(load.member.name, Modifier.weight(1f).padding(start = 8.dp), color = c.text, fontSize = 14.sp)
+            }
+            LoadBar(load, maxOpen, Modifier.fillMaxWidth())
+            Text(counts, color = countsColor, fontSize = 13.sp)
+        }
+    } else {
+        Row(rowModifier, verticalAlignment = Alignment.CenterVertically) {
+            PersonDot(load.member, 28.dp)
+            Text(load.member.name, Modifier.width(80.dp).padding(start = 8.dp), color = c.text, fontSize = 14.sp)
+            LoadBar(load, maxOpen, Modifier.weight(1f))
+            Text(counts, Modifier.padding(start = 8.dp), color = countsColor, fontSize = 13.sp)
+        }
+    }
+}
+
+@Composable
+private fun LoadBar(load: Load, maxOpen: Int, modifier: Modifier) {
+    val c = LocalFamilyColors.current
+    Box(modifier.height(14.dp).clip(RoundedCornerShape(7.dp)).background(c.background)) {
+        Row(Modifier.fillMaxHeight().fillMaxWidth(load.open.toFloat() / maxOpen)) {
+            val calm = load.open - load.overdue
+            if (calm > 0) Box(Modifier.weight(calm.toFloat()).fillMaxHeight().background(c.person(load.member.colorIndex)))
+            if (load.overdue > 0) Box(Modifier.weight(load.overdue.toFloat()).fillMaxHeight().background(c.overdue))
         }
     }
 }
