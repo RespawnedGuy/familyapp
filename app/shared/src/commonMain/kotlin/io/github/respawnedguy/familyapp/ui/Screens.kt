@@ -235,9 +235,10 @@ private fun MemberDialog(
                 }
                 if (member == null) {
                     Text(
-                        "Ohne eigenes Handy (Kind, Oma). Mit eigenem Handy koppeln kommt im nächsten Update per QR-Code.",
+                        "Ohne eigenes Handy (Kind, Oma) genügt der Name.",
                         fontSize = 12.sp, color = c.textTertiary,
                     )
+                    InviteWithPhoneButton(onDismiss)
                 }
                 if (onRemove != null) TextButton(onClick = onRemove) { Text("Aus der Familie entfernen", color = c.overdue) }
             }

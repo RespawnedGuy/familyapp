@@ -21,12 +21,15 @@ Spike `spikes/recipe-import/`: `gradle test`, `gradle run --args="<samples-dir> 
 
 Qualitätstor (in `tools/quality-check/`, ohne Android SDK, also auch in Cloud-Sessions): `gradle check` = Unit-Tests der Compose-freien App-Schichten plus Backup-Krypto, Abdeckungs-Untergrenze, detekt mit Baseline (`config/`). Läuft im CI als `.github/workflows/quality.yml`. Neue detekt-Befunde beheben statt in die Baseline aufnehmen.
 
+Hausgerät `tools/family-peer/` (gleicher Sync-Code wie die App, nur Maven Central): `gradle installDist`, dann `build/install/family-peer/bin/family-peer` (siehe README dort). Im CI auch zweites Gerät für den Kopplungstest im Emulator (`app/scripts/emulator-pairing-e2e.sh`).
+
 Spike `spikes/p2p-sync/`: `gradle test`, `gradle build`, CLI per `gradle installDist` und `build/install/p2p-sync/bin/p2p-sync` (siehe README dort).
 
 ## Ordner
 
 - `docs/` Konzept, `docs/qualitaet/` ISO-25010-Bewertung und Umsetzungsstand, `docs/kochbibliothek.md` Kochbibliothek mit Rezeptimport und Angeboten, `docs/entscheidungen/` ADRs, `docs/gestaltung/` Optik, Haptik, Klickwege, `docs/android-installieren.md` Sideloading-Anleitung, `docs/ui-bearbeiten.md` UI in Android Studio bearbeiten (Vorschauen in `app/shared/src/androidMain/.../preview/`), `docs/ui-werkzeuge.md` Werkzeugwahl für gemeinsame UI-Arbeit (Penpot, Hot Reload), `docs/gestaltung/penpot/` Penpot-Anleitung und Design-Tokens
 - `app/` KMP-App: `shared/` (gemeinsamer Compose-Code), `androidApp/`, `iosApp/` (vorbereitet), `scripts/` (APK-Prüfung, Emulator-Test)
+- `tools/family-peer/` Hausgerät als Kommandozeilenprogramm (Kopplung, Abgleich), ADR 0006
 - `tools/quality-check/` Qualitätstor und Messungen zur ISO-25010-Bewertung
 - `spikes/rule-engine/` Spike: deterministische Regel-Engine + deutscher Datums-Parser
 - `spikes/sync/` Spike: Local-first-Sync über blindes Relay (ADR 0002)
