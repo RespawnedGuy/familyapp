@@ -26,10 +26,10 @@ class PenpotTokensTest {
     }
 
     @Test
-    fun lightColorsMatchTheme() = assertSetMatches("FamilyApp/Hell", LightFamilyColors)
+    fun lightColorsMatchTheme() = assertSetMatches("Hell", LightFamilyColors)
 
     @Test
-    fun darkColorsMatchTheme() = assertSetMatches("FamilyApp/Dunkel", DarkFamilyColors)
+    fun darkColorsMatchTheme() = assertSetMatches("Dunkel", DarkFamilyColors)
 
     private fun assertSetMatches(set: String, c: FamilyColors) {
         val expected = linkedMapOf(

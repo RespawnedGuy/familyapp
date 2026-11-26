@@ -1,5 +1,5 @@
 {
-  "FamilyApp/Basis": {
+  "Basis": {
     "radius": {
       "card": {
         "$value": "16",
@@ -13,7 +13,7 @@
       }
     }
   },
-  "FamilyApp/Hell": {
+  "Hell": {
     "color": {
       "background": {
         "$value": "#F6F5F2",
@@ -75,7 +75,7 @@
       }
     }
   },
-  "FamilyApp/Dunkel": {
+  "Dunkel": {
     "color": {
       "background": {
         "$value": "#151513",
@@ -136,5 +136,18 @@
         }
       }
     }
+  },
+  "$themes": [],
+  "$metadata": {
+    "tokenSetOrder": [
+      "Basis",
+      "Hell",
+      "Dunkel"
+    ],
+    "activeThemes": [],
+    "activeSets": [
+      "Basis",
+      "Hell"
+    ]
   }
 }
