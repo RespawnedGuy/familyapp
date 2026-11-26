@@ -77,10 +77,9 @@ android {
         }
     }
 
-    // One universal APK: no ABI or density splits.
+    // One universal APK: no ABI splits. (Density splits are off by default and their DSL is gone in AGP 9.)
     splits {
         abi { isEnable = false }
-        density { isEnable = false }
     }
 
     compileOptions {
