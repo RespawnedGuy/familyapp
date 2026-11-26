@@ -217,15 +217,19 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           # The runner executes each line with sh, so pipefail needs an explicit bash.
+          # Every test runs even if an earlier one fails (one red test must not hide the others);
+          # the last line fails the step if any of them failed.
           # Smoke test, pairing with the house device program, hostile shares from other apps (threat model),
           # the in-app updater end to end (wrong checksum, foreign key, real update),
           # then every screen at 100 % and 200 % font size with screenshots (quality plan P1-4).
           script: |
-            bash -c 'set -o pipefail; bash app/scripts/emulator-smoke.sh "dist/familyapp-${{ env.VERSION_NAME }}.apk" probe/update-probe.apk emulator-out "$(ls probe/previous/*.apk 2>/dev/null | head -1)" 2>&1 | tee emulator-out-report.txt'
-            bash -c 'set -o pipefail; chmod +x peer/bin/family-peer; bash app/scripts/emulator-pairing-e2e.sh peer/bin/family-peer emulator-out 2>&1 | tee emulator-out-pairing.txt'
-            bash -c 'set -o pipefail; bash app/scripts/emulator-share-e2e.sh e2e/share-source.apk emulator-out 2>&1 | tee emulator-out-share.txt'
-            bash -c 'set -o pipefail; bash app/scripts/emulator-update-e2e.sh e2e emulator-out 2>&1 | tee emulator-out-e2e.txt'
-            bash -c 'set -o pipefail; bash app/scripts/emulator-font-scale.sh uitest/shared-debug-androidTest.apk emulator-out 2>&1 | tee emulator-out-schrift.txt'
+            rm -f emulator-failed
+            bash -c 'set -o pipefail; bash app/scripts/emulator-smoke.sh "dist/familyapp-${{ env.VERSION_NAME }}.apk" probe/update-probe.apk emulator-out "$(ls probe/previous/*.apk 2>/dev/null | head -1)" 2>&1 | tee emulator-out-report.txt' || touch emulator-failed
+            bash -c 'set -o pipefail; chmod +x peer/bin/family-peer; bash app/scripts/emulator-pairing-e2e.sh peer/bin/family-peer emulator-out 2>&1 | tee emulator-out-pairing.txt' || touch emulator-failed
+            bash -c 'set -o pipefail; bash app/scripts/emulator-share-e2e.sh e2e/share-source.apk emulator-out 2>&1 | tee emulator-out-share.txt' || touch emulator-failed
+            bash -c 'set -o pipefail; bash app/scripts/emulator-update-e2e.sh e2e emulator-out 2>&1 | tee emulator-out-e2e.txt' || touch emulator-failed
+            bash -c 'set -o pipefail; bash app/scripts/emulator-font-scale.sh uitest/shared-debug-androidTest.apk emulator-out 2>&1 | tee emulator-out-schrift.txt' || touch emulator-failed
+            test ! -f emulator-failed
 
       - name: Collect report
         if: always()
