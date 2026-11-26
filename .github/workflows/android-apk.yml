@@ -78,7 +78,7 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p ../dist ../logs
-          ./gradlew --no-daemon :shared:testDebugUnitTest :androidApp:assembleRelease \
+          ./gradlew --no-daemon :shared:testDebugUnitTest :shared:jvmTest :androidApp:assembleRelease \
             -PversionCode=$VERSION_CODE -PversionName=$VERSION_NAME 2>&1 | tee ../logs/gradle-build.txt
           cp androidApp/build/outputs/apk/release/androidApp-release.apk ../dist/familyapp-$VERSION_NAME.apk
 

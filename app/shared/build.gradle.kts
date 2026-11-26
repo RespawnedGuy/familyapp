@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.compose.hot.reload)
 }
 
 kotlin {
@@ -17,6 +18,9 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_17)
         }
     }
+
+    // Desktop window for UI work with Compose Hot Reload (docs/ui-bearbeiten.md). Dev tool only, never shipped.
+    jvm()
 
     // iOS is prepared but only compiles on macOS (Xcode required).
     listOf(iosArm64(), iosSimulatorArm64()).forEach { target ->
@@ -37,13 +41,28 @@ kotlin {
             api(libs.kotlinx.coroutines.core)
             api(libs.kotlinx.datetime)
         }
-        androidMain.dependencies {
-            // @Preview annotation for the Android Studio previews in androidMain/.../preview.
-            implementation(compose.preview)
+        androidMain {
+            // Sample family shared by the Android Studio previews and the desktop dev window.
+            kotlin.srcDir("src/sampleData/kotlin")
+            dependencies {
+                // @Preview annotation for the Android Studio previews in androidMain/.../preview.
+                implementation(compose.preview)
+            }
+        }
+        jvmMain {
+            kotlin.srcDir("src/sampleData/kotlin")
+            dependencies {
+                implementation(compose.desktop.currentOs)
+                implementation(libs.kotlinx.coroutines.swing)
+            }
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
+        }
+        jvmTest.dependencies {
+            @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
+            implementation(compose.uiTest)
         }
     }
 }
@@ -51,6 +70,12 @@ kotlin {
 dependencies {
     // Renderer for the Android Studio preview pane; debug only, never in the release APK.
     debugImplementation(compose.uiTooling)
+}
+
+compose.desktop {
+    application {
+        mainClass = "io.github.respawnedguy.familyapp.DevWindowKt"
+    }
 }
 
 android {

@@ -1,6 +1,6 @@
 # Werkzeuge, um gemeinsam an der Oberfläche zu arbeiten
 
-- Stand: 2026-11-25, Status: Empfehlung (wartet auf OK von Nils)
+- Stand: 2026-11-26, Status: **angenommen** (OK von Nils am 26.11.2026 für A, B und C)
 - Frage: Mit welchem kostenlosen oder selbst gehosteten Drag-and-drop-Werkzeug können Nils und Claude gemeinsam an der FamilyApp arbeiten?
 - Rahmen: Kotlin Multiplatform + Compose Multiplatform 1.9.0, Android + iOS, local-first ohne Server, E2E-verschlüsselt (ADR 0001–0003). Regel-Engine und Logik sind reines Kotlin und werden geteilt.
 
@@ -76,9 +76,13 @@ Kriterien in der Reihenfolge ihres Gewichts: (1) passt zum Stack, also landet am
 
 ## Vorgeschlagene nächste Schritte
 
-1. Nils: lokales AGP-Upgrade zurücknehmen (siehe oben), Vorschau öffnen, Claude-Code-Plugin in Android Studio installieren.
-2. Claude, kleiner PR: Zeile `density { … }` entfernen.
-3. Claude, PR „Desktop-Ziel + Compose Hot Reload“ mit Anleitungsabschnitt in `docs/ui-bearbeiten.md`. Abnahme: `./gradlew :desktopApp:hotRunDesktop` (o. ä.) öffnet die App, eine Textänderung erscheint ohne Neustart; Android-Build und CI bleiben grün.
-4. Nils: Penpot-Konto (Cloud) anlegen. Danach Claude (auf Nils' PC mit MCP): Baustein-Bibliothek aus dem Code anlegen, ein Bildschirm als Probelauf hin und zurück.
+Umgesetzt im selben PR (26.11.2026):
+
+- Zeile `density { … }` entfernt.
+- Desktop-Ziel `jvm()` in `shared` mit Compose Hot Reload 1.1.1 (letzte Version für Compose MP 1.9), Startpunkt `DevWindow.kt` mit der Beispielfamilie der Vorschauen (`PreviewData.kt` liegt dafür jetzt in `shared/src/sampleData/`). CI führt `:shared:jvmTest` aus: gemeinsame Tests zusätzlich auf der JVM und ein Render-Test, der die App im Desktop-Fenster aufbaut.
+- Penpot: Design-Tokens `docs/gestaltung/penpot/familyapp-tokens.json` (DTCG-Format, Import in Penpot) mit Test gegen `Theme.kt`, Anleitung `docs/gestaltung/penpot/README.md`.
+- Anleitung `docs/ui-bearbeiten.md` um AGP-Warnung, Hot Reload, Claude-Code-Plugin und Penpot ergänzt.
+
+Offen bei Nils: lokales AGP-Upgrade zurücknehmen, Hot-Reload-Fenster einmal starten, Penpot-Konto anlegen und Tokens importieren. Danach als Probelauf: ein Bildschirm aus dem Code nach Penpot und zurück (mit MCP auf Nils' PC).
 
 Abnahme für das Gesamtziel: Nils ändert einen Bildschirm selbst (Penpot oder Code), sieht das Ergebnis innerhalb von Sekunden und bekommt es als PR mit grünem CI in die App.

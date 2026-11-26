@@ -23,8 +23,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.datetime.LocalDate
 
 /**
- * Sample family for the Android Studio previews (Design/Split view). Only used by @Preview
- * functions, never by the app. Change names, titles or dates here to see other cases.
+ * Sample family for the Android Studio previews (Design/Split view) and the desktop dev window
+ * with Compose Hot Reload. Never used by the app itself. Change names, titles or dates here to see other cases.
  *
  * "Today" is fixed to Monday 23.11.2026 so overdue/soon labels look the same on every machine.
  */
