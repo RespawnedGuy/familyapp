@@ -9,7 +9,8 @@ In Penpot landen nur Entwürfe mit Beispieldaten (Nils, Lisa, Mia, Oma Gerda), *
 1. Konto auf **design.penpot.app** anlegen (kostenlos).
 2. Neues Projekt „FamilyApp“, darin eine Datei „FamilyApp UI“.
 3. **Farben und Ecken importieren:** In der Datei links den Reiter **Tokens** öffnen → unten **Tools → Import → Single JSON file** → [`familyapp-tokens.json`](familyapp-tokens.json) wählen (aus dem Repo-Klon, `docs/gestaltung/penpot/`).
-   Danach gibt es drei Sets: `FamilyApp/Basis` (Eckenradien 16 und 28), `FamilyApp/Hell` und `FamilyApp/Dunkel` (alle App-Farben, `color.person.1` bis `.4` sind die Personenfarben). Für helle Entwürfe `Basis` + `Hell` aktivieren, für dunkle `Basis` + `Dunkel`.
+   Danach gibt es drei Sets: `Basis` (Eckenradien 16 und 28), `Hell` und `Dunkel` (alle App-Farben, `color.person.1` bis `.4` sind die Personenfarben). `Basis` + `Hell` sind schon aktiv; für dunkle Entwürfe `Hell` aus- und `Dunkel` einschalten.
+   Die Datei folgt Penpots Mehr-Set-Format mit `$themes` und `$metadata` (wie Penpots eigene Testdaten). Ohne diese beiden Schlüssel liest Penpot die ganze Datei als ein einziges Set und lehnt die Namen ab.
 4. Ein Board (Rahmen) **412 × 900** anlegen, das entspricht dem Desktop-Fenster und etwa einem Pixel-Handy in dp. 1 px in Penpot = 1 dp in Compose.
 
 Die Farben in der Datei stimmen garantiert mit der App überein: Ein Test (`PenpotTokensTest`) vergleicht sie bei jedem PR mit `Theme.kt`. Ändert sich eine Farbe in der App, schlägt der Test fehl, bis die JSON-Datei angepasst ist; danach in Penpot erneut importieren.
