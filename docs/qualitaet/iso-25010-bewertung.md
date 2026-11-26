@@ -340,3 +340,33 @@ Abnahmekriterium „`file://`-URI und Übergröße werden abgelehnt“ prüft je
 Messwerte danach (`gradle check`, zusammen mit P1-7 Schritt 1): 178 App-Tests grün, Abdeckung Zeilen 91 %, Zweige 62 %.
 
 Noch offen aus P1: P1-4 Rest (Android-Prüfungen, Screenshots bei 200 % Schrift), P1-7 Texte in Ressourcen (begonnen), P1-10 Referenzmessung.
+
+### 26.11.2026: P1-4 große Schrift und Accessibility Test Framework im Emulator
+
+`LargeFontScreensTest` (`app/shared/src/androidInstrumentedTest`, gestartet von `app/scripts/emulator-font-scale.sh`) läuft im Emulator-Job auf Android 8 und 16: 9 Ansichten (Start, Heute, Heute leer, Familie, Demnächst, Suchen, Einstellungen, Erfassen Sprechen und Tippen) × Schrift 100 % und 200 % × hell und dunkel. Scrollbare Bildschirme werden seitenweise durchgeblättert, jede Seite wird geprüft und fotografiert.
+
+| Prüfung | Wie |
+| --- | --- |
+| Abgeschnitten | Textzeilen gegen die Fläche, die der Text auf dem Bildschirm wirklich bekommt (unten, seitlich, mehr Zeilen als erlaubt, „…“); dazu vom Container abgeschnitten und über den Bildschirmrand |
+| Zerbrochen | Zeilenumbruch mitten im Wort ohne Silbentrennung |
+| Überlappend | Text über Text |
+| Accessibility Test Framework | Alle Fehler (Beschriftung, Zielgröße), ab Android 14, weil die Compose-Anbindung API 34 braucht |
+
+Bewusst gekürzter freier Text (ab 2 Zeilen mit „…“, ganz per Tippen erreichbar) und automatische Silbentrennung sind Hinweise, keine Fehler. Der Emulator ist 320 dp breit, also schmaler als fast alle Handys; Android 8 vergrößert die Schrift linear, Android 14+ große Schriftgrade weniger stark. Beides zusammen ist der harte Fall.
+
+Was der Test gefunden hat und jetzt behoben ist:
+
+| Befund | Behebung |
+| --- | --- |
+| Beschriftungen der unteren Leiste und des Erfassen-Blatts brachen schon bei 100 % mitten im Wort um („Demnäch\|st“, „Abbrech\|en“) | `FitLabel` (`ui/LargeFont.kt`): einzeilig, wächst mit der Schrift, verkleinert sich aber bis zur Breite des Platzes statt Wörter zu trennen; ebenso der Titel oben |
+| Initialen in den Personenpunkten bei 200 % abgeschnitten | feste Größe, unabhängig von der Schriftgröße; der Name kommt über die Beschreibung für Screenreader |
+| Lastkarte: Zahlen liefen bei 200 % aus dem Bildschirm, lange Namen abgeschnitten | ab Schriftfaktor 1,3 stehen Name, Balken und Zahlen untereinander (`largeFont()`) |
+| Demnächst: Datum überlappte den Titel, Titel abgeschnitten | Datum bei großer Schrift über dem Titel, Titel ohne Zeilengrenze (die Zeile lässt sich nicht öffnen) |
+| „Übernehme ich“ ließ dem Titel 16 dp | Knopf unter dem Text; „Person hinzufügen“ bei großer Schrift unter der Überschrift |
+| Knöpfe mit fester Höhe 52 dp | Mindesthöhe |
+| Lange Wörter in schmalen Spalten | automatische Silbentrennung für alle Texte |
+| ATF: Erledigt-Kreis und Foto-Knopf ohne Beschriftung, Hintergrund des Erfassen-Blatts als unbenanntes 21-dp-Ziel | Beschriftung; Foto-Knopf und „Foto“ ein Ziel; Hintergrund für Screenreader ausgeblendet („Abbrechen“ bleibt) |
+
+Screenshots: Artefakt `emulator-api26/36`, Ordner `schrift-api*`, und im Release als `schrift-screenshots-api*.zip`. Alle Emulator-Tests laufen jetzt auch dann, wenn ein früherer fehlschlägt, damit ein roter Test die anderen nicht verdeckt.
+
+Noch offen aus P1: P1-7 Texte in Ressourcen (Rest), P1-10 Referenzmessung, TalkBack-Durchgang durch Nils.
