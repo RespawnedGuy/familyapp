@@ -69,5 +69,12 @@ grep -qE "networkSecurityConfig|usesCleartextTraffic" <<<"$XMLTREE" \
   || pass "nur HTTPS (keine Ausnahme für unverschlüsseltes HTTP)"
 
 echo
+echo "== Sicherung und Umzug (Manifest, Bedrohungsmodell GE-2)"
+grep -qE "allowBackup.*=(false|\(type 0x12\)0x0)" <<<"$XMLTREE" \
+  && pass "keine Cloud-Sicherung des App-Speichers (allowBackup=false)" || fail "allowBackup ist nicht false"
+grep -q "dataExtractionRules" <<<"$XMLTREE" \
+  && pass "Regeln gegen Kopie auf ein neues Handy (dataExtractionRules)" || fail "dataExtractionRules fehlen"
+
+echo
 [ $FAILED -eq 0 ] && echo "ERGEBNIS: alle Prüfungen bestanden" || echo "ERGEBNIS: mindestens eine Prüfung fehlgeschlagen"
 exit $FAILED

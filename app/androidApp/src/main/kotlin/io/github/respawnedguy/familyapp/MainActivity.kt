@@ -13,6 +13,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
 import com.journeyapps.barcodescanner.ScanContract
+import io.github.respawnedguy.familyapp.data.SharedImage
+import io.github.respawnedguy.familyapp.data.SharedInput
 import io.github.respawnedguy.familyapp.ui.AndroidPhotoLoader
 import io.github.respawnedguy.familyapp.update.AndroidUpdatePlatform
 import io.github.respawnedguy.familyapp.update.UpdateController
@@ -129,13 +131,17 @@ class MainActivity : ComponentActivity() {
             }
             Intent.ACTION_SEND -> {
                 app.coldStart = false
-                val subject = intent.getStringExtra(Intent.EXTRA_SUBJECT)
-                val body = intent.getStringExtra(Intent.EXTRA_TEXT)
-                val text = listOfNotNull(subject?.takeIf { it.isNotBlank() }, body?.takeIf { it.isNotBlank() }).joinToString(" – ")
+                // Any app can send anything here (threat model TE-1 to TE-4): text is cut, images are checked.
+                val text = SharedInput.text(
+                    intent.getCharSequenceExtra(Intent.EXTRA_SUBJECT)?.toString(),
+                    intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString(),
+                )
                 val stream = streamUri(intent)
+                val type = intent.type
                 lifecycleScope.launch {
-                    val photo = stream?.let { withContext(Dispatchers.IO) { app.platform.importSharedImage(it) } }
-                    app.model.captureShared(text, photo)
+                    val image = stream?.let { withContext(Dispatchers.IO) { app.platform.importSharedImage(it, type) } }
+                    val accepted = (image as? SharedImage.Accepted)?.path
+                    app.model.captureShared(text, accepted, (image as? SharedImage.Rejected)?.why)
                 }
             }
             else -> app.coldStart = false

@@ -18,3 +18,5 @@ dependencyResolutionManagement {
 
 include(":shared")
 include(":androidApp")
+// Test-only sender for the share end-to-end test in CI (never published).
+include(":e2eShareSource")

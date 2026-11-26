@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Android 11+: the FamilyApp must be visible to be started explicitly. -->
+    <queries>
+        <package android:name="io.github.respawnedguy.familyapp" />
+    </queries>
+
+    <application android:label="E2E Teilen" android:allowBackup="false">
+        <!-- Started by adb (am start -n io.github.respawnedguy.e2eshare/.ShareSourceActivity, extra "kind"). -->
+        <activity
+            android:name=".ShareSourceActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.NoDisplay" />
+
+        <!-- Like a gallery's FileProvider: not exported, readable only through a URI grant. -->
+        <provider
+            android:name=".TestFileProvider"
+            android:authorities="io.github.respawnedguy.e2eshare.files"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+    </application>
+</manifest>

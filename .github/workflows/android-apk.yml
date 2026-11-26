@@ -113,6 +113,13 @@ jobs:
           cp androidApp/build/outputs/apk/e2e/androidApp-e2e.apk ../e2e/e2e-102-foreign.apk
           ls -la ../e2e
 
+      - name: Share test sender APK (e2eShareSource, test only, never published)
+        run: |
+          set -o pipefail
+          mkdir -p ../e2e
+          ./gradlew --no-daemon :e2eShareSource:assembleDebug 2>&1 | tee ../logs/gradle-share-source.txt
+          cp e2eShareSource/build/outputs/apk/debug/e2eShareSource-debug.apk ../e2e/share-source.apk
+
       - name: Verify APK (apksigner, zipalign, aapt2)
         run: |
           set -o pipefail
@@ -210,11 +217,13 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           # The runner executes each line with sh, so pipefail needs an explicit bash.
-          # Smoke test, pairing with the house device program, the in-app updater end to end (wrong checksum, foreign key, real update),
+          # Smoke test, pairing with the house device program, hostile shares from other apps (threat model),
+          # the in-app updater end to end (wrong checksum, foreign key, real update),
           # then every screen at 100 % and 200 % font size with screenshots (quality plan P1-4).
           script: |
             bash -c 'set -o pipefail; bash app/scripts/emulator-smoke.sh "dist/familyapp-${{ env.VERSION_NAME }}.apk" probe/update-probe.apk emulator-out "$(ls probe/previous/*.apk 2>/dev/null | head -1)" 2>&1 | tee emulator-out-report.txt'
             bash -c 'set -o pipefail; chmod +x peer/bin/family-peer; bash app/scripts/emulator-pairing-e2e.sh peer/bin/family-peer emulator-out 2>&1 | tee emulator-out-pairing.txt'
+            bash -c 'set -o pipefail; bash app/scripts/emulator-share-e2e.sh e2e/share-source.apk emulator-out 2>&1 | tee emulator-out-share.txt'
             bash -c 'set -o pipefail; bash app/scripts/emulator-update-e2e.sh e2e emulator-out 2>&1 | tee emulator-out-e2e.txt'
             bash -c 'set -o pipefail; bash app/scripts/emulator-font-scale.sh uitest/shared-debug-androidTest.apk emulator-out 2>&1 | tee emulator-out-schrift.txt'
 
@@ -224,6 +233,7 @@ jobs:
           mkdir -p emulator-out
           [ -f emulator-out-report.txt ] && mv emulator-out-report.txt emulator-out/pruefbericht-emulator-api${{ matrix.api-level }}.txt || true
           [ -f emulator-out-pairing.txt ] && mv emulator-out-pairing.txt emulator-out/pruefbericht-kopplung-api${{ matrix.api-level }}.txt || true
+          [ -f emulator-out-share.txt ] && mv emulator-out-share.txt emulator-out/pruefbericht-teilen-api${{ matrix.api-level }}.txt || true
           [ -f emulator-out-e2e.txt ] && mv emulator-out-e2e.txt emulator-out/pruefbericht-update-e2e-api${{ matrix.api-level }}.txt || true
           [ -f emulator-out-schrift.txt ] && mv emulator-out-schrift.txt emulator-out/pruefbericht-schrift-api${{ matrix.api-level }}.txt || true
 
