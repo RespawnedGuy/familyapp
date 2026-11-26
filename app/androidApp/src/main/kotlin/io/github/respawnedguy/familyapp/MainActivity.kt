@@ -14,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import com.journeyapps.barcodescanner.ScanContract
 import io.github.respawnedguy.familyapp.data.SharedImage
 import io.github.respawnedguy.familyapp.data.SharedInput
+import io.github.respawnedguy.familyapp.presentation.KitchenRoute
 import io.github.respawnedguy.familyapp.ui.AndroidPhotoLoader
 import io.github.respawnedguy.familyapp.update.AndroidUpdatePlatform
 import io.github.respawnedguy.familyapp.update.UpdateController
@@ -54,6 +55,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         app.platform.activity = this
+        // After a rotation the new window must keep the screen on again while cooking.
+        if (app.model.kitchen.route.value is KitchenRoute.Cook) app.platform.keepScreenOn(true)
 
         if (BuildConfig.UPDATES_ENABLED) {
             val platform = AndroidUpdatePlatform(

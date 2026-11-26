@@ -1,6 +1,21 @@
 # Familien-Kochbibliothek – Konzept und Brainstorming
 
-Stand: 21.11.2026 · Status: **Entwurf zur Abstimmung** (noch kein Bau) · Reifestufe danach: Spike
+Stand: 26.11.2026 · Status: **Schritt 1 in der App** (siehe „Umsetzungsstand“) · Konzept vom 21.11.2026 abgestimmt (PR #17)
+
+## Umsetzungsstand
+
+**Schritt 1 (26.11.2026): Rezepte, Kochmodus, Einkaufsliste in der App, ohne Netz.**
+
+- Bibliothek unter **Familie › Kochbibliothek** (kein eigener Tab, wie unten entschieden): Suche über Titel und Zutaten, neueste zuerst, Markierung „Vorschlag“ und „Text fehlt“.
+- **Rezept hinzufügen** über ein einziges Textfeld (Weg 3). Der Regel-Baustein aus dem Spike (`domain/recipe/`, unverändert in der Logik, mit den Spike-Tests) teilt den Text in Titel, Portionen, Zeit, Zutaten und Schritte.
+- **Teilen** (Weg 1 ohne Download): Ein geteilter Text mit Zutatenliste *und* Schritten oder ein Instagram-Beitragslink landet als Rezeptvorschlag in der Bibliothek statt im Eingang, mit Rückgängig. Beim reinen Link fehlt der Text; man fügt die Bildunterschrift im Rezept ein („Text einlesen“). Alles andere bleibt ein normaler Eintrag. Bedrohungsmodell TE-7, TE-8.
+- **Rezept-Ansicht:** Portionen mit Plus/Minus, Mengen neu gerechnet und gerundet (`Amounts`: ⅓ TL, 1,05 kg, 335 g), Quelle als Link (nur http/https), Text der Vorlage, Notizen. Bearbeiten als Text: Zutaten und Schritte je eine Zeile.
+- **Kochmodus:** „Alles bereitlegen“ zum Abhaken, ein Schritt pro Seite in großer Schrift mit den Zutaten des Schritts, Weiter/Zurück groß unten und per Wischen, am Ende „Gekocht?“ (setzt „zuletzt gekocht“). Der Bildschirm bleibt nur im Kochmodus an.
+- **Einkaufsliste:** gemeinsam, aus Rezepten mit den gewählten Portionen oder getippt („Milch und 6 Eier“). Gleiche Zutaten werden über den Zutat-Schlüssel zusammengefasst, Gramm und Kilo addiert, EL und g nebeneinander. Grundzutaten (Salz, Öl, Mehl …) kommen als „Hast du noch …?“. Abhaken zeigt, wer es war; „Abgehakte entfernen“ nach dem Einkauf.
+- **Abgleich:** Rezepte und Einträge sind eigene Datensätze mit Stempel (neuester gewinnt). Löschen ist eine neue Fassung mit `deleted` statt eines neuen Grabstein-Typs. So bleibt das Format bei Schema 2 und Handys mit älterer App-Version gleichen alles andere weiter ab; sie überspringen nur die Rezepte, bis sie aktualisiert sind. Sicherung enthält Rezepte und Liste.
+- Keine Benachrichtigung, keine Vibration, keine Cloud-KI.
+
+**Bewusst noch nicht drin (nächste Schritte):** Kochtimer aus dem Text (mit Ton), Abruf von Rezeptseiten per JSON-LD und von Instagram-Bildunterschriften (hängt an der Lizenzentscheidung yt-dlp/GPL, Empfehlung 15), Titelbilder (Anhänge im Sync), Fotos/Texterkennung, „Einkaufen“ als Aufgabe mit Zuständigkeit, Sortierung nach Abteilung und Markt, Angebote und Wochenvorschlag, Rezepte in der Suche unter **Suchen**.
 
 ## Kurzfassung
 

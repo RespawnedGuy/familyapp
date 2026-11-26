@@ -91,6 +91,22 @@ done
 [ $FOUND -eq 1 ] && pass "Foto erscheint im Eingang" || fail "Foto fehlt im Eingang"
 adb exec-out screencap -p > "$OUT/screen-share-api$API.png" || true
 
+echo "-- Kochbibliothek: geteilter Instagram-Link wird Rezeptvorschlag (TE-7)"
+tap() { seen "$1" && adb shell input tap $(python3 "$HERE/ui-tap.py" "$OUT/ui.xml" "$1" "$PKG"); }
+adb shell am start -W -n "$PKG/.MainActivity" -a android.intent.action.SEND -t text/plain \
+  --es android.intent.extra.TEXT "'https://www.instagram.com/reel/E2Etest1/?igsh=abc'" >/dev/null 2>&1
+expect "Instagram-Link als Rezeptvorschlag gespeichert" "Link als Rezeptvorschlag gespeichert\..*"
+tap "Familie"
+if wait_text "Kochbibliothek" 10 && tap "Rezepte" && wait_text "Rezept von Instagram" 10; then
+  pass "Vorschlag steht in der Kochbibliothek unter Familie"
+else
+  fail "Vorschlag fehlt in der Kochbibliothek"
+fi
+tap "Rezept von Instagram"
+wait_text "Zu diesem Link fehlt der Rezepttext\..*" 10 && pass "Rezept zeigt, dass der Text fehlt" || fail "Hinweis auf fehlenden Text fehlt"
+adb exec-out screencap -p > "$OUT/screen-recipe-api$API.png" || true
+for _ in 1 2 3; do adb shell input keyevent KEYCODE_BACK; sleep 1; done
+
 adb logcat -d > "$OUT/logcat-share-api$API.txt"
 grep -qE "FATAL EXCEPTION|ANR in $PKG" "$OUT/logcat-share-api$API.txt" && fail "Absturz/ANR beim Teilen" || pass "kein Absturz beim Teilen"
 adb uninstall "$SRC" >/dev/null 2>&1 || true

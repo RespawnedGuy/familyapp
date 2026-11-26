@@ -26,7 +26,7 @@ interface SpeechInput {
  * Everything the shared UI needs from the platform. Android implements it in androidApp;
  * iOS gets its own implementation when the iOS app is built.
  */
-interface PlatformServices : DeviceMeasurements {
+interface PlatformServices : DeviceMeasurements, ScreenControl {
     /** Null where no recognizer is available; the capture sheet then offers text instead. */
     val speech: SpeechInput?
 
@@ -74,6 +74,12 @@ sealed interface RestoreRead {
     data object NeedsCode : RestoreRead
     data object WrongCode : RestoreRead
     data class Failed(val message: String) : RestoreRead
+}
+
+/** Display control for the kitchen library. Default: nothing (platforms without it). */
+interface ScreenControl {
+    /** Keeps the display on while the cooking mode is open; off again afterwards. */
+    fun keepScreenOn(on: Boolean) = Unit
 }
 
 /** What the reference measurement on real phones needs (quality plan P1-10). Defaults where a platform has none. */

@@ -1,5 +1,7 @@
 package io.github.respawnedguy.familyapp.domain
 
+import io.github.respawnedguy.familyapp.domain.recipe.Recipe
+import io.github.respawnedguy.familyapp.domain.recipe.ShoppingEntry
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 
@@ -125,7 +127,12 @@ data class Tombstone(val id: String, val kind: RecordKind, val stamp: Stamp, val
 /** Current version of the stored format. Older files are upgraded by [io.github.respawnedguy.familyapp.data.FamilyJson]. */
 const val CURRENT_SCHEMA = 2
 
-/** Everything stored on this device. Sync (ADR 0003) will exchange members, items and tombstones by [Stamp]. */
+/**
+ * Everything stored on this device. Sync (ADR 0003) exchanges members, items, tombstones, recipes
+ * and shopping entries by [Stamp]. Recipes and shopping entries came later (kitchen library,
+ * 26.11.2026) as additional fields: older app versions ignore them, so the schema stays 2 and
+ * devices with different versions keep syncing everything else.
+ */
 @Serializable
 data class FamilyData(
     val schema: Int = CURRENT_SCHEMA,
@@ -135,6 +142,8 @@ data class FamilyData(
     val items: List<Item> = emptyList(),
     val tombstones: List<Tombstone> = emptyList(),
     val settings: Settings = Settings(),
+    val recipes: List<Recipe> = emptyList(),
+    val shopping: List<ShoppingEntry> = emptyList(),
 ) {
     val self: Member? get() = members.firstOrNull { it.id == selfId }
     fun member(id: String?): Member? = id?.let { i -> members.firstOrNull { it.id == i } }

@@ -9,6 +9,7 @@ import android.os.Debug
 import android.os.SystemClock
 import android.provider.DocumentsContract
 import android.provider.Settings
+import android.view.WindowManager
 import androidx.core.content.FileProvider
 import io.github.respawnedguy.familyapp.data.BackupCrypto
 import io.github.respawnedguy.familyapp.data.BackupFolder
@@ -195,6 +196,16 @@ class AndroidPlatform(private val app: FamilyApplication) : PlatformServices {
     override fun formatLocalTime(epochMs: Long): String =
         Instant.ofEpochMilli(epochMs).atZone(ZoneId.systemDefault()).truncatedTo(ChronoUnit.SECONDS)
             .toOffsetDateTime().toString()
+
+    /** Cooking mode: the flag belongs to the window, so it ends with the activity at the latest. */
+    override fun keepScreenOn(on: Boolean) {
+        val window = activity?.window ?: return
+        if (on) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
 
     override fun shareText(subject: String, text: String): Boolean {
         val send = Intent(Intent.ACTION_SEND).setType("text/plain")

@@ -74,7 +74,11 @@ import io.github.respawnedguy.familyapp.presentation.Feedback
 import io.github.respawnedguy.familyapp.presentation.RestoreCodeRequest
 import io.github.respawnedguy.familyapp.presentation.Tab
 import io.github.respawnedguy.familyapp.sync.SyncUi
+import io.github.respawnedguy.familyapp.presentation.KitchenRoute
 import io.github.respawnedguy.familyapp.ui.CaptureSheet
+import io.github.respawnedguy.familyapp.ui.CookOverlay
+import io.github.respawnedguy.familyapp.ui.KitchenScreen
+import io.github.respawnedguy.familyapp.ui.kitchenTitle
 import io.github.respawnedguy.familyapp.ui.FamilyIcons
 import io.github.respawnedguy.familyapp.ui.FitLabel
 import io.github.respawnedguy.familyapp.ui.FamilyScreen
@@ -222,11 +226,17 @@ private fun Main(
     val feedback by model.feedback.collectAsState()
     val saveProblem by model.repo.saveProblem.collectAsState()
     val restoreCode by model.restoreCode.collectAsState()
+    val kitchen by model.kitchen.route.collectAsState()
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
+            val kitchenRoute = kitchen
             TopBar(
-                title = stringResource(if (settingsOpen) Res.string.common_settings else tab.label),
+                title = when {
+                    settingsOpen -> stringResource(Res.string.common_settings)
+                    kitchenRoute != null -> kitchenTitle(kitchenRoute, data)
+                    else -> stringResource(tab.label)
+                },
                 data = data,
                 onAvatar = { model.openSettings() },
             )
@@ -234,6 +244,8 @@ private fun Main(
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 if (settingsOpen) {
                     SettingsScreen(data, model, updates, versionName)
+                } else if (kitchenRoute != null) {
+                    KitchenScreen(kitchenRoute, data, model)
                 } else when (tab) {
                     Tab.TODAY -> TodayScreen(data, model, photos, reducedMotion)
                     Tab.FAMILY -> FamilyScreen(data, model, photos, reducedMotion)
@@ -244,6 +256,8 @@ private fun Main(
             }
             BottomBar(tab.takeUnless { settingsOpen }, Views.inbox(data).size, data.settings.firstCaptureAction, model)
         }
+        // Cooking mode covers everything, bars included (concept "Kochmodus").
+        (kitchen as? KitchenRoute.Cook)?.let { CookOverlay(it, data, model) }
         CaptureSheet(capture, model, reducedMotion)
         restoreCode?.let { RestoreCodeDialog(it, model) }
     }
