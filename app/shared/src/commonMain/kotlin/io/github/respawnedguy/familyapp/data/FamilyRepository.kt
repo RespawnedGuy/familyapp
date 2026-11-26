@@ -332,6 +332,12 @@ class FamilyRepository(
 
     fun setBackupCode(code: String) = settings { it.copy(backupCode = code) }
 
+    fun setRemindersOn(on: Boolean) = settings { it.copy(remindersOn = on) }
+
+    fun recordRemindersChecked(ms: Long) = settings { it.copy(remindersCheckedMs = ms) }
+
+    fun recordNotificationsAsked() = settings { it.copy(notificationsAsked = true) }
+
     fun recordBackup(error: String?) = settings {
         if (error == null) it.copy(lastBackupMs = now(), lastBackupError = null) else it.copy(lastBackupError = error)
     }

@@ -138,6 +138,7 @@ class AppModel(
         val undo = repo.confirm(item.id)
         val who = repo.current.items.firstOrNull { it.id == item.id }?.assignee
         show(if (who == repo.current.selfId) "Gehört jetzt dir." else "Passt. ${name(who)} kümmert sich.", undo)
+        askForNotificationsOnce(item.id)
     }
 
     fun irrelevant(item: Item) = show("Als irrelevant markiert.", repo.markIrrelevant(item.id))
@@ -150,7 +151,23 @@ class AppModel(
     fun setAssignee(item: Item, memberId: String) {
         val r = repo.setAssignee(item.id, memberId)
         if (r.confirmed) show("Bestätigt: ${name(memberId)} kümmert sich.", r.undo)
+        askForNotificationsOnce(item.id)
     }
+
+    /**
+     * The first time a deadline is confirmed, the app asks for the notification permission: the
+     * moment the person sees why reminders matter (instead of a prompt at the first start).
+     */
+    private fun askForNotificationsOnce(itemId: String) {
+        val s = repo.current.settings
+        val item = repo.current.items.firstOrNull { it.id == itemId }
+        val hasDeadline = item?.status == ItemStatus.OPEN && item.due != null
+        if (s.notificationsAsked || !s.remindersOn || !hasDeadline) return
+        repo.recordNotificationsAsked()
+        platform.requestNotificationPermission()
+    }
+
+    fun setRemindersOn(on: Boolean) = repo.setRemindersOn(on)
 
     fun setConcerns(item: Item, memberId: String?) {
         repo.setConcerns(item.id, memberId)
@@ -163,6 +180,7 @@ class AppModel(
             val whenText = date?.let { "bis " + DateFormat.short(it) } ?: "ohne Datum"
             show("Bestätigt: ${name(now?.assignee)}, $whenText.", r.undo)
         }
+        askForNotificationsOnce(item.id)
     }
 
     fun rename(item: Item, title: String) {

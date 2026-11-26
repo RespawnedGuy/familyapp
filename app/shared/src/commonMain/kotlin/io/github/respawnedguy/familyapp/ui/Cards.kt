@@ -1,5 +1,6 @@
 package io.github.respawnedguy.familyapp.ui
 
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -96,7 +97,9 @@ fun InboxCard(item: Item, data: FamilyData, model: AppModel, photos: PhotoLoader
             )
             Text(
                 item.title,
-                modifier = Modifier.clickable { editing = true },
+                // Tap target at least 48 dp high even for a one-line title (P1-6).
+                modifier = Modifier.heightIn(min = 48.dp).clickable { editing = true }
+                    .wrapContentHeight(Alignment.CenterVertically),
                 color = c.text, fontSize = 17.sp, fontWeight = FontWeight.Medium,
                 maxLines = 3, overflow = TextOverflow.Ellipsis,
             )

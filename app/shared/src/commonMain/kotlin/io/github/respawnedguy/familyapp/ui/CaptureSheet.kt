@@ -148,7 +148,7 @@ private fun ColumnScope.Typing(model: AppModel) {
 @Composable
 private fun BottomRow(state: CaptureState, model: AppModel) {
     val c = LocalFamilyColors.current
-    Row(Modifier.fillMaxWidth().height(80.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 80.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
             if (state == CaptureState.Typing) {
                 SheetAction("Sprechen") { model.switchCapture(CaptureAction.VOICE) }

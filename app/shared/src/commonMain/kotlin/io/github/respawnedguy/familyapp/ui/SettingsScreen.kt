@@ -1,5 +1,10 @@
 package io.github.respawnedguy.familyapp.ui
 
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -60,13 +65,22 @@ fun SettingsScreen(data: FamilyData, model: AppModel, updates: UpdateController?
                 CaptureAction.VOICE to "Sprache (Foto liegt dann an derselben Stelle)",
                 CaptureAction.PHOTO to "Foto",
                 CaptureAction.TEXT to "Tippen",
-            ).forEach { (action, label) ->
-                Row(
-                    Modifier.fillMaxWidth().clickable { model.setFirstCaptureAction(action) },
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    RadioButton(selected = s.firstCaptureAction == action, onClick = { model.setFirstCaptureAction(action) })
-                    Text(label, fontSize = 15.sp, color = c.text)
+            ).let { options ->
+                // One radio group: TalkBack announces "1 of 3, selected"; the whole row is the target (P1-6).
+                Column(Modifier.selectableGroup()) {
+                    options.forEach { (action, label) ->
+                        val chosen = s.firstCaptureAction == action
+                        Row(
+                            Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                                .selectable(selected = chosen, role = Role.RadioButton) {
+                                    model.setFirstCaptureAction(action)
+                                },
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(selected = chosen, onClick = null)
+                            Text(label, Modifier.padding(start = 12.dp), fontSize = 15.sp, color = c.text)
+                        }
+                    }
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -83,6 +97,29 @@ fun SettingsScreen(data: FamilyData, model: AppModel, updates: UpdateController?
                 "Schneller als die App: Schnellkachel „Erfassen“ in den Schnelleinstellungen, langes Drücken aufs App-Symbol, oder „Teilen“ aus Mail und Galerie.",
                 fontSize = 12.sp, color = c.textTertiary,
             )
+        }
+
+        SettingsGroup("Erinnerungen") {
+            // Whole row is one switch for screen readers and a large touch target (P1-6).
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(
+                    value = s.remindersOn,
+                    role = Role.Switch,
+                    onValueChange = { model.setRemindersOn(it) },
+                ),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("An Fristen erinnern", fontSize = 15.sp, color = c.text)
+                    Text(
+                        "Um 8 Uhr am Tag der Frist und am Tag danach, wenn sie noch offen ist. " +
+                            "Ist sie dann immer noch offen, erfahren es alle. " +
+                            "Mehrere Fristen kommen als eine Nachricht.",
+                        fontSize = 12.sp, color = c.textTertiary,
+                    )
+                }
+                Switch(checked = s.remindersOn, onCheckedChange = null)
+            }
         }
 
         SettingsGroup("Sicherung in Ordner") {

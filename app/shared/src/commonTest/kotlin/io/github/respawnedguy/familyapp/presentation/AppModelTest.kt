@@ -55,6 +55,8 @@ private class FakePlatform(override val speech: SpeechInput?) : PlatformServices
         }
     }
     override fun newRecoveryCode() = "ABCD-EFGH-JKMN-PQRS-TVWX"
+    var notificationRequests = 0
+    override fun requestNotificationPermission() { notificationRequests++ }
     override fun describeFolder(folder: String) = folder
 }
 
@@ -240,5 +242,33 @@ class AppModelTest {
         assertTrue(fresh.repo.current.items.any { it.title == "Turnschuhe" })
         assertEquals("ABCD-EFGH-JKMN-PQRS-TVWX", fresh.repo.current.settings.backupCode)
         assertTrue(fresh.feedback.value!!.message.startsWith("Sicherung wiederhergestellt."))
+    }
+
+    @Test
+    fun notificationPermissionIsAskedOnceWhenTheFirstDeadlineIsConfirmed() = runTest {
+        val platform = FakePlatform(FakeSpeech())
+        val m = model(platform = platform)
+        m.addMember("Lisa", MemberKind.ADULT)
+        val lisa = m.repo.current.members.first { it.name == "Lisa" }.id
+        m.saveText("Einkaufen")
+        m.setAssignee(m.repo.current.items.single(), lisa)
+        assertEquals(0, platform.notificationRequests, "no deadline, no reason to ask")
+
+        m.saveText("Elternabend am Dienstag")
+        m.setAssignee(m.repo.current.items.first { it.title.startsWith("Elternabend") }, lisa)
+        m.saveText("Ausflug am 4.12.")
+        m.setAssignee(m.repo.current.items.first { it.title.startsWith("Ausflug") }, lisa)
+        assertEquals(1, platform.notificationRequests)
+        assertTrue(m.repo.current.settings.notificationsAsked)
+    }
+
+    @Test
+    fun switchedOffRemindersNeverAskForThePermission() = runTest {
+        val platform = FakePlatform(FakeSpeech())
+        val m = model(platform = platform)
+        m.setRemindersOn(false)
+        m.saveText("Elternabend am Dienstag")
+        m.setAssignee(m.repo.current.items.single(), m.repo.current.selfId!!)
+        assertEquals(0, platform.notificationRequests)
     }
 }

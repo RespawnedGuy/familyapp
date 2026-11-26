@@ -1,5 +1,7 @@
 package io.github.respawnedguy.familyapp.ui
 
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.heading
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -85,7 +87,10 @@ fun Modifier.dashedBorder(color: Color, radius: Dp, width: Dp = 1.5.dp): Modifie
 fun SectionHeader(title: String, count: Int? = null, modifier: Modifier = Modifier) {
     val c = LocalFamilyColors.current
     Row(modifier.fillMaxWidth().padding(top = 20.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(title, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = c.text)
+        Text(
+            title, Modifier.semantics { heading() },
+            fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = c.text,
+        )
         if (count != null && count > 0) {
             Text(
                 count.toString(),
@@ -124,7 +129,8 @@ fun DecisionChip(
 ) {
     val c = LocalFamilyColors.current
     val shape = RoundedCornerShape(16.dp)
-    val base = Modifier.heightIn(min = 40.dp).clip(shape)
+    // 48 dp: minimum touch target (Material, WCAG 2.5.8 with margin; quality plan P1-6).
+    val base = Modifier.heightIn(min = 48.dp).clip(shape)
     val bordered = if (missing || suggested) base.dashedBorder(if (missing) c.textSecondary else c.accent, 16.dp)
     else base.border(1.dp, c.outline, shape).background(c.background)
     Row(
@@ -237,7 +243,10 @@ fun SettingsGroup(title: String, content: @Composable () -> Unit) {
         Modifier.fillMaxWidth().padding(vertical = 8.dp).clip(RoundedCornerShape(16.dp)).background(c.card).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(title, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.text)
+        Text(
+            title, Modifier.semantics { heading() },
+            fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.text,
+        )
         content()
     }
 }

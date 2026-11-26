@@ -25,13 +25,15 @@ class FamilyApplication : Application() {
         private set
     lateinit var model: AppModel
         private set
+    lateinit var reminders: AndroidReminders
+        private set
+    val scope = MainScope()
 
     /** True until the first capture intent was handled: then the process start is the trigger time. */
     var coldStart = true
 
     override fun onCreate() {
         super.onCreate()
-        val scope = MainScope()
         platform = AndroidPlatform(this)
         val repo = FamilyRepository(
             store = AndroidTextStore(File(filesDir, "familyapp.json")),
@@ -45,6 +47,7 @@ class FamilyApplication : Application() {
         // Off the main thread: must not delay the capture start (D8).
         scope.launch(Dispatchers.IO) { platform.cleanOrphanPhotos(repo.current) }
         model = AppModel(repo, platform, scope, ::today, Dispatchers.IO)
+        reminders = AndroidReminders(this, repo).also { it.follow(scope) }
         publishShortcut()
     }
 
