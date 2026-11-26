@@ -62,6 +62,9 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.plus
+import io.github.respawnedguy.familyapp.resources.Res
+import io.github.respawnedguy.familyapp.resources.task_mark_done
+import org.jetbrains.compose.resources.stringResource
 
 /** Inbox card (design "Eingang: eine Karte, ein Tap"): at most three chips, reason line, two buttons. */
 @OptIn(ExperimentalLayoutApi::class)
@@ -289,10 +292,11 @@ fun TaskRow(
                 .padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            val markDone = stringResource(Res.string.task_mark_done)
             Box(
                 // A label for screen readers; ATF reported this button as unnamed (P1-4).
                 Modifier.size(48.dp).clip(CircleShape).clickable { model.complete(item) }
-                    .semantics { contentDescription = "Als erledigt markieren" },
+                    .semantics { contentDescription = markDone },
                 contentAlignment = Alignment.Center,
             ) {
                 Box(Modifier.size(24.dp).dashedBorder(c.textSecondary, 12.dp, 2.dp))
