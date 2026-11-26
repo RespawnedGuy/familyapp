@@ -16,10 +16,22 @@ data class FoundDate(val date: LocalDate, val phrase: String)
  * "heute", "morgen", "übermorgen", weekdays ("bis Freitag": next occurrence after today),
  * "in 3 Tagen", "in zwei Wochen". Vague phrases ("nächste Woche", "bald") give no date on purpose:
  * the card then asks instead of guessing (HITL).
+ *
+ * Not a deadline, so skipped (P1-5, found with the corpus in tools/quality-check/corpus): numbers
+ * after "Kapitel", "Seite", "Nr.", "Aufgabe" … ("Kapitel 4.1."), and a reference date after
+ * "vom"/"von" without "bis" ("Rechnung vom 12.11."). A range ("15.-19.6.") yields both ends, so
+ * the card asks instead of picking one.
  */
 class GermanDateParser {
 
     private val fullDate = Regex("""(?<!\d)(\d{1,2})\.\s?(\d{1,2})\.\s?(\d{4}|\d{2})(?!\d)""")
+    private val rangeDate = Regex("""(?<![\d.])(\d{1,2})\.\s?[-–]\s?(\d{1,2})\.\s?(\d{1,2})\.(?!\d)""")
+    private val numbering = Regex(
+        """(?:kapitel|kap\.|seite|s\.|nr\.|nummer|aufgabe|abschnitt|übung|punkt|version|raum)\s*$""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val reference = Regex("""${WORD_START}(?:vom|von)\s*$""", RegexOption.IGNORE_CASE)
+    private val rangeContinues = Regex("""^\s*(?:bis|[-–])""", RegexOption.IGNORE_CASE)
     private val shortDate = Regex("""(?<![\d.])(\d{1,2})\.\s?(\d{1,2})\.(?!\d)""")
     private val monthDate = Regex(
         """(?<!\d)(\d{1,2})\.?\s+($MONTHS)(?:\s+(\d{4}))?$WORD_END""",
@@ -44,14 +56,14 @@ class GermanDateParser {
         }
         var rest = text
 
-        fullDate.findAll(rest).forEach { m ->
+        fullDate.findAll(rest).filterNot { notADeadline(rest, it) }.forEach { m ->
             val (d, mo, y) = m.destructured
             val year = if (y.length == 2) 2000 + y.toInt() else y.toInt()
             add(dateOrNull(year, mo.toInt(), d.toInt()), m.value)
         }
         rest = fullDate.replace(rest, " ")
 
-        monthDate.findAll(rest).forEach { m ->
+        monthDate.findAll(rest).filterNot { notADeadline(rest, it) }.forEach { m ->
             val (d, monthWord, y) = m.destructured
             val month = monthNumber(monthWord)
             val date = if (y.isNotEmpty()) dateOrNull(y.toInt(), month, d.toInt()) else nextOccurrence(today, month, d.toInt())
@@ -59,7 +71,14 @@ class GermanDateParser {
         }
         rest = monthDate.replace(rest, " ")
 
-        shortDate.findAll(rest).forEach { m ->
+        rangeDate.findAll(rest).forEach { m ->
+            val (from, to, mo) = m.destructured
+            add(nextOccurrence(today, mo.toInt(), from.toInt()), m.value)
+            add(nextOccurrence(today, mo.toInt(), to.toInt()), m.value)
+        }
+        rest = rangeDate.replace(rest, " ")
+
+        shortDate.findAll(rest).filterNot { notADeadline(rest, it) }.forEach { m ->
             val (d, mo) = m.destructured
             add(nextOccurrence(today, mo.toInt(), d.toInt()), m.value)
         }
@@ -83,9 +102,17 @@ class GermanDateParser {
         return found.entries.map { FoundDate(it.key, it.value) }.sortedBy { it.date }
     }
 
+    private fun notADeadline(text: String, m: MatchResult): Boolean {
+        val before = text.substring(0, m.range.first)
+        if (numbering.containsMatchIn(before)) return true
+        val after = text.substring(m.range.last + 1)
+        return reference.containsMatchIn(before) && !rangeContinues.containsMatchIn(after)
+    }
+
     private fun nextOccurrence(today: LocalDate, month: Int, day: Int): LocalDate? {
+        // "29.2." in a non-leap year means the next leap day only if that falls within a year.
         val thisYear = dateOrNull(today.year, month, day)
-        return if (thisYear != null && thisYear < today) dateOrNull(today.year + 1, month, day) else thisYear
+        return if (thisYear == null || thisYear < today) dateOrNull(today.year + 1, month, day) else thisYear
     }
 
     private fun dateOrNull(year: Int, month: Int, day: Int): LocalDate? =
