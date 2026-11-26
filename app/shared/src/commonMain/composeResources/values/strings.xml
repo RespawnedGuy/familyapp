@@ -52,6 +52,7 @@
     <string name="capture_save">Speichern</string>
     <string name="capture_speak">Sprechen</string>
     <string name="capture_type">Tippen</string>
+    <string name="task_mark_done">Als erledigt markieren</string>
     <!-- Settings: measurements on real phones (P1-10) -->
     <string name="measure_title">Messwerte (nur lokal)</string>
     <string name="measure_none">Noch keine Messung. Öffne die App ein paar Mal neu und sprich einmal per Knopf, Kachel oder Verknüpfung.</string>

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -52,6 +53,9 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt
 
+private const val DOT_INITIAL_SCALE = 0.45f
+private const val DOT_QUESTION_SCALE = 0.5f
+
 /** Person dot: fixed colour plus initial, so colour is never the only signal (design D6). */
 @Composable
 fun PersonDot(member: Member?, size: Dp = 28.dp, modifier: Modifier = Modifier) {
@@ -61,7 +65,16 @@ fun PersonDot(member: Member?, size: Dp = 28.dp, modifier: Modifier = Modifier) 
         Box(
             modifier.size(size).dashedBorder(c.textSecondary, size / 2),
             contentAlignment = Alignment.Center,
-        ) { Text("?", color = c.textSecondary, fontSize = (size.value * 0.5f).sp, fontWeight = FontWeight.Bold) }
+        ) {
+            val questionSize = with(LocalDensity.current) { (size * DOT_QUESTION_SCALE).toSp() }
+            Text(
+                "?",
+                color = c.textSecondary,
+                fontSize = questionSize,
+                lineHeight = questionSize,
+                fontWeight = FontWeight.Bold,
+            )
+        }
         return
     }
     Box(
@@ -69,10 +82,14 @@ fun PersonDot(member: Member?, size: Dp = 28.dp, modifier: Modifier = Modifier) 
             .clearAndSetSemantics { contentDescription = member.name },
         contentAlignment = Alignment.Center,
     ) {
+        val initialSize = with(LocalDensity.current) { (size * DOT_INITIAL_SCALE).toSp() }
         Text(
             member.initial,
             color = if (c.dark) Color(0xFF151513) else Color.White,
-            fontSize = (size.value * 0.45f).sp,
+            // The dot has a fixed size, so its initial must not grow with the system font size
+            // (it would be cut off at 200 %, P1-4). The name is read out via contentDescription.
+            fontSize = initialSize,
+            lineHeight = initialSize,
             fontWeight = FontWeight.Bold,
         )
     }

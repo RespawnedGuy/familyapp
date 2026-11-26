@@ -42,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -61,6 +62,9 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.plus
+import io.github.respawnedguy.familyapp.resources.Res
+import io.github.respawnedguy.familyapp.resources.task_mark_done
+import org.jetbrains.compose.resources.stringResource
 
 /** Inbox card (design "Eingang: eine Karte, ein Tap"): at most three chips, reason line, two buttons. */
 @OptIn(ExperimentalLayoutApi::class)
@@ -288,8 +292,11 @@ fun TaskRow(
                 .padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            val markDone = stringResource(Res.string.task_mark_done)
             Box(
-                Modifier.size(48.dp).clip(CircleShape).clickable { model.complete(item) },
+                // A label for screen readers; ATF reported this button as unnamed (P1-4).
+                Modifier.size(48.dp).clip(CircleShape).clickable { model.complete(item) }
+                    .semantics { contentDescription = markDone },
                 contentAlignment = Alignment.Center,
             ) {
                 Box(Modifier.size(24.dp).dashedBorder(c.textSecondary, 12.dp, 2.dp))
@@ -311,10 +318,13 @@ fun TaskRow(
                         fontWeight = if (overdue) FontWeight.SemiBold else FontWeight.Normal,
                     )
                 }
+                // Below the text, not beside it: beside it the button left the title only 16 dp at
+                // 200 % font size and too little for long words on narrow phones even at 100 % (P1-4).
+                if (takeOver) {
+                    TextButton(onClick = { model.takeOver(item) }) { Text("Übernehme ich") }
+                }
             }
-            if (takeOver) {
-                TextButton(onClick = { model.takeOver(item) }) { Text("Übernehme ich") }
-            } else if (showAssignee) {
+            if (!takeOver && showAssignee) {
                 PersonDot(data.member(item.assignee), 28.dp, Modifier.padding(end = 8.dp))
             }
         }
