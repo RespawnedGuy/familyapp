@@ -125,11 +125,19 @@ private fun LocalOnlyCard(model: AppModel) {
             stringResource(Res.string.local_only_text),
             fontSize = 14.sp, color = c.textSecondary,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        val setup: @Composable () -> Unit = {
             OutlinedButton(onClick = { model.openSettings(); model.chooseBackupFolder() }) {
                 Text(stringResource(Res.string.local_only_setup))
             }
+        }
+        val later: @Composable () -> Unit = {
             TextButton(onClick = { model.dismissLocalOnlyHint() }) { Text(stringResource(Res.string.local_only_later)) }
+        }
+        // At large font sizes the two buttons do not fit side by side on narrow phones.
+        if (largeFont()) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) { setup(); later() }
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { setup(); later() }
         }
     }
 }
