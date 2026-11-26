@@ -219,13 +219,14 @@ jobs:
           # The runner executes each line with sh, so pipefail needs an explicit bash.
           # Every test runs even if an earlier one fails (one red test must not hide the others);
           # the last line fails the step if any of them failed.
-          # Smoke test, pairing with the house device program, hostile shares from other apps (threat model),
+          # Smoke test, pairing with the house device program, cold-start measurement (P1-10), hostile shares from other apps (threat model),
           # the in-app updater end to end (wrong checksum, foreign key, real update),
           # then every screen at 100 % and 200 % font size with screenshots (quality plan P1-4).
           script: |
             rm -f emulator-failed
             bash -c 'set -o pipefail; bash app/scripts/emulator-smoke.sh "dist/familyapp-${{ env.VERSION_NAME }}.apk" probe/update-probe.apk emulator-out "$(ls probe/previous/*.apk 2>/dev/null | head -1)" 2>&1 | tee emulator-out-report.txt' || touch emulator-failed
             bash -c 'set -o pipefail; chmod +x peer/bin/family-peer; bash app/scripts/emulator-pairing-e2e.sh peer/bin/family-peer emulator-out 2>&1 | tee emulator-out-pairing.txt' || touch emulator-failed
+            bash -c 'set -o pipefail; bash app/scripts/emulator-perf.sh emulator-out 10 2>&1 | tee emulator-out-perf.txt' || touch emulator-failed
             bash -c 'set -o pipefail; bash app/scripts/emulator-share-e2e.sh e2e/share-source.apk emulator-out 2>&1 | tee emulator-out-share.txt' || touch emulator-failed
             bash -c 'set -o pipefail; bash app/scripts/emulator-update-e2e.sh e2e emulator-out 2>&1 | tee emulator-out-e2e.txt' || touch emulator-failed
             bash -c 'set -o pipefail; bash app/scripts/emulator-font-scale.sh uitest/shared-debug-androidTest.apk emulator-out 2>&1 | tee emulator-out-schrift.txt' || touch emulator-failed
@@ -240,6 +241,7 @@ jobs:
           [ -f emulator-out-share.txt ] && mv emulator-out-share.txt emulator-out/pruefbericht-teilen-api${{ matrix.api-level }}.txt || true
           [ -f emulator-out-e2e.txt ] && mv emulator-out-e2e.txt emulator-out/pruefbericht-update-e2e-api${{ matrix.api-level }}.txt || true
           [ -f emulator-out-schrift.txt ] && mv emulator-out-schrift.txt emulator-out/pruefbericht-schrift-api${{ matrix.api-level }}.txt || true
+          [ -f emulator-out-perf.txt ] && mv emulator-out-perf.txt emulator-out/pruefbericht-leistung-api${{ matrix.api-level }}.txt || true
 
       - uses: actions/upload-artifact@v5
         if: always()
@@ -272,6 +274,7 @@ jobs:
             cp "$d"/screen-*.png "$d"/e2e-*.png out/ 2>/dev/null || true
             # Screenshots of every screen at 100 % and 200 % font size, light and dark (P1-4).
             [ -d "$d/schrift-$api" ] && (cd "$d" && zip -qr "../../out/schrift-screenshots-$api.zip" "schrift-$api") || true
+            cp "$d"/leistung-*.csv out/ 2>/dev/null || true
           done
           if [ "${{ needs.build.result }}" != "success" ] || [ "${{ needs.emulator.result }}" != "success" ]; then
             (cd in && find . -path '*/logs/*' -type f | zip -q -@ ../out/ci-logs.zip) || true
@@ -290,7 +293,7 @@ jobs:
             TAG="v$VERSION_NAME"
             NAME="FamilyApp $VERSION_NAME"
             PRERELEASE=false
-            BODY="Installierbare APK für Android 8.0 und neuer. Anleitung: docs/android-installieren.md. Prüfberichte (Signatur, Manifest, Emulator Android 8 und 16) hängen an."
+            BODY="Installierbare APK für Android 8.0 und neuer. Anleitung: docs/android-installieren.md. Prüfberichte (Signatur, Manifest, Emulator Android 8 und 16, Leistung) hängen an."
           else
             BRANCH="${{ github.head_ref || github.ref_name }}"
             TAG="ci-$(echo "$BRANCH" | tr -c 'a-zA-Z0-9.-' '-' | sed 's/-*$//')"
@@ -314,6 +317,7 @@ jobs:
               *.png) CT="image/png" ;;
               *.zip) CT="application/zip" ;;
               *.json) CT="application/json" ;;
+              *.csv) CT="text/csv; charset=utf-8" ;;
               *) CT="text/plain; charset=utf-8" ;;
             esac
             curl -sSf -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Content-Type: $CT" \

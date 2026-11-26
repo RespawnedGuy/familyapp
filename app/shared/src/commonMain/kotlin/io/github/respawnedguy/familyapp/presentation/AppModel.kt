@@ -5,9 +5,14 @@ import io.github.respawnedguy.familyapp.data.ShareRejection
 import io.github.respawnedguy.familyapp.data.Undo
 import io.github.respawnedguy.familyapp.domain.CaptureAction
 import io.github.respawnedguy.familyapp.domain.DateFormat
+import io.github.respawnedguy.familyapp.domain.DeviceInfo
 import io.github.respawnedguy.familyapp.domain.Item
 import io.github.respawnedguy.familyapp.domain.ItemStatus
+import io.github.respawnedguy.familyapp.domain.Measurements
 import io.github.respawnedguy.familyapp.domain.MemberKind
+import io.github.respawnedguy.familyapp.domain.Metric
+import io.github.respawnedguy.familyapp.domain.MetricSummary
+import io.github.respawnedguy.familyapp.domain.ResourceUsage
 import io.github.respawnedguy.familyapp.domain.Source
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -67,6 +72,9 @@ class AppModel(
 
     /** Pending latency measurement: which trigger, started when (monotonic ms). */
     private var latencyStart: Pair<String, Long>? = null
+
+    /** When the person stopped speaking (monotonic ms) and whether a tap on "Fertig" ended it, for D8 (b). */
+    private var speechEnd: Pair<String, Long>? = null
 
     init {
         startAutoBackup()
@@ -228,11 +236,16 @@ class AppModel(
             return
         }
         _capture.value = CaptureState.Listening()
+        speechEnd = null
         speech.start(object : SpeechListener {
             override fun onReady() {
                 latencyStart?.let { (trigger, start) -> repo.recordLatency(trigger, platform.elapsedMs() - start) }
                 latencyStart = null
                 (_capture.value as? CaptureState.Listening)?.let { _capture.value = it.copy(ready = true) }
+            }
+
+            override fun onEndOfSpeech() {
+                if (speechEnd == null) speechEnd = SPEECH_END_AUTO to platform.elapsedMs()
             }
 
             override fun onPartial(text: String) {
@@ -245,7 +258,11 @@ class AppModel(
                     _capture.value = CaptureState.Problem("Nichts verstanden. Nochmal sprechen oder tippen.")
                 } else {
                     save(text, Source.VOICE)
+                    speechEnd?.let { (how, at) ->
+                        repo.recordLatency(how, platform.elapsedMs() - at, Metric.SAVE_AFTER_SPEECH)
+                    }
                 }
+                speechEnd = null
             }
 
             override fun onError(message: String) {
@@ -256,7 +273,12 @@ class AppModel(
     }
 
     /** Ends listening early ("Fertig"); the recognizer then delivers the final result. */
-    fun stopListening() = platform.speech?.stop()
+    fun stopListening() {
+        if (_capture.value is CaptureState.Listening && speechEnd == null) {
+            speechEnd = SPEECH_END_TAP to platform.elapsedMs()
+        }
+        platform.speech?.stop()
+    }
 
     fun saveText(text: String) {
         if (text.isBlank()) return
@@ -296,6 +318,7 @@ class AppModel(
     fun dismissCapture() {
         platform.speech?.cancel()
         latencyStart = null
+        speechEnd = null
         _capture.value = CaptureState.Closed
     }
 
@@ -409,11 +432,46 @@ class AppModel(
 
     // ---- Metrics shown in settings ("Prüfung" 4 of the design doc) ----------------------------
 
-    /** Median of the last latency samples, or null without samples. */
-    fun latencyMedianMs(): Long? {
-        val ms = repo.current.settings.latency.map { it.ms }.sorted()
-        if (ms.isEmpty()) return null
-        return if (ms.size % 2 == 1) ms[ms.size / 2] else (ms[ms.size / 2 - 1] + ms[ms.size / 2]) / 2
+    /** Median of the capture measurements (trigger until the microphone listens), or null without samples. */
+    fun latencyMedianMs(): Long? =
+        Measurements.median(repo.current.settings.latency.filter { it.metric == Metric.CAPTURE_READY }.map { it.ms })
+
+    /**
+     * A cold start reached its first frame [ms] after the process started. Ignored when implausibly
+     * long: then the process had been running in the background (alarm, sync) before the app opened.
+     */
+    fun recordColdStart(trigger: String, ms: Long) {
+        if (ms in 0..Measurements.COLD_START_PLAUSIBLE_MS) repo.recordLatency(trigger, ms, Metric.COLD_START)
+    }
+
+    fun measurementSummary(): List<MetricSummary> = Measurements.summarize(repo.current.settings.latency)
+
+    fun measurementsByTrigger(metric: Metric): List<MetricSummary> =
+        Measurements.byTrigger(repo.current.settings.latency, metric)
+
+    fun resourceUsage(): ResourceUsage? = platform.resourceUsage()
+
+    /** All local measurements as CSV, without any family data (P1-10). */
+    fun measurementsCsv(): String = Measurements.csv(
+        samples = repo.current.settings.latency,
+        device = platform.deviceInfo() ?: DeviceInfo("unbekannt", "unbekannt", "unbekannt"),
+        usage = platform.resourceUsage(),
+        formatTime = platform::formatLocalTime,
+    )
+
+    fun shareMeasurements() {
+        if (repo.current.settings.latency.isEmpty()) {
+            show("Noch keine Messwerte zum Teilen.")
+            return
+        }
+        if (!platform.shareText("FamilyApp Messwerte", measurementsCsv())) show("Teilen geht auf diesem Gerät nicht.")
+    }
+
+    fun clearMeasurements() {
+        val before = repo.current.settings.latency
+        if (before.isEmpty()) return
+        repo.clearMeasurements()
+        show("Messwerte gelöscht. Die nächste Messreihe beginnt leer.")
     }
 
     /** Share of cards that left the inbox with exactly one tap, among those decided in the app. */
@@ -425,5 +483,9 @@ class AppModel(
     companion object {
         const val AUTO_BACKUP_DELAY_MS = 3_000L
         private const val SAVED = "Gespeichert. Liegt oben im Eingang."
+
+        /** Triggers of [Metric.SAVE_AFTER_SPEECH]: the recognizer noticed the pause, or "Fertig" was tapped. */
+        const val SPEECH_END_AUTO = "Sprechpause"
+        const val SPEECH_END_TAP = "Fertig getippt"
     }
 }

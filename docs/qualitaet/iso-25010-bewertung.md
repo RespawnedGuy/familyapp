@@ -305,8 +305,6 @@ Prüfung (Anfang von P1-4): `AccessibilityTest` in `app/shared/src/jvmTest` stel
 
 Noch nicht geprüft: Prüfungen des Accessibility Test Framework auf Android (Kontrast, Beschriftung) und Screenshots bei Schriftgröße 2,0; beides braucht den Emulator-Job. Ein TalkBack-Durchgang durch Nils steht aus.
 
-Noch offen aus P1: P1-4 Rest (Android-Prüfungen, Screenshots bei 200 % Schrift), P1-5 Datumsparser-Korpus, P1-7 Texte in Ressourcen (begonnen, siehe unten), P1-9 FMEA, P1-10 Referenzmessung.
-
 ### 26.11.2026: P1-7 Texte in Ressourcen, Schritt 1
 
 Die App nutzt Compose Multiplatform Resources. Alle Texte stehen in `app/shared/src/commonMain/composeResources/values/strings.xml`, Deutsch ist die Grundsprache (`values/`), eine Übersetzung käme nach `values-<sprache>/`. Der Code holt sie mit `stringResource(Res.string.…)`; die Klasse `Res` ist modulintern (`io.github.respawnedguy.familyapp.resources`).
@@ -316,6 +314,30 @@ Umgestellt in Schritt 1: der Rahmen in `App.kt` (Willkommen, obere Leiste, Navig
 Messung und Tor: `UiStringsTest` im Qualitätstor zählt die Text-Literale (Zeichenketten mit Buchstaben, ohne Kommentare und `$`-Platzhalter) in `App.kt`, `ui/` und `update/UpdateSection.kt` und vergleicht sie mit `tools/quality-check/config/ui-strings-baseline.txt`. Eine Datei darf nie mehr Texte im Code haben als dort steht, neue UI-Dateien starten bei 0; die Zahlen werden mit jedem Schritt gesenkt (Sperrklinke wie bei der detekt-Baseline). Stand: 214 Texte im Code, `CaptureSheet.kt` bei 0, `App.kt` bei 2 (Versionsanzeige, zieht mit den Einstellungen um).
 
 Nächste Schritte, je ein kleiner PR: (2) `Components.kt` und `Cards.kt` mit Pluralformen für „vor 3 Std.“/„vor 2 Tagen“, (3) `Screens.kt`, (4) `SettingsScreen.kt` mit `AppInfo.versionLabel` und `UpdateSection.kt`, (5) `SyncScreens.kt`, (6) Texte aus `presentation/AppModel.kt` (Rückmeldungen wie „Gespeichert.“) und Android-Benachrichtigungen, die nicht in Composables entstehen (`getString`). Danach ist das Abnahmekriterium „keine deutschen String-Literale mehr in `ui/`“ erfüllt, wenn die Baseline leer ist.
+
+### 26.11.2026: P1-10 Messpunkte für die Referenzmessung
+
+| Teil | Umsetzung | Beleg |
+| --- | --- | --- |
+| Bis die Aufnahme läuft (D8 a) | Gab es schon; die Kachel misst jetzt ab dem Entsperren statt ab dem Tipp auf das gesperrte Handy, wie D8 es formuliert | `voiceCaptureSavesWithoutTapAndRecordsLatency` |
+| Speichern nach Sprechende (D8 b) | Neu: von `onEndOfSpeech` des Erkenners bis gespeichert; ein Tipp auf „Fertig“ zählt als Sprechende und wird getrennt ausgewiesen („Fertig getippt“), weil D8 „ohne Tipp“ verlangt | `savingAfterTheSpeakerStopsIsMeasuredFromTheEndOfSpeech`, `tappingFertigCountsAsTheEndOfSpeechAndIsLabelledSo` |
+| Kaltstart | Neu: Prozessstart bis erstes Bild (`ColdStartProbe`), nur wenn der Prozess für diesen Start entstand; dazu `reportFullyDrawn` | `coldStartsAreKeptOnlyWhenPlausible` |
+| Auswertung | Median, 90-%-Wert (nächster Rang, ohne Interpolation) und Ziel je Messwert; je Messwert die letzten 50 Werte, damit häufige Kaltstarts die selteneren Aufnahme-Messungen nicht verdrängen | `MeasurementsTest` |
+| Export | „Messwerte teilen“ schickt eine CSV (RFC 4180) über das Android-Teilen-Menü, nur Zeiten, Gerät und Versionen. Abweichung vom Plan: Teilen statt Datei im Sicherungsordner, weil das ohne PC direkt in die Claude-App oder Mail geht | `csvHoldsTimesAndDeviceButNoFamilyData`, `measurementsAreSharedAsCsvAndCanStartOver` |
+| Speicher | Arbeitsspeicher (PSS) und Größe der App-Dateien in den Einstellungen und in der CSV | – |
+| Gegenprobe im CI | `emulator-perf.sh` startet die App je 10-mal kalt über Symbol und Erfassen (Android 8 und 16) und vergleicht die Messung der App mit Androids `am start -W` (TotalTime). Schlägt fehl, wenn die App kaum misst oder grob abweicht; Emulatorzeiten werden nur berichtet | `pruefbericht-leistung-api*.txt`, `leistung-api*.csv` am Release |
+| Anleitung | [leistung-messen.md](leistung-messen.md): Messreihe auf dem Handy ohne PC, Akku über die Android-Einstellungen | – |
+
+Bewusst nicht gemacht: Macrobenchmark. Er misst im CI-Emulator dieselbe Spanne wie `am start -W`, braucht aber ein eigenes Modul aus Google Maven. Sinnvoll erst mit Baseline Profile (P2-5) auf echtem Gerät.
+
+**Referenzwerte (offen, trägt Claude nach Nils' Messung ein):**
+
+| Gerät | Bis Aufnahme läuft, Kachel (Median / 90 %) | Speichern nach Sprechende | Kaltstart | Arbeitsspeicher | Akku/Tag |
+| --- | --- | --- | --- | --- | --- |
+| Pixel (Nils) | – | – | – | – | – |
+| Android 8 (falls vorhanden) | – | – | – | – | – |
+
+Abnahme P1-10 ist erst erfüllt, wenn die Pixel-Zeile ausgefüllt ist und der Median „bis Aufnahme läuft“ ≤ 2 s liegt.
 
 ### 26.11.2026: P1-8 Bedrohungsmodell und Härtung der Eingänge
 
@@ -332,8 +354,6 @@ Nächste Schritte, je ein kleiner PR: (2) `Components.kt` und `Cards.kt` mit Plu
 Abnahmekriterium „`file://`-URI und Übergröße werden abgelehnt“ prüft jetzt der Emulator-Test auf Android 8 und 16 (dazu eigener Anbieter, HTML, HTML mit Bildtyp und ein echtes Bild). Höchstes Restrisiko: Ein verlorenes Handy oder ein ehemaliges Familienmitglied behält den Familienschlüssel (M1, Gerät entfernen mit Schlüsselwechsel).
 
 Messwerte danach (`gradle check`, zusammen mit P1-7 Schritt 1): 178 App-Tests grün, Abdeckung Zeilen 91 %, Zweige 62 %.
-
-Noch offen aus P1: P1-4 Rest (Android-Prüfungen, Screenshots bei 200 % Schrift), P1-5 Datumsparser-Korpus, P1-7 Texte in Ressourcen (begonnen), P1-9 FMEA, P1-10 Referenzmessung.
 
 ### 26.11.2026: P1-4 große Schrift und Accessibility Test Framework im Emulator
 
@@ -363,4 +383,4 @@ Was der Test gefunden hat und jetzt behoben ist:
 
 Screenshots: Artefakt `emulator-api26/36`, Ordner `schrift-api*`, und im Release als `schrift-screenshots-api*.zip`. Alle Emulator-Tests laufen jetzt auch dann, wenn ein früherer fehlschlägt, damit ein roter Test die anderen nicht verdeckt.
 
-Noch offen aus P1: P1-5 Datumsparser-Korpus, P1-7 Texte in Ressourcen (Rest), P1-9 FMEA, P1-10 Referenzmessung, TalkBack-Durchgang durch Nils.
+Noch offen aus P1: P1-5 Datumsparser-Korpus, P1-7 Texte in Ressourcen (Rest), P1-9 FMEA, P1-10 Referenzwerte vom Gerät, TalkBack-Durchgang durch Nils.
