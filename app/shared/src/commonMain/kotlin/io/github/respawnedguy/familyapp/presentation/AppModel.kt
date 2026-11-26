@@ -24,6 +24,9 @@ import kotlinx.datetime.LocalDate
 
 enum class Tab { TODAY, FAMILY, UPCOMING, SEARCH }
 
+/** A restore waits for the recovery code; [wrong] means the last code did not open the backup. */
+data class RestoreCodeRequest(val folder: String, val wrong: Boolean)
+
 /** Bottom message with optional undo, visible for 6 s (design: undo instead of dialogs). */
 data class Feedback(val id: Long, val message: String, val undo: Undo? = null)
 
@@ -280,9 +283,16 @@ class AppModel(
         if (name.isNotBlank()) repo.rename(name)
     }
 
+    private val _restoreCode = MutableStateFlow<RestoreCodeRequest?>(null)
+
+    /** Set while a restore waits for the recovery code (new phone, or code typed wrong). */
+    val restoreCode: StateFlow<RestoreCodeRequest?> = _restoreCode.asStateFlow()
+
+    /** Choosing a folder also creates the recovery code if there is none yet (P0-3). */
     fun chooseBackupFolder() {
         platform.pickBackupFolder { folder ->
             if (folder != null) {
+                if (repo.current.settings.backupCode == null) repo.setBackupCode(platform.newRecoveryCode())
                 repo.setBackupFolder(folder)
                 backupNow()
             }
@@ -291,23 +301,67 @@ class AppModel(
 
     fun stopBackups() = repo.setBackupFolder(null)
 
+    private fun backupContent(): BackupContent? {
+        val code = repo.current.settings.backupCode ?: return null
+        return BackupContent(repo.exportBackup(), repo.current.items.mapNotNull { it.photoPath }, code)
+    }
+
     fun backupNow() {
         val folder = repo.current.settings.backupFolder ?: return
-        val text = repo.exportBackup()
+        val content = backupContent() ?: return
         scope.launch {
-            val error = withContext(io) { platform.writeBackup(folder, text) }
+            val error = withContext(io) { platform.writeBackup(folder, content) }
             repo.recordBackup(error)
             show(error?.let { "Sicherung fehlgeschlagen: $it" } ?: "Gesichert.")
         }
     }
 
-    fun restoreFromFile() {
-        platform.pickRestoreFile { text ->
-            if (text == null) return@pickRestoreFile
-            val error = repo.restoreBackup(text)
-            show(error ?: "Sicherung wiederhergestellt.")
+    /** Restore: pick the folder that holds the backup, then open it with the code on this phone. */
+    fun restoreFromFolder() {
+        platform.pickBackupFolder { folder ->
+            if (folder != null) openBackup(folder, repo.current.settings.backupCode)
         }
     }
+
+    /** The person typed the recovery code in the dialog. */
+    fun restoreWithCode(code: String) {
+        val folder = _restoreCode.value?.folder ?: return
+        openBackup(folder, code)
+    }
+
+    fun cancelRestore() {
+        _restoreCode.value = null
+    }
+
+    private fun openBackup(folder: String, code: String?) {
+        scope.launch {
+            when (val read = withContext(io) { platform.readBackup(folder, code) }) {
+                is RestoreRead.Ok -> {
+                    _restoreCode.value = null
+                    val result = repo.restoreBackup(read.json, read.photoPaths)
+                    if (result.error != null) {
+                        show(result.error)
+                    } else {
+                        // The code that opened the backup is the one that protects it from now on.
+                        if (code != null) repo.setBackupCode(code)
+                        show(listOfNotNull("Sicherung wiederhergestellt.", result.note).joinToString(" "), result.undo)
+                    }
+                }
+                RestoreRead.NeedsCode -> _restoreCode.value = RestoreCodeRequest(folder, wrong = false)
+                RestoreRead.WrongCode -> _restoreCode.value = RestoreCodeRequest(folder, wrong = code != null)
+                is RestoreRead.Failed -> {
+                    _restoreCode.value = null
+                    show("Wiederherstellen fehlgeschlagen: ${read.message}")
+                }
+            }
+        }
+    }
+
+    fun hasRestoreSnapshot(): Boolean = repo.hasRestoreSnapshot()
+
+    fun restoreSnapshot() = show(repo.restoreSnapshot() ?: "Stand vor der Wiederherstellung ist zurück.")
+
+    fun retrySave() = repo.retrySave()
 
     fun describeFolder(folder: String) = platform.describeFolder(folder)
 
@@ -321,8 +375,8 @@ class AppModel(
                 .debounce(AUTO_BACKUP_DELAY_MS)
                 .collect {
                     val folder = repo.current.settings.backupFolder ?: return@collect
-                    val text = repo.exportBackup()
-                    repo.recordBackup(withContext(io) { platform.writeBackup(folder, text) })
+                    val content = backupContent() ?: return@collect
+                    repo.recordBackup(withContext(io) { platform.writeBackup(folder, content) })
                 }
         }
     }

@@ -184,7 +184,7 @@ Schnell rein: Die erste Person legt die Familie an, indem sie die App öffnet un
 
 - Der Name wird **vor** dem Scannen abgefragt, damit das einladende Gerät beim Bestätigen sieht, wer beitritt, nicht nur welches Gerät (Schutz gegen abfotografierte Codes, ADR 0003).
 - „Jemand ohne Handy“ (Kind, Oma) braucht nur einen Namen, Farbe wird vergeben.
-- **Wiederherstellungscode** (D7): nicht beim ersten Start, sondern nach dem ersten Pairing oder nach 10 Einträgen als Karte im Eingang: „Sichere deinen Wiederherstellungscode“. Gegenargument: Wer vorher das Handy verliert, verliert die Daten. Bei zwei gekoppelten Geräten liegen sie aber auf dem zweiten.
+- **Wiederherstellungscode** (D7): nicht beim ersten Start, sondern nach dem ersten Pairing oder nach 10 Einträgen als Karte im Eingang: „Sichere deinen Wiederherstellungscode“. Gegenargument: Wer vorher das Handy verliert, verliert die Daten. Bei zwei gekoppelten Geräten liegen sie aber auf dem zweiten. Ergänzt am 26.11.2026: Wer einen Sicherungsordner wählt, bekommt den Code sofort, weil die Sicherung damit verschlüsselt wird (siehe docs/qualitaet/iso-25010-bewertung.md, P0-3).
 
 ## Tablet (später)
 

@@ -36,6 +36,15 @@ tap_text() { # <regex> <seconds>
   adb shell input tap $xy
 }
 
+# A pull-request build can have a lower versionCode than the newest public release; the app then
+# shows its update banner over the top of the screen. Hide it so the checks see the app itself.
+hide_update_banner() {
+  if dump && python3 "$HERE/ui-tap.py" "$OUT/ui.xml" "Ausblenden" "$PKG" >/dev/null; then
+    tap_text "Ausblenden" 3 && echo "Hinweis: Update-Banner ausgeblendet"
+    sleep 1
+  fi
+}
+
 echo "== Emulator API $API ($(adb shell getprop ro.build.version.release | tr -d '\r'))"
 adb shell input keyevent 82 >/dev/null 2>&1 || true   # unlock screen
 
@@ -60,6 +69,7 @@ adb shell pidof "$PKG" >/dev/null 2>&1 && pass "App läuft nach 8 s noch" || fai
 adb logcat -d > "$OUT/logcat-api$API.txt"
 grep -qE "FATAL EXCEPTION|ANR in $PKG" "$OUT/logcat-api$API.txt" && fail "Absturz/ANR im Logcat" || pass "kein Absturz im Logcat"
 
+hide_update_banner
 adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
 adb pull /sdcard/ui.xml "$OUT/ui-api$API.xml" >/dev/null 2>&1
 grep -q 'text="FamilyApp"' "$OUT/ui-api$API.xml" && pass "Startbildschirm zeigt \"FamilyApp\"" || fail "Text \"FamilyApp\" nicht auf dem Bildschirm"
@@ -76,6 +86,7 @@ if tap_text "@EditText" 20; then
 else
   fail "Onboarding-Feld fehlt"
 fi
+hide_update_banner
 wait_text "Alles sortiert.*" 15 && pass "leerer Eingang zeigt \"Alles sortiert\"" || fail "leerer Eingang nicht sichtbar"
 tap_text "Erfassen" 10 && pass "Erfassen geöffnet" || fail "Erfassen-Knopf fehlt"
 tap_text "Tippen" 15 && pass "Wechsel zu Tippen im Erfassen-Blatt" || fail "\"Tippen\" im Erfassen-Blatt fehlt"
@@ -90,6 +101,7 @@ tap_text "Mach ich" 10 && pass "Karte mit einem Tap bestätigt" || fail "\"Mach 
 wait_text "Alles sortiert.*" 10 && pass "Eingang danach leer" || fail "Eingang nicht leer"
 adb shell am force-stop "$PKG"
 adb shell am start -W -n "$PKG/.MainActivity" >/dev/null 2>&1
+sleep 2; hide_update_banner
 wait_text "Hausschuhe b.s Donnerstag.*" 20 && pass "Eintrag übersteht Neustart (unter \"Meins\")" || fail "Eintrag nach Neustart weg"
 adb exec-out screencap -p > "$OUT/screen-today-api$API.png" || true
 adb logcat -d > "$OUT/logcat-core-api$API.txt"
@@ -99,6 +111,10 @@ echo "-- Update-Probe (versionCode +1, gleicher Schlüssel) darüber installiere
 R="$(adb install -r "$PROBE" 2>&1)"; echo "$R"
 PROBE_VC="$(vc)"
 if echo "$R" | grep -q Success && [ "$PROBE_VC" -gt "$NEW_VC" ]; then pass "Update auf versionCode $PROBE_VC"; else fail "Update-Probe abgelehnt"; fi
+# Quality plan P0-7: data written before an update must still be there afterwards.
+adb shell am start -W -n "$PKG/.MainActivity" >/dev/null 2>&1
+sleep 2; hide_update_banner
+wait_text "Hausschuhe b.s Donnerstag.*" 20 && pass "Eintrag übersteht das Update" || fail "Eintrag nach Update weg"
 
 echo
 [ $FAILED -eq 0 ] && echo "ERGEBNIS API $API: alle Prüfungen bestanden" || echo "ERGEBNIS API $API: mindestens eine Prüfung fehlgeschlagen"

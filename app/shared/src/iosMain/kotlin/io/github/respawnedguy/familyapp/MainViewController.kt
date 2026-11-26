@@ -4,6 +4,8 @@ import androidx.compose.ui.window.ComposeUIViewController
 import io.github.respawnedguy.familyapp.data.FamilyRepository
 import io.github.respawnedguy.familyapp.data.TextStore
 import io.github.respawnedguy.familyapp.presentation.AppModel
+import io.github.respawnedguy.familyapp.presentation.BackupContent
+import io.github.respawnedguy.familyapp.presentation.RestoreRead
 import io.github.respawnedguy.familyapp.presentation.PlatformServices
 import io.github.respawnedguy.familyapp.presentation.SpeechInput
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -18,6 +20,7 @@ import platform.Foundation.NSCalendarUnitMonth
 import platform.Foundation.NSCalendarUnitYear
 import platform.Foundation.NSDate
 import platform.Foundation.NSDocumentDirectory
+import platform.Foundation.NSFileManager
 import platform.Foundation.NSProcessInfo
 import platform.Foundation.NSSearchPathForDirectoriesInDomains
 import platform.Foundation.NSString
@@ -29,6 +32,7 @@ import platform.Foundation.stringWithContentsOfFile
 import platform.Foundation.timeIntervalSince1970
 import platform.Foundation.writeToFile
 import platform.UIKit.UIViewController
+import platform.posix.arc4random_uniform
 
 /**
  * Entry point for the future iOS app (Xcode project in iosApp/, built on macOS only, not in CI).
@@ -61,13 +65,25 @@ private fun iosToday(): LocalDate {
 private class IosTextStore(private val path: String) : TextStore {
     override fun read(): String? = NSString.stringWithContentsOfFile(path, NSUTF8StringEncoding, null)
 
-    // atomically = true: Foundation writes a temp file and renames it.
+    // atomically = true: Foundation writes a temp file and renames it. False means it failed.
     override fun write(text: String) {
-        NSString.create(string = text).writeToFile(path, true, NSUTF8StringEncoding, null)
+        check(NSString.create(string = text).writeToFile(path, true, NSUTF8StringEncoding, null)) { "Schreiben fehlgeschlagen" }
     }
 
     override fun preserveBroken(text: String) {
         NSString.create(string = text).writeToFile("$path.unlesbar", true, NSUTF8StringEncoding, null)
+    }
+
+    private val snapshotPath = "$path.vor-wiederherstellung"
+
+    override fun readSnapshot(): String? = NSString.stringWithContentsOfFile(snapshotPath, NSUTF8StringEncoding, null)
+
+    override fun writeSnapshot(text: String?) {
+        if (text == null) {
+            NSFileManager.defaultManager.removeItemAtPath(snapshotPath, null)
+        } else {
+            check(NSString.create(string = text).writeToFile(snapshotPath, true, NSUTF8StringEncoding, null)) { "Schreiben fehlgeschlagen" }
+        }
     }
 }
 
@@ -77,7 +93,14 @@ private object IosPlatform : PlatformServices {
     override fun reducedMotion(): Boolean = false
     override fun takePhoto(onResult: (String?) -> Unit) = onResult(null)
     override fun pickBackupFolder(onResult: (String?) -> Unit) = onResult(null)
-    override fun writeBackup(folder: String, text: String): String? = "Auf iOS noch nicht verfügbar"
-    override fun pickRestoreFile(onResult: (String?) -> Unit) = onResult(null)
+    override fun writeBackup(folder: String, backup: BackupContent): String? = "Auf iOS noch nicht verfügbar"
+    override fun readBackup(folder: String, code: String?): RestoreRead = RestoreRead.Failed("Auf iOS noch nicht verfügbar")
+
+    // Same alphabet and length as BackupCrypto on Android; secure random from the system.
+    override fun newRecoveryCode(): String {
+        val alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+        return (1..20).map { alphabet[(arc4random_uniform(alphabet.length.toUInt())).toInt()] }
+            .chunked(4).joinToString("-") { it.joinToString("") }
+    }
     override fun describeFolder(folder: String): String = folder
 }

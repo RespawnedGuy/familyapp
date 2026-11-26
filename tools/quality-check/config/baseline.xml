@@ -1,0 +1,286 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:Components.kt$@Composable fun SwipeToDecide( rightLabel: String, onRight: () -&gt; Unit, leftLabel: String?, onLeft: (() -&gt; Unit)?, reducedMotion: Boolean, modifier: Modifier = Modifier, content: @Composable () -&gt; Unit, )</ID>
+    <ID>CyclomaticComplexMethod:GermanDateParser.kt$GermanDateParser$fun find(text: String, today: LocalDate): List&lt;FoundDate&gt;</ID>
+    <ID>CyclomaticComplexMethod:Screens.kt$@Composable fun FamilyScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reducedMotion: Boolean)</ID>
+    <ID>CyclomaticComplexMethod:SettingsScreen.kt$@Composable fun SettingsScreen(data: FamilyData, model: AppModel, updates: UpdateController?, versionName: String)</ID>
+    <ID>ForEachOnRange:Screens.kt$0 until PERSON_COLOR_COUNT</ID>
+    <ID>FunctionNaming:MainViewController.kt$fun MainViewController(): UIViewController</ID>
+    <ID>LongMethod:Cards.kt$@OptIn(ExperimentalLayoutApi::class) @Composable fun InboxCard(item: Item, data: FamilyData, model: AppModel, photos: PhotoLoader?, reducedMotion: Boolean)</ID>
+    <ID>LongMethod:Screens.kt$@Composable fun FamilyScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reducedMotion: Boolean)</ID>
+    <ID>LongMethod:SettingsScreen.kt$@Composable fun SettingsScreen(data: FamilyData, model: AppModel, updates: UpdateController?, versionName: String)</ID>
+    <ID>LongParameterList:App.kt$( data: FamilyData, model: AppModel, photos: PhotoLoader?, reducedMotion: Boolean, updates: UpdateController?, versionName: String, )</ID>
+    <ID>LongParameterList:Cards.kt$( data: FamilyData, selectedId: String?, origin: Origin?, question: String, prefix: String?, allowNone: Boolean, onPick: (String?) -&gt; Unit, )</ID>
+    <ID>LongParameterList:Cards.kt$( item: Item, data: FamilyData, model: AppModel, photos: PhotoLoader?, reducedMotion: Boolean, showAssignee: Boolean, takeOver: Boolean, )</ID>
+    <ID>LongParameterList:Components.kt$( rightLabel: String, onRight: () -&gt; Unit, leftLabel: String?, onLeft: (() -&gt; Unit)?, reducedMotion: Boolean, modifier: Modifier = Modifier, content: @Composable () -&gt; Unit, )</ID>
+    <ID>LongParameterList:FamilyRepository.kt$FamilyRepository$( private val store: TextStore, private val scope: CoroutineScope, private val ioDispatcher: CoroutineDispatcher, val now: () -&gt; Long, private val today: () -&gt; LocalDate, private val newId: () -&gt; String, private val rules: CaptureRules = CaptureRules(), )</ID>
+    <ID>LongParameterList:PreviewData.kt$PreviewData$(id: String, title: String, who: Member, due: LocalDate?, concerns: Member? = null, ageMs: Long = 3 * DAY)</ID>
+    <ID>MagicNumber:AndroidPhotoLoader.kt$AndroidPhotoLoader$180f</ID>
+    <ID>MagicNumber:AndroidPhotoLoader.kt$AndroidPhotoLoader$270f</ID>
+    <ID>MagicNumber:AndroidPhotoLoader.kt$AndroidPhotoLoader$90f</ID>
+    <ID>MagicNumber:AndroidPlatform.kt$AndroidPlatform$1024</ID>
+    <ID>MagicNumber:AndroidPlatform.kt$AndroidPlatform$64</ID>
+    <ID>MagicNumber:AndroidUpdatePlatform.kt$1024</ID>
+    <ID>MagicNumber:AndroidUpdatePlatform.kt$8</ID>
+    <ID>MagicNumber:AndroidUpdatePlatform.kt$AndroidUpdatePlatform$1024</ID>
+    <ID>MagicNumber:AndroidUpdatePlatform.kt$AndroidUpdatePlatform$15_000</ID>
+    <ID>MagicNumber:AndroidUpdatePlatform.kt$AndroidUpdatePlatform$28</ID>
+    <ID>MagicNumber:AndroidUpdatePlatform.kt$AndroidUpdatePlatform$30_000</ID>
+    <ID>MagicNumber:AndroidUpdatePlatform.kt$AndroidUpdatePlatform$31</ID>
+    <ID>MagicNumber:AndroidUpdatePlatform.kt$AndroidUpdatePlatform$33</ID>
+    <ID>MagicNumber:AndroidUpdatePlatform.kt$AndroidUpdatePlatform$64</ID>
+    <ID>MagicNumber:BackupCrypto.kt$BackupCrypto$4</ID>
+    <ID>MagicNumber:BackupFolder.kt$BackupFolder.Companion$128</ID>
+    <ID>MagicNumber:CaptureSheet.kt$0.85f</ID>
+    <ID>MagicNumber:CaptureSheet.kt$1.15f</ID>
+    <ID>MagicNumber:CaptureSheet.kt$700</ID>
+    <ID>MagicNumber:Cards.kt$1970</ID>
+    <ID>MagicNumber:Cards.kt$2000</ID>
+    <ID>MagicNumber:Cards.kt$5</ID>
+    <ID>MagicNumber:Cards.kt$7</ID>
+    <ID>MagicNumber:Cards.kt$800</ID>
+    <ID>MagicNumber:Cards.kt$86_400_000L</ID>
+    <ID>MagicNumber:Components.kt$0.35f</ID>
+    <ID>MagicNumber:Components.kt$0xFF151513</ID>
+    <ID>MagicNumber:Components.kt$24</ID>
+    <ID>MagicNumber:Components.kt$48</ID>
+    <ID>MagicNumber:Components.kt$60</ID>
+    <ID>MagicNumber:Components.kt$60_000</ID>
+    <ID>MagicNumber:Components.kt$6f</ID>
+    <ID>MagicNumber:Components.kt$8f</ID>
+    <ID>MagicNumber:DateFormat.kt$DateFormat$3</ID>
+    <ID>MagicNumber:DateFormat.kt$DateFormat$4</ID>
+    <ID>MagicNumber:DateFormat.kt$DateFormat$6</ID>
+    <ID>MagicNumber:DateFormat.kt$DateFormat$7</ID>
+    <ID>MagicNumber:FamilyRepository.kt$FamilyRepository$80</ID>
+    <ID>MagicNumber:GermanDateParser.kt$GermanDateParser$10</ID>
+    <ID>MagicNumber:GermanDateParser.kt$GermanDateParser$2000</ID>
+    <ID>MagicNumber:GermanDateParser.kt$GermanDateParser$3</ID>
+    <ID>MagicNumber:GermanDateParser.kt$GermanDateParser$4</ID>
+    <ID>MagicNumber:GermanDateParser.kt$GermanDateParser$5</ID>
+    <ID>MagicNumber:GermanDateParser.kt$GermanDateParser$6</ID>
+    <ID>MagicNumber:GermanDateParser.kt$GermanDateParser$7</ID>
+    <ID>MagicNumber:GermanDateParser.kt$GermanDateParser$8</ID>
+    <ID>MagicNumber:GermanDateParser.kt$GermanDateParser$9</ID>
+    <ID>MagicNumber:Icons.kt$FamilyIcons$24f</ID>
+    <ID>MagicNumber:MainViewController.kt$IosPlatform$1000</ID>
+    <ID>MagicNumber:MainViewController.kt$IosPlatform$20</ID>
+    <ID>MagicNumber:MainViewController.kt$IosPlatform$4</ID>
+    <ID>MagicNumber:PreviewData.kt$PreviewData$11</ID>
+    <ID>MagicNumber:PreviewData.kt$PreviewData$12</ID>
+    <ID>MagicNumber:PreviewData.kt$PreviewData$15</ID>
+    <ID>MagicNumber:PreviewData.kt$PreviewData$20</ID>
+    <ID>MagicNumber:PreviewData.kt$PreviewData$2026</ID>
+    <ID>MagicNumber:PreviewData.kt$PreviewData$23</ID>
+    <ID>MagicNumber:PreviewData.kt$PreviewData$24</ID>
+    <ID>MagicNumber:PreviewData.kt$PreviewData$26</ID>
+    <ID>MagicNumber:PreviewData.kt$PreviewData$28</ID>
+    <ID>MagicNumber:PreviewData.kt$PreviewData$3</ID>
+    <ID>MagicNumber:PreviewData.kt$PreviewData$30</ID>
+    <ID>MagicNumber:PreviewData.kt$PreviewData$410</ID>
+    <ID>MagicNumber:PreviewData.kt$PreviewData$840</ID>
+    <ID>MagicNumber:SettingsScreen.kt$10</ID>
+    <ID>MagicNumber:SettingsScreen.kt$100</ID>
+    <ID>MagicNumber:SettingsScreen.kt$5</ID>
+    <ID>MagicNumber:SettingsScreen.kt$50</ID>
+    <ID>MagicNumber:Theme.kt$0xFF0B2E2C</ID>
+    <ID>MagicNumber:Theme.kt$0xFF0E6B66</ID>
+    <ID>MagicNumber:Theme.kt$0xFF151513</ID>
+    <ID>MagicNumber:Theme.kt$0xFF1D1C1A</ID>
+    <ID>MagicNumber:Theme.kt$0xFF201F1C</ID>
+    <ID>MagicNumber:Theme.kt$0xFF2C7A4B</ID>
+    <ID>MagicNumber:Theme.kt$0xFF2F5DA8</ID>
+    <ID>MagicNumber:Theme.kt$0xFF3A3934</ID>
+    <ID>MagicNumber:Theme.kt$0xFF5C5A55</ID>
+    <ID>MagicNumber:Theme.kt$0xFF5FC4BC</ID>
+    <ID>MagicNumber:Theme.kt$0xFF6E6B65</ID>
+    <ID>MagicNumber:Theme.kt$0xFF7B3FA0</ID>
+    <ID>MagicNumber:Theme.kt$0xFF7FCB9B</ID>
+    <ID>MagicNumber:Theme.kt$0xFF8A5300</ID>
+    <ID>MagicNumber:Theme.kt$0xFF8FB0EC</ID>
+    <ID>MagicNumber:Theme.kt$0xFFA84B0C</ID>
+    <ID>MagicNumber:Theme.kt$0xFFB0ADA6</ID>
+    <ID>MagicNumber:Theme.kt$0xFFB3261E</ID>
+    <ID>MagicNumber:Theme.kt$0xFFC9A0E6</ID>
+    <ID>MagicNumber:Theme.kt$0xFFD9D6CF</ID>
+    <ID>MagicNumber:Theme.kt$0xFFECEAE4</ID>
+    <ID>MagicNumber:Theme.kt$0xFFF0A06A</ID>
+    <ID>MagicNumber:Theme.kt$0xFFF2B85B</ID>
+    <ID>MagicNumber:Theme.kt$0xFFF6F5F2</ID>
+    <ID>MagicNumber:Theme.kt$0xFFFF8A80</ID>
+    <ID>MagicNumber:Theme.kt$0xFFFFFFFF</ID>
+    <ID>MagicNumber:Theme.kt$Motion$0.05f</ID>
+    <ID>MagicNumber:Theme.kt$Motion$0.1f</ID>
+    <ID>MagicNumber:Theme.kt$Motion$0.2f</ID>
+    <ID>MagicNumber:Theme.kt$Motion$0.7f</ID>
+    <ID>MagicNumber:Views.kt$Views$7</ID>
+    <ID>MatchingDeclarationName:Icons.kt$FamilyIcons</ID>
+    <ID>MaxLineLength:AndroidPhotoLoader.kt$AndroidPhotoLoader$val</ID>
+    <ID>MaxLineLength:AndroidPhotoLoader.kt$AndroidPhotoLoader$val bitmap = BitmapFactory.decodeFile(path, BitmapFactory.Options().apply { inSampleSize = sample }) ?: return null</ID>
+    <ID>MaxLineLength:AndroidPlatform.kt$AndroidPlatform$RestoreRead.Failed(if (e is SecurityException) "Kein Zugriff auf den Ordner." else e.message ?: e.javaClass.simpleName)</ID>
+    <ID>MaxLineLength:AndroidPlatform.kt$AndroidPlatform$val files = photoDir.listFiles().orEmpty().filter { it.isFile }.map { StoredPhoto(it.absolutePath, it.lastModified()) }</ID>
+    <ID>MaxLineLength:AndroidSpeech.kt$AndroidSpeech$"Auf diesem Handy gibt es keine Offline-Spracherkennung. Du kannst tippen oder in den Einstellungen die Online-Erkennung erlauben."</ID>
+    <ID>MaxLineLength:AndroidSpeech.kt$AndroidSpeech$SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -&gt; "Erkennung braucht Internet, das gerade fehlt. Bitte tippen."</ID>
+    <ID>MaxLineLength:AndroidSpeech.kt$AndroidSpeech$SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -&gt; "Nichts verstanden. Nochmal sprechen oder tippen."</ID>
+    <ID>MaxLineLength:AndroidSpeech.kt$AndroidSpeech.Callbacks$private inner</ID>
+    <ID>MaxLineLength:AndroidSpeech.kt$AndroidSpeech.Callbacks$runCatching { SpeechRecognizer.createOnDeviceSpeechRecognizer(context).triggerModelDownload(intent(true)) }</ID>
+    <ID>MaxLineLength:AndroidSpeech.kt$AndroidSpeech.Callbacks$target.onError("Das deutsche Sprachpaket fehlt noch auf dem Handy. Der Download ist angestoßen; bis dahin tippen.")</ID>
+    <ID>MaxLineLength:AndroidTextStore.kt$AndroidTextStore$File(file.parentFile, "${file.nameWithoutExtension}-unlesbar-${System.currentTimeMillis()}.json").writeText(text)</ID>
+    <ID>MaxLineLength:App.kt$"Kein Konto, keine E-Mail. Damit ist deine Familie angelegt, weitere Personen fügst du unter „Familie“ hinzu."</ID>
+    <ID>MaxLineLength:App.kt$)</ID>
+    <ID>MaxLineLength:App.kt$Button</ID>
+    <ID>MaxLineLength:App.kt$Modifier.offset(y = (-10).dp).size(60.dp).shadow(6.dp, CircleShape).clip(CircleShape).background(c.accent)</ID>
+    <ID>MaxLineLength:App.kt$Modifier.padding(12.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(c.text).padding(start = 16.dp, end = 4.dp)</ID>
+    <ID>MaxLineLength:App.kt$OutlinedTextField(value = code, onValueChange = { code = it }, singleLine = true, label = { Text("z. B. 7K3M-Q9TB-…") })</ID>
+    <ID>MaxLineLength:App.kt$Text("Erfassen", fontSize = 12.sp, color = c.text, fontWeight = FontWeight.SemiBold, modifier = Modifier.offset(y = (-6).dp))</ID>
+    <ID>MaxLineLength:App.kt$Text("Wie heißt du?", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = c.text, modifier = Modifier.padding(top = 24.dp))</ID>
+    <ID>MaxLineLength:App.kt$Text(label, fontSize = 12.sp, color = if (selected) c.text else c.textSecondary, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal)</ID>
+    <ID>MaxLineLength:App.kt$TextButton(onClick = { model.undo(f) }) { Text("Rückgängig", color = c.background, fontWeight = FontWeight.Bold) }</ID>
+    <ID>MaxLineLength:App.kt$confirmButton = { TextButton(onClick = { model.restoreWithCode(code) }, enabled = code.isNotBlank()) { Text("Öffnen") } }</ID>
+    <ID>MaxLineLength:App.kt$if (request.wrong) "Dieser Code öffnet die Sicherung nicht. Bitte genau prüfen." else "Gib den Code ein, den du beim Einrichten der Sicherung aufgeschrieben hast."</ID>
+    <ID>MaxLineLength:App.kt$keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done)</ID>
+    <ID>MaxLineLength:App.kt$val</ID>
+    <ID>MaxLineLength:App.kt$val enter = if (reducedMotion) fadeIn(tween(0)) else slideInVertically(tween(Motion.FEEDBACK_MS, easing = Motion.Standard)) { it } + fadeIn()</ID>
+    <ID>MaxLineLength:App.kt$val exit = if (reducedMotion) fadeOut(tween(0)) else slideOutVertically(tween(Motion.FEEDBACK_MS, easing = Motion.Standard)) { it } + fadeOut()</ID>
+    <ID>MaxLineLength:AppModel.kt$AppModel$_capture.value = CaptureState.Problem("Spracherkennung ist auf diesem Gerät nicht verfügbar. Tippen geht immer.")</ID>
+    <ID>MaxLineLength:AppModel.kt$AppModel$fun</ID>
+    <ID>MaxLineLength:BackupCrypto.kt$BackupCrypto$(1..CODE_LENGTH).map { ALPHABET[random.nextInt(ALPHABET.length)] }.chunked(GROUP).joinToString("-") { it.joinToString("") }</ID>
+    <ID>MaxLineLength:BackupCrypto.kt$BackupCrypto$cipher.doFinal(data, MAGIC.size + SALT_BYTES + NONCE_BYTES, data.size - MAGIC.size - SALT_BYTES - NONCE_BYTES)</ID>
+    <ID>MaxLineLength:BackupCrypto.kt$BackupCrypto$fun isEncrypted(data: ByteArray): Boolean</ID>
+    <ID>MaxLineLength:BackupCrypto.kt$BackupCrypto$return ByteBuffer.allocate(MAGIC.size + SALT_BYTES + NONCE_BYTES + body.size).put(MAGIC).put(salt).put(nonce).put(body).array()</ID>
+    <ID>MaxLineLength:BackupFolder.kt$BackupFolder$val text = files.read(null, LEGACY_FILE)?.decodeToString() ?: return RestoreRead.Failed("Sicherung nicht lesbar")</ID>
+    <ID>MaxLineLength:BackupFolder.kt$BackupFolder.Companion$fun</ID>
+    <ID>MaxLineLength:CaptureRules.kt$CaptureRules$found.size &gt; 1 -&gt; null.also { reasons += "Mehrere Daten erkannt (${found.joinToString { it.phrase }}), bitte wählen" }</ID>
+    <ID>MaxLineLength:CaptureRules.kt$CaptureRules$named.size &gt; 1 -&gt; null.also { reasons += "Mehrere Namen erkannt (${named.joinToString { it.name }}), bitte wählen" }</ID>
+    <ID>MaxLineLength:CaptureSheet.kt$)</ID>
+    <ID>MaxLineLength:CaptureSheet.kt$.</ID>
+    <ID>MaxLineLength:CaptureSheet.kt$Box(Modifier.align(Alignment.CenterHorizontally).width(32.dp).height(4.dp).clip(CircleShape).background(c.outline))</ID>
+    <ID>MaxLineLength:CaptureSheet.kt$Button(onClick = { model.saveText(text) }, enabled = text.isNotBlank(), modifier = Modifier.align(Alignment.End)) { Text("Speichern") }</ID>
+    <ID>MaxLineLength:CaptureSheet.kt$Modifier.size(64.dp).clip(CircleShape).background(c.accent).clickable { model.switchCapture(CaptureAction.PHOTO) }</ID>
+    <ID>MaxLineLength:CaptureSheet.kt$keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done)</ID>
+    <ID>MaxLineLength:CaptureSheet.kt$modifier = Modifier.clip(RoundedCornerShape(24.dp)).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp)</ID>
+    <ID>MaxLineLength:CaptureTileService.kt$CaptureTileService$val pending = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)</ID>
+    <ID>MaxLineLength:Cards.kt$.</ID>
+    <ID>MaxLineLength:Cards.kt$FlowRow</ID>
+    <ID>MaxLineLength:Cards.kt$OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Titel") }, modifier = Modifier.fillMaxWidth())</ID>
+    <ID>MaxLineLength:Cards.kt$Row</ID>
+    <ID>MaxLineLength:Cards.kt$TextButton(onClick = { onClose(); if (title != item.title) model.rename(item, title) }) { Text("Speichern") }</ID>
+    <ID>MaxLineLength:Cards.kt$modifier = Modifier.fillMaxWidth().height(height.dp).clip(RoundedCornerShape(12.dp)).clickable { full = true }</ID>
+    <ID>MaxLineLength:Cards.kt$text = { big?.let { Image(it, contentDescription = "Foto", modifier = Modifier.fillMaxWidth(), contentScale = ContentScale.Fit) } }</ID>
+    <ID>MaxLineLength:Components.kt$Modifier.fillMaxWidth().padding(vertical = 8.dp).clip(RoundedCornerShape(16.dp)).background(c.card).padding(16.dp)</ID>
+    <ID>MaxLineLength:Components.kt$modifier = Modifier.padding(start = 8.dp).clip(CircleShape).background(c.accent).padding(horizontal = 8.dp, vertical = 1.dp)</ID>
+    <ID>MaxLineLength:DateFormat.kt$DateFormat$private val MONTHS = listOf("Jan.", "Feb.", "März", "Apr.", "Mai", "Juni", "Juli", "Aug.", "Sep.", "Okt.", "Nov.", "Dez.")</ID>
+    <ID>MaxLineLength:DateFormat.kt$DateFormat$val range = if (monday.month == sunday.month) "${monday.day}.–${dayMonth(sunday)}" else "${dayMonth(monday)} – ${dayMonth(sunday)}"</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$(before.members.map { it.stamp } + before.items.map { it.stamp } + before.tombstones.map { it.stamp }).forEach(clock::observe)</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$(d.members.map { it.stamp.wallMs } + d.items.map { it.stamp.wallMs } + d.tombstones.map { it.stamp.wallMs }).maxOrNull()</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$change(id) { it.copy(concerns = memberId, concernsOrigin = memberId?.let { Origin.PERSON }, inboxTaps = it.inboxTapsPlus(2)) }</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$d.copy(items = d.items.map { if (it.id == id) block(it).copy(changedBy = d.selfId, stamp = clock.tick()) else it })</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$else</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$fun</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$fun markIrrelevant(id: String): Undo</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$if (it.id == id) it.copy(name = name.trim(), colorIndex = colorIndex, kind = kind, stamp = clock.tick()) else it</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$it.copy(assignee = current.selfId, assigneeOrigin = Origin.PERSON, status = if (it.status == ItemStatus.INBOX) it.status else ItemStatus.OPEN)</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$it.copy(assignee = memberId, assigneeOrigin = Origin.PERSON, inboxTaps = it.inboxTapsPlus(2)).confirmedIfReady()</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$it.copy(due = date, dueDecided = true, dueOrigin = Origin.PERSON, inboxTaps = it.inboxTapsPlus(2)).confirmedIfReady()</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$item.photoPath?.let { path -&gt; photoPaths[photoName(path)]?.let { item.copy(photoPath = it) } } ?: item</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$loadProblem = "Gespeicherte Daten waren nicht lesbar und wurden beiseitegelegt (${e.message?.take(80)})."</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$return RestoreResult(undo = Undo(emptyMap(), wholeBefore = before), note = listOfNotNull(note, extra).joinToString(" ").ifEmpty { null })</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$return if (newestBackup &lt; newestHere) "Achtung: Die Sicherung ist älter als die Daten auf diesem Handy." else null</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$runCatching { store.writeSnapshot(text) }.isSuccess.also { ok -&gt; snapshotPresent = if (ok) text != null else null }</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$snapshotPresent ?: runCatching { store.readSnapshot() != null }.getOrDefault(false).also { snapshotPresent = it }</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$status = if (item.assignee == id &amp;&amp; item.status == ItemStatus.OPEN) ItemStatus.INBOX else item.status</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$tombstones = d.tombstones.filterNot { it.id == id } + Tombstone(id, RecordKind.ITEM, clock.tick(), d.selfId)</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$tombstones = d.tombstones.filterNot { it.id == id } + Tombstone(id, RecordKind.MEMBER, clock.tick(), d.selfId)</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$val color = (0 until PERSON_COLOR_COUNT).firstOrNull { it !in used } ?: (current.members.size % PERSON_COLOR_COUNT)</ID>
+    <ID>MaxLineLength:FamilyRepository.kt$FamilyRepository$val revived = undo.itemsBefore.filterValues { it != null }.keys + undo.membersBefore.filterValues { it != null }.keys</ID>
+    <ID>MaxLineLength:GermanDateParser.kt$GermanDateParser$"""${WORD_START}in\s+(\d{1,2}|einem|einer|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn)\s+(tag|tagen|woche|wochen)$WORD_END"""</ID>
+    <ID>MaxLineLength:GermanDateParser.kt$GermanDateParser$val date = if (y.isNotEmpty()) dateOrNull(y.toInt(), month, d.toInt()) else nextOccurrence(today, month, d.toInt())</ID>
+    <ID>MaxLineLength:Icons.kt$FamilyIcons$"M12,14c1.66,0 2.99,-1.34 2.99,-3L15,5c0,-1.66 -1.34,-3 -3,-3S9,3.34 9,5v6c0,1.66 1.34,3 3,3zM17.3,11c0,3 -2.54,5.1 -5.3,5.1S6.7,14 6.7,11L5,11c0,3.41 2.72,6.23 6,6.72L11,21h2v-3.28c3.28,-0.48 6,-3.3 6,-6.72h-1.7z"</ID>
+    <ID>MaxLineLength:Icons.kt$FamilyIcons$"M12,8.8a3.2,3.2 0,1 0,0 6.4a3.2,3.2 0,1 0,0 -6.4zM9,2L7.17,4L4,4c-1.1,0 -2,0.9 -2,2v12c0,1.1 0.9,2 2,2h16c1.1,0 2,-0.9 2,-2L22,6c0,-1.1 -0.9,-2 -2,-2h-3.17L15,2L9,2zM12,17c-2.76,0 -5,-2.24 -5,-5s2.24,-5 5,-5 5,2.24 5,5 -2.24,5 -5,5z"</ID>
+    <ID>MaxLineLength:Icons.kt$FamilyIcons$"M15.5,14h-0.79l-0.28,-0.27C15.41,12.59 16,11.11 16,9.5 16,5.91 13.09,3 9.5,3S3,5.91 3,9.5 5.91,16 9.5,16c1.61,0 3.09,-0.59 4.23,-1.57l0.27,0.28v0.79l5,4.99L20.49,19l-4.99,-5zM9.5,14C7.01,14 5,11.99 5,9.5S7.01,5 9.5,5 14,7.01 14,9.5 11.99,14 9.5,14z"</ID>
+    <ID>MaxLineLength:Icons.kt$FamilyIcons$"M16,11c1.66,0 2.99,-1.34 2.99,-3S17.66,5 16,5c-1.66,0 -3,1.34 -3,3s1.34,3 3,3zM8,11c1.66,0 2.99,-1.34 2.99,-3S9.66,5 8,5C6.34,5 5,6.34 5,8s1.34,3 3,3zM8,13c-2.33,0 -7,1.17 -7,3.5L1,19h14v-2.5c0,-2.33 -4.67,-3.5 -7,-3.5zM16,13c-0.29,0 -0.62,0.02 -0.97,0.05 1.16,0.84 1.97,1.97 1.97,3.45L17,19h6v-2.5c0,-2.33 -4.67,-3.5 -7,-3.5z"</ID>
+    <ID>MaxLineLength:Icons.kt$FamilyIcons$"M17,12h-5v5h5v-5zM16,1v2L8,3L8,1L6,1v2L5,3c-1.11,0 -1.99,0.9 -1.99,2L3,19c0,1.1 0.89,2 2,2h14c1.1,0 2,-0.9 2,-2L21,5c0,-1.1 -0.9,-2 -2,-2h-1L18,1h-2zM19,19L5,19L5,8h14v11z"</ID>
+    <ID>MaxLineLength:Icons.kt$FamilyIcons$"M20,5L4,5c-1.1,0 -1.99,0.9 -1.99,2L2,17c0,1.1 0.9,2 2,2h16c1.1,0 2,-0.9 2,-2L22,7c0,-1.1 -0.9,-2 -2,-2zM11,8h2v2h-2L11,8zM11,11h2v2h-2v-2zM8,8h2v2L8,10L8,8zM8,11h2v2L8,13v-2zM7,13L5,13v-2h2v2zM7,10L5,10L5,8h2v2zM16,17L8,17v-2h8v2zM16,13h-2v-2h2v2zM16,10h-2L14,8h2v2zM19,13h-2v-2h2v2zM19,10h-2L17,8h2v2z"</ID>
+    <ID>MaxLineLength:MainActivity.kt$MainActivity$val openTree = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri -&gt; app.platform.onFolderPicked(uri) }</ID>
+    <ID>MaxLineLength:MainActivity.kt$MainActivity$val takePicture = registerForActivityResult(ActivityResultContracts.TakePicture()) { ok -&gt; app.platform.onPhotoResult(ok) }</ID>
+    <ID>MaxLineLength:MainActivity.kt$MainActivity$val text = listOfNotNull(subject?.takeIf { it.isNotBlank() }, body?.takeIf { it.isNotBlank() }).joinToString(" – ")</ID>
+    <ID>MaxLineLength:MainViewController.kt$IosPlatform$override fun readBackup(folder: String, code: String?): RestoreRead</ID>
+    <ID>MaxLineLength:MainViewController.kt$IosTextStore$check(NSString.create(string = text).writeToFile(path, true, NSUTF8StringEncoding, null)) { "Schreiben fehlgeschlagen" }</ID>
+    <ID>MaxLineLength:MainViewController.kt$IosTextStore$check(NSString.create(string = text).writeToFile(snapshotPath, true, NSUTF8StringEncoding, null)) { "Schreiben fehlgeschlagen" }</ID>
+    <ID>MaxLineLength:MainViewController.kt$return ComposeUIViewController { App(versionName = version ?: "", model = model, photos = null, reducedMotion = false) }</ID>
+    <ID>MaxLineLength:MainViewController.kt$val c = NSCalendar.currentCalendar.components(NSCalendarUnitYear or NSCalendarUnitMonth or NSCalendarUnitDay, NSDate())</ID>
+    <ID>MaxLineLength:Model.kt$/** Current version of the stored format. Older files are upgraded by [io.github.respawnedguy.familyapp.data.FamilyJson]. */</ID>
+    <ID>MaxLineLength:PhotoCleanup.kt$PhotoCleanup$return files.filter { FamilyRepository.photoName(it.path) !in used &amp;&amp; nowMs - it.modifiedMs &gt;= minAgeMs }.map { it.path }</ID>
+    <ID>MaxLineLength:PreviewData.kt$PreviewData$private</ID>
+    <ID>MaxLineLength:Previews.kt$ComponentPreviews$@Preview(name = "Dunkel", widthDp = 411, showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES or Configuration.UI_MODE_TYPE_NORMAL)</ID>
+    <ID>MaxLineLength:Previews.kt$DecisionChip("Nils", missing = false, suggested = false, onClick = {}, leading = { PersonDot(PreviewData.nils, size = 20.dp) })</ID>
+    <ID>MaxLineLength:Previews.kt$PhonePreviews$@Preview(name = "Dunkel", widthDp = 411, heightDp = 891, showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES or Configuration.UI_MODE_TYPE_NORMAL)</ID>
+    <ID>MaxLineLength:Previews.kt$TaskRow(PreviewData.noDate, data, model, photos = null, reducedMotion = true, showAssignee = true, takeOver = true)</ID>
+    <ID>MaxLineLength:Previews.kt$TaskRow(PreviewData.overdue, data, model, photos = null, reducedMotion = true, showAssignee = false, takeOver = false)</ID>
+    <ID>MaxLineLength:Previews.kt$TaskRow(PreviewData.soon, data, model, photos = null, reducedMotion = true, showAssignee = true, takeOver = false)</ID>
+    <ID>MaxLineLength:Previews.kt$private</ID>
+    <ID>MaxLineLength:SafBackupFiles.kt$SafBackupFiles$?:</ID>
+    <ID>MaxLineLength:SafBackupFiles.kt$SafBackupFiles$resolver.query(uri, arrayOf(Document.COLUMN_DOCUMENT_ID, Document.COLUMN_DISPLAY_NAME, Document.COLUMN_MIME_TYPE), null, null, null)</ID>
+    <ID>MaxLineLength:SafBackupFiles.kt$SafBackupFiles$return children(dir).firstOrNull { it.second == name &amp;&amp; it.third != Document.MIME_TYPE_DIR }?.let { docUri(it.first) }</ID>
+    <ID>MaxLineLength:Screens.kt$"Ohne eigenes Handy (Kind, Oma). Mit eigenem Handy koppeln kommt im nächsten Update per QR-Code."</ID>
+    <ID>MaxLineLength:Screens.kt$MemberDialog</ID>
+    <ID>MaxLineLength:Screens.kt$Modifier.fillMaxWidth().padding(top = 12.dp).clip(RoundedCornerShape(16.dp)).background(c.card).padding(16.dp)</ID>
+    <ID>MaxLineLength:Screens.kt$Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(12.dp)).background(c.card).padding(12.dp)</ID>
+    <ID>MaxLineLength:Screens.kt$OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, singleLine = true)</ID>
+    <ID>MaxLineLength:Screens.kt$Text("Nur feste Fristen und Termine. Antippen filtert die Liste.", fontSize = 12.sp, color = c.textTertiary)</ID>
+    <ID>MaxLineLength:Screens.kt$Text("Personen", Modifier.weight(1f), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = c.text)</ID>
+    <ID>MaxLineLength:Screens.kt$Text(if (member.id == data.selfId) "${member.name} (ich)" else member.name, color = c.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)</ID>
+    <ID>MaxLineLength:Screens.kt$Text(load.member.name, Modifier.width(72.dp).padding(start = 8.dp), color = c.text, fontSize = 14.sp, maxLines = 1)</ID>
+    <ID>MaxLineLength:Screens.kt$confirmButton = { TextButton(onClick = { if (name.isNotBlank()) onSave(name, color, kind) }) { Text("Speichern") } }</ID>
+    <ID>MaxLineLength:Screens.kt$if (calm &gt; 0) Box(Modifier.weight(calm.toFloat()).fillMaxHeight().background(c.person(load.member.colorIndex)))</ID>
+    <ID>MaxLineLength:Screens.kt$if (load.overdue &gt; 0) Box(Modifier.weight(load.overdue.toFloat()).fillMaxHeight().background(c.overdue))</ID>
+    <ID>MaxLineLength:Screens.kt$if (onRemove != null) TextButton(onClick = onRemove) { Text("Aus der Familie entfernen", color = c.overdue) }</ID>
+    <ID>MaxLineLength:Screens.kt$if (unowned == 0) "Im Eingang ist alles verteilt." else "Im Eingang gehören $unowned Dinge noch niemandem."</ID>
+    <ID>MaxLineLength:Screens.kt$val open = if (load.overdue &gt; 0) "${load.open} · ${load.overdue} überfällig" else "${load.open} offen"</ID>
+    <ID>MaxLineLength:SettingsScreen.kt$"Aus: Sprache wird nur auf dem Handy erkannt. Ein: Fehlt das Offline-Sprachpaket, darf Google online erkennen."</ID>
+    <ID>MaxLineLength:SettingsScreen.kt$"Die Daten liegen geschützt im App-Speicher. Zusätzlich schreibt die App nach jeder Änderung eine verschlüsselte Sicherung mit allen Fotos in einen Ordner deiner Wahl, z. B. einen Synology-Drive-Ordner."</ID>
+    <ID>MaxLineLength:SettingsScreen.kt$"Prototyp. Alles bleibt auf diesem Gerät, keine Cloud, keine KI. Die App vibriert nicht. Kopplung mit anderen Handys folgt im nächsten Update."</ID>
+    <ID>MaxLineLength:SettingsScreen.kt$"Schneller als die App: Schnellkachel „Erfassen“ in den Schnelleinstellungen, langes Drücken aufs App-Symbol, oder „Teilen“ aus Mail und Galerie."</ID>
+    <ID>MaxLineLength:SettingsScreen.kt$"Schreib ihn auf Papier. Ohne diesen Code lässt sich die Sicherung auf einem neuen Handy nicht öffnen, auch nicht von uns."</ID>
+    <ID>MaxLineLength:SettingsScreen.kt$"Wähle den Ordner, in dem die Sicherung liegt. Der jetzige Stand wird vorher aufbewahrt und lässt sich zurückholen."</ID>
+    <ID>MaxLineLength:SettingsScreen.kt$Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 96.dp)</ID>
+    <ID>MaxLineLength:SettingsScreen.kt$OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Dein Name") }, singleLine = true, modifier = Modifier.fillMaxWidth())</ID>
+    <ID>MaxLineLength:SettingsScreen.kt$RadioButton(selected = s.firstCaptureAction == action, onClick = { model.setFirstCaptureAction(action) })</ID>
+    <ID>MaxLineLength:SettingsScreen.kt$Text("${it.trigger}: ${formatMs(it.ms)} · ${ago(it.atMs, model.repo.now())}", fontSize = 12.sp, color = c.textTertiary)</ID>
+    <ID>MaxLineLength:SettingsScreen.kt$Text("Karten mit einem Tap erledigt: $one von $all (${one * 100 / all} %, Ziel ≥ 70 %).", fontSize = 14.sp, color = c.text)</ID>
+    <ID>MaxLineLength:SettingsScreen.kt$Text("Kein Konto, keine E-Mail. Alles liegt nur auf diesem Handy.", fontSize = 12.sp, color = c.textTertiary)</ID>
+    <ID>MaxLineLength:SettingsScreen.kt$Text(code, fontSize = 20.sp, color = c.text, fontFamily = FontFamily.Monospace, modifier = Modifier.semantics { contentDescription = code.toList().joinToString(" ") })</ID>
+    <ID>MaxLineLength:SettingsScreen.kt$TextButton(onClick = { model.restoreSnapshot() }) { Text("Stand vor der Wiederherstellung zurückholen") }</ID>
+    <ID>MaxLineLength:SettingsScreen.kt$val last = s.lastBackupMs?.let { "Zuletzt gesichert: ${ago(it, model.repo.now())}" } ?: "Noch nicht gesichert."</ID>
+    <ID>MaxLineLength:TextStore.kt$NewerSchemaException$IllegalStateException("Die Daten stammen aus einer neueren App-Version (Format $found, diese App kennt $CURRENT_SCHEMA).")</ID>
+    <ID>MaxLineLength:UpdateController.kt$UpdateController$when</ID>
+    <ID>MaxLineLength:UpdateManifest.kt$UpdateManifestParser$manifest.sizeBytes &lt;= 0 || manifest.sizeBytes &gt; MAX_APK_BYTES -&gt; ManifestResult.Invalid("ungültige Dateigröße")</ID>
+    <ID>MaxLineLength:UpdateSection.kt$LinearProgressIndicator(progress = { s.progress.coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())</ID>
+    <ID>MaxLineLength:Views.kt$Views$Week(monday, dated.filter { (w == 0 &amp;&amp; it.due!! &lt; monday) || (it.due!! &gt;= monday &amp;&amp; it.due &lt; next) }.sortedWith(byDue))</ID>
+    <ID>MaxLineLength:Views.kt$Views$val done = data.items.count { it.status == ItemStatus.DONE &amp;&amp; it.doneBy == m.id &amp;&amp; it.doneOn != null &amp;&amp; it.doneOn &gt;= monday }</ID>
+    <ID>MayBeConst:GermanDateParser.kt$GermanDateParser.Companion$private val MONTHS = "januar|jan\\.?|februar|feb\\.?|märz|mär\\.?|april|apr\\.?|mai|juni|jun\\.?|juli|jul\\.?|" + "august|aug\\.?|september|sept?\\.?|oktober|okt\\.?|november|nov\\.?|dezember|dez\\.?"</ID>
+    <ID>ReturnCount:AndroidSpeech.kt$AndroidSpeech.Callbacks$override fun onError(error: Int)</ID>
+    <ID>ReturnCount:AndroidUpdatePlatform.kt$AndroidUpdatePlatform$@Suppress("DEPRECATION") private fun certDigests(info: PackageInfo): Set&lt;String&gt;</ID>
+    <ID>ReturnCount:AndroidUpdatePlatform.kt$AndroidUpdatePlatform$override fun verifyPackage(download: VerifiedDownload): String?</ID>
+    <ID>ReturnCount:BackupFolder.kt$BackupFolder$@Suppress("SwallowedException") // a wrong code is an expected answer, not an error to keep fun read(code: String?, photoDir: File): RestoreRead</ID>
+    <ID>ReturnCount:FamilyRepository.kt$FamilyRepository$fun restoreBackup(text: String, photoPaths: Map&lt;String, String&gt; = emptyMap()): RestoreResult</ID>
+    <ID>ReturnCount:FamilyRepository.kt$FamilyRepository$fun restoreSnapshot(): String?</ID>
+    <ID>ReturnCount:FamilyRepository.kt$FamilyRepository$private fun olderNote(restored: FamilyData, before: FamilyData): String?</ID>
+    <ID>ReturnCount:SafBackupFiles.kt$SafBackupFiles$private fun dirId(sub: String?, create: Boolean): String?</ID>
+    <ID>ReturnCount:UpdateManifest.kt$UpdateManifestParser$fun parse(text: String, allowedApkUrlPrefix: String): ManifestResult</ID>
+    <ID>SwallowedException:AndroidPlatform.kt$AndroidPlatform$e: ActivityNotFoundException</ID>
+    <ID>SwallowedException:AndroidUpdatePlatform.kt$AndroidUpdatePlatform$e: IOException</ID>
+    <ID>SwallowedException:AndroidUpdatePlatform.kt$AndroidUpdatePlatform$e: SecurityException</ID>
+    <ID>SwallowedException:UpdateManifest.kt$UpdateManifestParser$e: IllegalArgumentException</ID>
+    <ID>SwallowedException:UpdateManifest.kt$UpdateManifestParser$e: SerializationException</ID>
+    <ID>TooManyFunctions:AndroidPlatform.kt$AndroidPlatform : PlatformServices</ID>
+    <ID>TooManyFunctions:AndroidSpeech.kt$AndroidSpeech$Callbacks : RecognitionListener</ID>
+    <ID>TooManyFunctions:AndroidUpdatePlatform.kt$AndroidUpdatePlatform : UpdatePlatform</ID>
+    <ID>TooManyFunctions:AppModel.kt$AppModel</ID>
+    <ID>TooManyFunctions:FamilyRepository.kt$FamilyRepository</ID>
+    <ID>TooManyFunctions:Previews.kt$io.github.respawnedguy.familyapp.preview.Previews.kt</ID>
+    <ID>UnusedParameter:Screens.kt$data: FamilyData</ID>
+  </CurrentIssues>
+</SmellBaseline>

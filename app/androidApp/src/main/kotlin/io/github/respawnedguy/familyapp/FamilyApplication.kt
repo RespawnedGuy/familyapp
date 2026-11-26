@@ -10,6 +10,7 @@ import io.github.respawnedguy.familyapp.data.FamilyRepository
 import io.github.respawnedguy.familyapp.presentation.AppModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.toKotlinLocalDate
 import java.io.File
@@ -41,6 +42,8 @@ class FamilyApplication : Application() {
             newId = { UUID.randomUUID().toString() },
         )
         platform.allowOnlineSpeech = { repo.current.settings.allowOnlineSpeech }
+        // Off the main thread: must not delay the capture start (D8).
+        scope.launch(Dispatchers.IO) { platform.cleanOrphanPhotos(repo.current) }
         model = AppModel(repo, platform, scope, ::today, Dispatchers.IO)
         publishShortcut()
     }

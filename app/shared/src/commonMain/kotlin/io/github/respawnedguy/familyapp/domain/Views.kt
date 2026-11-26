@@ -4,8 +4,11 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
 
-/** One bar of the load chart ("Lastkarte"): only items with a fixed date count (Nils, 20.11.2026). */
-data class Load(val member: Member, val open: Int, val overdue: Int)
+/**
+ * One bar of the load chart ("Lastkarte"): only items with a fixed date count (Nils, 20.11.2026).
+ * [doneThisWeek] counts everything this member finished since Monday, so done work is visible too.
+ */
+data class Load(val member: Member, val open: Int, val overdue: Int, val doneThisWeek: Int = 0)
 
 data class Week(val monday: LocalDate, val items: List<Item>)
 
@@ -30,11 +33,14 @@ object Views {
     fun isOverdue(item: Item, today: LocalDate): Boolean =
         item.status == ItemStatus.OPEN && item.due != null && item.due < today
 
-    fun loads(data: FamilyData, today: LocalDate): List<Load> =
-        data.members.filter { it.kind == MemberKind.ADULT }.map { m ->
+    fun loads(data: FamilyData, today: LocalDate): List<Load> {
+        val monday = DateFormat.mondayOf(today)
+        return data.members.filter { it.kind == MemberKind.ADULT }.map { m ->
             val fixed = data.items.filter { it.status == ItemStatus.OPEN && it.assignee == m.id && it.hasFixedDate }
-            Load(m, fixed.size, fixed.count { isOverdue(it, today) })
+            val done = data.items.count { it.status == ItemStatus.DONE && it.doneBy == m.id && it.doneOn != null && it.doneOn >= monday }
+            Load(m, fixed.size, fixed.count { isOverdue(it, today) }, done)
         }
+    }
 
     /** Inbox items nobody takes care of yet (shown under the load chart). */
     fun unowned(data: FamilyData): Int = data.items.count { it.status == ItemStatus.INBOX && it.assignee == null }

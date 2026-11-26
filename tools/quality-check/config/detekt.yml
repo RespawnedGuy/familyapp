@@ -1,0 +1,10 @@
+# detekt rules for the app (on top of the default config). Existing findings are in baseline.xml;
+# CI fails only on new ones (quality plan P1-2). Shrink the baseline, never grow it by hand.
+naming:
+  FunctionNaming:
+    # Composables are named like types by convention.
+    ignoreAnnotated: ['Composable']
+style:
+  UnusedPrivateMember:
+    # Android Studio previews are used by the IDE, not by code.
+    ignoreAnnotated: ['Preview', 'PhonePreviews', 'ComponentPreviews']

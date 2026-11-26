@@ -7,7 +7,14 @@ import android.os.SystemClock
 import android.provider.DocumentsContract
 import android.provider.Settings
 import androidx.core.content.FileProvider
+import io.github.respawnedguy.familyapp.data.BackupCrypto
+import io.github.respawnedguy.familyapp.data.BackupFolder
+import io.github.respawnedguy.familyapp.data.PhotoCleanup
+import io.github.respawnedguy.familyapp.data.StoredPhoto
+import io.github.respawnedguy.familyapp.domain.FamilyData
+import io.github.respawnedguy.familyapp.presentation.BackupContent
 import io.github.respawnedguy.familyapp.presentation.PlatformServices
+import io.github.respawnedguy.familyapp.presentation.RestoreRead
 import io.github.respawnedguy.familyapp.presentation.SpeechInput
 import java.io.File
 import java.util.UUID
@@ -64,7 +71,6 @@ class AndroidPlatform(private val app: FamilyApplication) : PlatformServices {
     // ---- Backup folder (Storage Access Framework) ---------------------------------------------
 
     private var folderCallback: ((String?) -> Unit)? = null
-    private var restoreCallback: ((String?) -> Unit)? = null
 
     override fun pickBackupFolder(onResult: (String?) -> Unit) {
         val a = activity ?: return onResult(null)
@@ -80,29 +86,8 @@ class AndroidPlatform(private val app: FamilyApplication) : PlatformServices {
         callback(uri.toString())
     }
 
-    override fun writeBackup(folder: String, text: String): String? = runCatching {
-        val tree = Uri.parse(folder)
-        val resolver = app.contentResolver
-        val dirId = DocumentsContract.getTreeDocumentId(tree)
-        val dir = DocumentsContract.buildDocumentUriUsingTree(tree, dirId)
-        val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, dirId)
-        var target: Uri? = null
-        resolver.query(
-            children,
-            arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME),
-            null, null, null,
-        )?.use { cursor ->
-            while (cursor.moveToNext()) {
-                if (cursor.getString(1) == BACKUP_NAME) {
-                    target = DocumentsContract.buildDocumentUriUsingTree(tree, cursor.getString(0))
-                    break
-                }
-            }
-        }
-        val uri = target ?: DocumentsContract.createDocument(resolver, dir, "application/json", BACKUP_NAME)
-            ?: error("Datei ließ sich nicht anlegen")
-        resolver.openOutputStream(uri, "wt")?.use { it.write(text.toByteArray(Charsets.UTF_8)) }
-            ?: error("Datei ließ sich nicht schreiben")
+    override fun writeBackup(folder: String, backup: BackupContent): String? = runCatching {
+        BackupFolder(SafBackupFiles(app.contentResolver, Uri.parse(folder))).write(backup)
         null
     }.getOrElse { e ->
         when (e) {
@@ -111,16 +96,20 @@ class AndroidPlatform(private val app: FamilyApplication) : PlatformServices {
         }
     }
 
-    override fun pickRestoreFile(onResult: (String?) -> Unit) {
-        val a = activity ?: return onResult(null)
-        restoreCallback = onResult
-        a.openDocument.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
+    override fun readBackup(folder: String, code: String?): RestoreRead = runCatching {
+        BackupFolder(SafBackupFiles(app.contentResolver, Uri.parse(folder))).read(code, photoDir)
+    }.getOrElse { e ->
+        RestoreRead.Failed(if (e is SecurityException) "Kein Zugriff auf den Ordner." else e.message ?: e.javaClass.simpleName)
     }
 
-    fun onRestorePicked(uri: Uri?) {
-        val callback = restoreCallback.also { restoreCallback = null } ?: return
-        val text = uri?.let { runCatching { app.contentResolver.openInputStream(it)?.use { s -> s.readBytes().toString(Charsets.UTF_8) } }.getOrNull() }
-        callback(text)
+    override fun newRecoveryCode(): String = BackupCrypto.newCode()
+
+    /** Deletes photo files no item uses any more (P0-4); runs once at app start. */
+    fun cleanOrphanPhotos(data: FamilyData) {
+        runCatching {
+            val files = photoDir.listFiles().orEmpty().filter { it.isFile }.map { StoredPhoto(it.absolutePath, it.lastModified()) }
+            PhotoCleanup.orphans(files, data, System.currentTimeMillis()).forEach { File(it).delete() }
+        }
     }
 
     override fun describeFolder(folder: String): String = runCatching {
@@ -134,14 +123,35 @@ class AndroidPlatform(private val app: FamilyApplication) : PlatformServices {
         }
     }.getOrDefault(folder)
 
-    /** Copies an image shared from another app into private storage, returns its path. */
+    /**
+     * Copies an image shared from another app into private storage, returns its path. Only
+     * content:// from other apps and at most [MAX_SHARED_BYTES]: a file:// link could point into
+     * this app's own private files (quality plan P1-8).
+     */
     fun importSharedImage(uri: Uri): String? = runCatching {
+        if (uri.scheme != "content" || uri.authority == "${app.packageName}.files") return null
         val file = File(photoDir, "${UUID.randomUUID()}.jpg")
-        app.contentResolver.openInputStream(uri)?.use { input -> file.outputStream().use { input.copyTo(it) } } ?: return null
+        app.contentResolver.openInputStream(uri)?.use { input ->
+            file.outputStream().use { out ->
+                val buffer = ByteArray(64 * 1024)
+                var total = 0L
+                while (true) {
+                    val n = input.read(buffer)
+                    if (n < 0) break
+                    total += n
+                    if (total > MAX_SHARED_BYTES) {
+                        out.close()
+                        file.delete()
+                        return null
+                    }
+                    out.write(buffer, 0, n)
+                }
+            }
+        } ?: return null
         file.absolutePath
     }.getOrNull()
 
     companion object {
-        const val BACKUP_NAME = "familyapp-sicherung.json"
+        const val MAX_SHARED_BYTES = 20L * 1024 * 1024
     }
 }

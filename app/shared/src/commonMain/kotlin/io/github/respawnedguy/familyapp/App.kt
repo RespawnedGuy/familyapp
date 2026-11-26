@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,6 +30,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -46,7 +48,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -59,6 +63,7 @@ import io.github.respawnedguy.familyapp.domain.FamilyData
 import io.github.respawnedguy.familyapp.domain.Views
 import io.github.respawnedguy.familyapp.presentation.AppModel
 import io.github.respawnedguy.familyapp.presentation.Feedback
+import io.github.respawnedguy.familyapp.presentation.RestoreCodeRequest
 import io.github.respawnedguy.familyapp.presentation.Tab
 import io.github.respawnedguy.familyapp.ui.CaptureSheet
 import io.github.respawnedguy.familyapp.ui.FamilyIcons
@@ -158,6 +163,8 @@ private fun Main(
     val settingsOpen by model.settingsOpen.collectAsState()
     val capture by model.capture.collectAsState()
     val feedback by model.feedback.collectAsState()
+    val saveProblem by model.repo.saveProblem.collectAsState()
+    val restoreCode by model.restoreCode.collectAsState()
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
@@ -171,6 +178,7 @@ private fun Main(
                 data = data,
                 onAvatar = { model.openSettings() },
             )
+            saveProblem?.let { SaveProblemBanner(it) { model.retrySave() } }
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 if (settingsOpen) {
                     SettingsScreen(data, model, updates, versionName)
@@ -185,7 +193,44 @@ private fun Main(
             BottomBar(tab.takeUnless { settingsOpen }, Views.inbox(data).size, data.settings.firstCaptureAction, model)
         }
         CaptureSheet(capture, model, reducedMotion)
+        restoreCode?.let { RestoreCodeDialog(it, model) }
     }
+}
+
+/** Stays until saving works again (P0-1): data loss must never be silent. */
+@Composable
+private fun SaveProblemBanner(message: String, onRetry: () -> Unit) {
+    val c = LocalFamilyColors.current
+    Column(
+        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).clip(RoundedCornerShape(12.dp))
+            .background(c.card).border(1.dp, c.overdue, RoundedCornerShape(12.dp)).padding(12.dp)
+            .semantics { liveRegion = LiveRegionMode.Assertive },
+    ) {
+        Text(message, color = c.overdue, fontSize = 14.sp)
+        TextButton(onClick = onRetry, modifier = Modifier.align(Alignment.End)) { Text("Erneut speichern") }
+    }
+}
+
+/** Asks for the recovery code when a backup does not open with the code on this phone. */
+@Composable
+private fun RestoreCodeDialog(request: RestoreCodeRequest, model: AppModel) {
+    val c = LocalFamilyColors.current
+    var code by remember(request) { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = { model.cancelRestore() },
+        title = { Text("Wiederherstellungscode") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    if (request.wrong) "Dieser Code öffnet die Sicherung nicht. Bitte genau prüfen." else "Gib den Code ein, den du beim Einrichten der Sicherung aufgeschrieben hast.",
+                    color = if (request.wrong) c.overdue else c.text,
+                )
+                OutlinedTextField(value = code, onValueChange = { code = it }, singleLine = true, label = { Text("z. B. 7K3M-Q9TB-…") })
+            }
+        },
+        confirmButton = { TextButton(onClick = { model.restoreWithCode(code) }, enabled = code.isNotBlank()) { Text("Öffnen") } },
+        dismissButton = { TextButton(onClick = { model.cancelRestore() }) { Text("Abbrechen") } },
+    )
 }
 
 @Composable

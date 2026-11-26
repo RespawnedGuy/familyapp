@@ -28,7 +28,6 @@ class MainActivity : ComponentActivity() {
 
     val takePicture = registerForActivityResult(ActivityResultContracts.TakePicture()) { ok -> app.platform.onPhotoResult(ok) }
     val openTree = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri -> app.platform.onFolderPicked(uri) }
-    val openDocument = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> app.platform.onRestorePicked(uri) }
     private val micPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         micCallback?.invoke(granted)
         micCallback = null

@@ -10,17 +10,33 @@ class AndroidTextStore(private val file: File) : TextStore {
 
     override fun read(): String? = if (file.exists()) file.readText(Charsets.UTF_8) else null
 
+    private val snapshotFile = File(file.parentFile, "${file.nameWithoutExtension}-vor-wiederherstellung.json")
+
     @Synchronized
-    override fun write(text: String) {
-        file.parentFile?.mkdirs()
-        val tmp = File(file.parentFile, file.name + ".tmp")
-        tmp.outputStream().use { out ->
-            out.write(text.toByteArray(Charsets.UTF_8))
-            out.fd.sync()
-        }
-        if (!tmp.renameTo(file)) {
-            file.delete()
-            check(tmp.renameTo(file)) { "Could not replace ${file.name}" }
+    override fun write(text: String) = writeAtomically(file, text)
+
+    override fun readSnapshot(): String? = if (snapshotFile.exists()) snapshotFile.readText(Charsets.UTF_8) else null
+
+    @Synchronized
+    override fun writeSnapshot(text: String?) {
+        if (text == null) snapshotFile.delete() else writeAtomically(snapshotFile, text)
+    }
+
+    private fun writeAtomically(target: File, text: String) {
+        target.parentFile?.mkdirs()
+        val tmp = File(target.parentFile, target.name + ".tmp")
+        try {
+            tmp.outputStream().use { out ->
+                out.write(text.toByteArray(Charsets.UTF_8))
+                out.fd.sync()
+            }
+            if (!tmp.renameTo(target)) {
+                target.delete()
+                check(tmp.renameTo(target)) { "Could not replace ${target.name}" }
+            }
+        } finally {
+            // A half-written temp file (disk full) must not eat the remaining space.
+            if (tmp.exists()) tmp.delete()
         }
     }
 

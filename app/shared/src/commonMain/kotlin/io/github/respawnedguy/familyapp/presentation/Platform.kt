@@ -33,15 +33,32 @@ interface PlatformServices {
     /** Opens the system camera; returns the stored photo's path or null if cancelled. */
     fun takePhoto(onResult: (String?) -> Unit)
 
-    /** Lets the person choose a folder for backups; returns an opaque folder reference. */
+    /** Lets the person choose a folder (for backups or to restore from); returns an opaque folder reference. */
     fun pickBackupFolder(onResult: (String?) -> Unit)
 
-    /** Writes the backup into the chosen folder. Returns an error text or null. */
-    fun writeBackup(folder: String, text: String): String?
+    /**
+     * Writes an encrypted backup into the folder: the family data and every photo, each file
+     * encrypted with the recovery code (format in docs/qualitaet, P0-3). Returns an error text or null.
+     */
+    fun writeBackup(folder: String, backup: BackupContent): String?
 
-    /** Lets the person choose a backup file and returns its text (null if cancelled or unreadable). */
-    fun pickRestoreFile(onResult: (String?) -> Unit)
+    /** Reads a backup from a folder; photos are unpacked into private storage. */
+    fun readBackup(folder: String, code: String?): RestoreRead
+
+    /** A new random recovery code (about 100 bits, from a secure random source). */
+    fun newRecoveryCode(): String
 
     /** Human-readable name of a backup folder reference. */
     fun describeFolder(folder: String): String
+}
+
+/** What goes into a backup. [photoPaths] are the private photo files the items point to. */
+class BackupContent(val json: String, val photoPaths: List<String>, val code: String)
+
+sealed interface RestoreRead {
+    /** [photoPaths] maps a photo's file name to where it was unpacked on this device. */
+    class Ok(val json: String, val photoPaths: Map<String, String>) : RestoreRead
+    data object NeedsCode : RestoreRead
+    data object WrongCode : RestoreRead
+    data class Failed(val message: String) : RestoreRead
 }
