@@ -31,6 +31,8 @@ Unterwegs erreichen die Handys das Hausgerät über Tailscale (Adresse 100.x), z
 ## Wichtig
 
 - Das Verzeichnis (`~/familyapp-haus`) enthält in `sync.json` den Familienschlüssel. Nie in ein Repository, eine Sicherung ohne Verschlüsselung oder einen geteilten Ordner legen.
+- Das Programm setzt das Verzeichnis auf `rwx------` und `sync.json` auf `rw-------` (Linux, Synology, macOS), andere Konten des Rechners kommen nicht hinein. Die Familiendaten liegen darin aber unverschlüsselt (anders als auf dem Handy gibt es keine Android-Sandbox): Festplattenverschlüsselung einschalten (BitLocker, LUKS, verschlüsseltes Synology-Volume). Wer Administrator auf dem Rechner ist, kann alles lesen ([Bedrohungsmodell](../../docs/qualitaet/bedrohungsmodell.md), HG-1).
+- Im Tailnet per ACL nur die Familiengeräte an Port 47420 lassen (HG-2).
 - Umlaute in Argumenten brauchen eine UTF-8-Umgebung (`LC_ALL=C.UTF-8` unter Linux).
 - Hausgerät und App brauchen dieselbe App-Version (Datenschema), sonst lehnen sie den Abgleich mit Hinweis ab.
 

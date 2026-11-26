@@ -1,6 +1,7 @@
 package io.github.respawnedguy.familyapp.presentation
 
 import io.github.respawnedguy.familyapp.data.FamilyRepository
+import io.github.respawnedguy.familyapp.data.ShareRejection
 import io.github.respawnedguy.familyapp.data.Undo
 import io.github.respawnedguy.familyapp.domain.CaptureAction
 import io.github.respawnedguy.familyapp.domain.DateFormat
@@ -275,18 +276,25 @@ class AppModel(
         save("", Source.PHOTO, path)
     }
 
-    /** Text or image shared from another app (mail, gallery, browser). Saved without a further tap. */
-    fun captureShared(text: String?, photoPath: String?) {
+    /**
+     * Text or image shared from another app (mail, gallery, browser). Saved without a further tap.
+     * A refused image ([rejected], quality plan P1-8) is said out loud instead of vanishing.
+     */
+    fun captureShared(text: String?, photoPath: String?, rejected: ShareRejection? = null) {
         if (repo.current.selfId == null) return
-        if (text.isNullOrBlank() && photoPath == null) return
-        save(text.orEmpty(), Source.SHARE, photoPath)
+        if (text.isNullOrBlank() && photoPath == null) {
+            rejected?.let { show("Bild nicht übernommen. ${it.reason}") }
+            return
+        }
+        val message = rejected?.let { "Gespeichert ohne Bild. ${it.reason}" } ?: SAVED
+        save(text.orEmpty(), Source.SHARE, photoPath, message)
     }
 
-    private fun save(text: String, source: Source, photoPath: String? = null) {
+    private fun save(text: String, source: Source, photoPath: String? = null, message: String = SAVED) {
         val item = repo.capture(text, source, photoPath)
         _capture.value = CaptureState.Closed
         _tab.value = Tab.TODAY
-        show("Gespeichert. Liegt oben im Eingang.", Undo(mapOf(item.id to null)))
+        show(message, Undo(mapOf(item.id to null)))
     }
 
     fun dismissCapture() {
@@ -420,5 +428,6 @@ class AppModel(
 
     companion object {
         const val AUTO_BACKUP_DELAY_MS = 3_000L
+        private const val SAVED = "Gespeichert. Liegt oben im Eingang."
     }
 }

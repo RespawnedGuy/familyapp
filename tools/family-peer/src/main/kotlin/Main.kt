@@ -24,6 +24,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.toKotlinLocalDate
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.attribute.PosixFilePermissions
 import java.util.UUID
 import java.util.concurrent.Executors
 import kotlin.system.exitProcess
@@ -99,6 +101,8 @@ fun main(args: Array<String>) {
         exitProcess(2)
     }
     val dir = File(positional[1]).apply { mkdirs() }
+    // Family data, photos and the family key live here: only this account may look inside (threat model HG-1).
+    runCatching { Files.setPosixFilePermissions(dir.toPath(), PosixFilePermissions.fromString("rwx------")) }
     val ok = runBlocking { run(positional[0], positional.drop(2), dir, options) }
     exitProcess(if (ok) 0 else 1)
 }

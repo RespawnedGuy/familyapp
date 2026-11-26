@@ -16,15 +16,25 @@ import java.net.InetSocketAddress
 import java.net.NetworkInterface
 import java.net.ServerSocket
 import java.net.Socket
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Direct TCP connections (ADR 0003): LAN address at home, Tailscale address (100.x) on the road.
  * Plain java.net, so the app and the house device program share it. Frames are length-prefixed
  * (4 bytes, big endian); the content is already encrypted by [SecureChannel].
+ *
+ * Anyone in the same WLAN can connect before any secret is checked (threat model NE-3, NE-4,
+ * docs/qualitaet/bedrohungsmodell.md). So until a connection has passed the handshake it may only
+ * send small frames, must answer quickly, and only [maxConnections] connections are served at once.
  */
-class TcpTransport(private val maxFrameBytes: Int = MAX_FRAME_BYTES) : SyncTransport {
+class TcpTransport(
+    private val maxFrameBytes: Int = MAX_FRAME_BYTES,
+    private val maxConnections: Int = MAX_CONNECTIONS,
+    private val preAuthTimeoutMs: Int = PRE_AUTH_TIMEOUT_MS,
+) : SyncTransport {
     private var server: ServerSocket? = null
     private var scope: CoroutineScope? = null
+    private val open = AtomicInteger()
 
     @Synchronized
     override fun startServer(port: Int, handler: suspend (FrameChannel) -> Unit): Int {
@@ -40,8 +50,19 @@ class TcpTransport(private val maxFrameBytes: Int = MAX_FRAME_BYTES) : SyncTrans
         s.launch {
             while (!socket.isClosed) {
                 val client = runCatching { socket.accept() }.getOrNull() ?: break
-                client.soTimeout = SERVER_READ_TIMEOUT_MS
-                launch { handler(SocketChannel(client, maxFrameBytes)) }
+                if (open.incrementAndGet() > maxConnections) {
+                    open.decrementAndGet()
+                    runCatching { client.close() }
+                } else {
+                    launch {
+                        try {
+                            handler(SocketChannel(client, maxFrameBytes, SERVER_READ_TIMEOUT_MS, preAuthTimeoutMs))
+                        } finally {
+                            runCatching { client.close() }
+                            open.decrementAndGet()
+                        }
+                    }
+                }
             }
         }
         return socket.localPort
@@ -69,7 +90,7 @@ class TcpTransport(private val maxFrameBytes: Int = MAX_FRAME_BYTES) : SyncTrans
             socket.close()
             throw e
         }
-        return SocketChannel(socket, maxFrameBytes)
+        return SocketChannel(socket, maxFrameBytes, readTimeoutMs, readTimeoutMs)
     }
 
     override fun localAddresses(): List<String> = runCatching {
@@ -83,9 +104,25 @@ class TcpTransport(private val maxFrameBytes: Int = MAX_FRAME_BYTES) : SyncTrans
             .sortedBy { if (isTailscale(it)) 1 else 0 } // LAN first: faster at home
     }.getOrDefault(emptyList())
 
-    private class SocketChannel(private val socket: Socket, private val maxFrameBytes: Int) : FrameChannel {
+    /**
+     * The first [PRE_AUTH_FRAMES] frames a side receives are the handshake hello and the first
+     * encrypted message (sync [Hello] or [PairHello]), all far below [PRE_AUTH_FRAME_BYTES]. Only
+     * after that the other side has proven the secret, and photo-sized frames are allowed. Without
+     * this a stranger could make the app reserve 32 MB per connection with four bytes.
+     */
+    private class SocketChannel(
+        private val socket: Socket,
+        private val maxFrameBytes: Int,
+        private val readTimeoutMs: Int,
+        preAuthTimeoutMs: Int,
+    ) : FrameChannel {
         private val input = DataInputStream(socket.getInputStream().buffered())
         private val output = DataOutputStream(socket.getOutputStream().buffered())
+        private var received = 0
+
+        init {
+            socket.soTimeout = minOf(preAuthTimeoutMs, readTimeoutMs)
+        }
 
         override suspend fun send(frame: ByteArray) = withContext(Dispatchers.IO) {
             output.writeInt(frame.size)
@@ -99,8 +136,12 @@ class TcpTransport(private val maxFrameBytes: Int = MAX_FRAME_BYTES) : SyncTrans
             } catch (e: EOFException) {
                 throw IOException("Verbindung beendet", e)
             }
-            if (size !in 0..maxFrameBytes) throw IOException("Ungültige Nachrichtengröße $size")
-            ByteArray(size).also { input.readFully(it) }
+            val limit = if (received < PRE_AUTH_FRAMES) PRE_AUTH_FRAME_BYTES else maxFrameBytes
+            if (size !in 0..limit) throw IOException("Ungültige Nachrichtengröße $size")
+            ByteArray(size).also {
+                input.readFully(it)
+                if (++received == PRE_AUTH_FRAMES) socket.soTimeout = readTimeoutMs
+            }
         }
 
         override fun close() {
@@ -114,6 +155,16 @@ class TcpTransport(private val maxFrameBytes: Int = MAX_FRAME_BYTES) : SyncTrans
 
         /** Pairing waits for two people to compare digits. */
         const val SERVER_READ_TIMEOUT_MS = 200_000
+
+        /** Handshake and first message come without anyone tapping; a silent stranger is dropped. */
+        const val PRE_AUTH_TIMEOUT_MS = 10_000
+
+        /** Frames before the other side proved the secret (see [SocketChannel]). */
+        const val PRE_AUTH_FRAMES = 2
+        const val PRE_AUTH_FRAME_BYTES = 64 * 1024
+
+        /** A family has a handful of devices; more parallel connections are someone knocking. */
+        const val MAX_CONNECTIONS = 8
 
         private const val IPV4_PARTS = 4
         private const val TAILSCALE_FIRST = 100

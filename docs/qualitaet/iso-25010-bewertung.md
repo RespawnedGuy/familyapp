@@ -311,7 +311,7 @@ Noch nicht geprüft: Prüfungen des Accessibility Test Framework auf Android (Ko
 - **P1-9:** [Gefahrenanalyse](gefahrenanalyse.md) mit 19 Fehlerarten für „Termin falsch, fehlt, zu spät“ und „Daten weg“. Alle 14 vorher hohen Zeilen haben einen Test. Dabei neu umgesetzt: Hinweis in den Einstellungen, wenn Android die Benachrichtigungen blockiert.
 - **P1-11 (neu aus der Gefahrenanalyse):** Karte „Nur auf diesem Handy“ auf „Heute“ ab 10 Einträgen ohne Sicherungsordner und ohne gekoppeltes Gerät; „Später“ legt sie für 30 weitere Einträge beiseite (`localOnlyHintAppearsFromTenEntriesAndWaitsThirtyMoreAfterBeingPutAside`).
 
-Noch offen aus P1: P1-4 Rest (Android-Prüfungen, Screenshots bei 200 % Schrift), P1-7 Texte in Ressourcen (begonnen, siehe unten), P1-8 Bedrohungsmodell, P1-10 Referenzmessung.
+Noch offen aus P1: P1-4 Rest (Android-Prüfungen, Screenshots bei 200 % Schrift), P1-7 Texte in Ressourcen (begonnen, siehe unten), P1-10 Referenzmessung.
 
 ### 26.11.2026: P1-7 Texte in Ressourcen, Schritt 1
 
@@ -322,3 +322,21 @@ Umgestellt in Schritt 1: der Rahmen in `App.kt` (Willkommen, obere Leiste, Navig
 Messung und Tor: `UiStringsTest` im Qualitätstor zählt die Text-Literale (Zeichenketten mit Buchstaben, ohne Kommentare und `$`-Platzhalter) in `App.kt`, `ui/` und `update/UpdateSection.kt` und vergleicht sie mit `tools/quality-check/config/ui-strings-baseline.txt`. Eine Datei darf nie mehr Texte im Code haben als dort steht, neue UI-Dateien starten bei 0; die Zahlen werden mit jedem Schritt gesenkt (Sperrklinke wie bei der detekt-Baseline). Stand: 214 Texte im Code, `CaptureSheet.kt` bei 0, `App.kt` bei 2 (Versionsanzeige, zieht mit den Einstellungen um).
 
 Nächste Schritte, je ein kleiner PR: (2) `Components.kt` und `Cards.kt` mit Pluralformen für „vor 3 Std.“/„vor 2 Tagen“, (3) `Screens.kt`, (4) `SettingsScreen.kt` mit `AppInfo.versionLabel` und `UpdateSection.kt`, (5) `SyncScreens.kt`, (6) Texte aus `presentation/AppModel.kt` (Rückmeldungen wie „Gespeichert.“) und Android-Benachrichtigungen, die nicht in Composables entstehen (`getString`). Danach ist das Abnahmekriterium „keine deutschen String-Literale mehr in `ui/`“ erfüllt, wenn die Baseline leer ist.
+
+### 26.11.2026: P1-8 Bedrohungsmodell und Härtung der Eingänge
+
+[Bedrohungsmodell](bedrohungsmodell.md) nach STRIDE für Teilen, Kopplung, Direktabgleich, geteilten Ordner, Hausgerät und Gerät: 28 Bedrohungen, jede mit Maßnahme und Test oder als offene Maßnahme M1 bis M4. Beim Durchgehen des Codes gefunden und gleich behoben:
+
+| Befund | Umsetzung | Beleg |
+| --- | --- | --- |
+| Teilen prüfte weder Typ noch Inhalt; nur der FileProvider `.files` galt als eigener Anbieter; abgelehnte Bilder verschwanden still | Typ vom Anbieter muss `image/*` sein, der Bilddecoder muss eine Größe lesen (≤ 100 MP), alle eigenen Anbieter abgelehnt, Text ≤ 20 000 Zeichen, Meldung mit Grund | `SharedInputTest`, `AppModelTest.refusedSharedImage…`, Emulator `emulator-share-e2e.sh` |
+| Ein Fremder im WLAN konnte mit 4 Bytes 32 MB Speicher pro Verbindung belegen, unbegrenzt viele Verbindungen je 200 s offen halten | Vor dem Handshake höchstens 64 KB pro Rahmen, 10 s Wartezeit, 8 Verbindungen | `TcpTransportTest` |
+| Wiederherstellen und Ordnerabgleich lasen jede Datei ganz in den Speicher; eine kaputte Riesendatei hätte jeden Abgleich scheitern lassen | Höchstens 32 MB pro Datei, zu große Abgleichdatei wird übersprungen | `BoundedReadTest`, `SyncControllerTest` |
+| Ab Android 12 hätte der Umzug auf ein neues Handy Familienschlüssel und Geräte-ID mitkopiert | `dataExtractionRules` | `verify-apk.sh` |
+| Hausgerät: `sync.json` mit Standardrechten lesbar für andere Konten | `rw-------`, Verzeichnis `rwx------` | `SyncFilesTest` |
+
+Abnahmekriterium „`file://`-URI und Übergröße werden abgelehnt“ prüft jetzt der Emulator-Test auf Android 8 und 16 (dazu eigener Anbieter, HTML, HTML mit Bildtyp und ein echtes Bild). Höchstes Restrisiko: Ein verlorenes Handy oder ein ehemaliges Familienmitglied behält den Familienschlüssel (M1, Gerät entfernen mit Schlüsselwechsel).
+
+Messwerte danach (`gradle check`, zusammen mit P1-7 Schritt 1): 178 App-Tests grün, Abdeckung Zeilen 91 %, Zweige 62 %.
+
+Noch offen aus P1: P1-4 Rest (Android-Prüfungen, Screenshots bei 200 % Schrift), P1-5 Datumsparser-Korpus, P1-7 Texte in Ressourcen (begonnen), P1-9 FMEA, P1-10 Referenzmessung.
