@@ -36,6 +36,8 @@ kotlin {
             implementation(compose.foundation)
             implementation(compose.material3)
             implementation(compose.ui)
+            // UI texts in composeResources/values/strings.xml (quality plan P1-7).
+            implementation(compose.components.resources)
             implementation(libs.kotlinx.serialization.json)
             // Part of the shared API (AppModel, LocalDate in the domain), so the apps see them too.
             api(libs.kotlinx.coroutines.core)
@@ -70,6 +72,13 @@ kotlin {
 dependencies {
     // Renderer for the Android Studio preview pane; debug only, never in the release APK.
     debugImplementation(compose.uiTooling)
+}
+
+// Texts and other resources: generated accessors in io.github.respawnedguy.familyapp.resources.Res,
+// internal to this module (docs/ui-bearbeiten.md, "Texte").
+compose.resources {
+    publicResClass = false
+    packageOfResClass = "io.github.respawnedguy.familyapp.resources"
 }
 
 compose.desktop {

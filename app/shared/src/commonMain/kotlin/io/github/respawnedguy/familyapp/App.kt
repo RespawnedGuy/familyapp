@@ -91,6 +91,30 @@ import io.github.respawnedguy.familyapp.update.UpdateController
 import io.github.respawnedguy.familyapp.update.UpdateSection
 import io.github.respawnedguy.familyapp.update.UpdateState
 import kotlinx.coroutines.delay
+import io.github.respawnedguy.familyapp.resources.Res
+import io.github.respawnedguy.familyapp.resources.app_tagline
+import io.github.respawnedguy.familyapp.resources.common_cancel
+import io.github.respawnedguy.familyapp.resources.common_settings
+import io.github.respawnedguy.familyapp.resources.feedback_undo
+import io.github.respawnedguy.familyapp.resources.nav_capture
+import io.github.respawnedguy.familyapp.resources.onboarding_invited
+import io.github.respawnedguy.familyapp.resources.onboarding_name_placeholder
+import io.github.respawnedguy.familyapp.resources.onboarding_name_question
+import io.github.respawnedguy.familyapp.resources.onboarding_no_account
+import io.github.respawnedguy.familyapp.resources.onboarding_start
+import io.github.respawnedguy.familyapp.resources.restore_code_example
+import io.github.respawnedguy.familyapp.resources.restore_code_open
+import io.github.respawnedguy.familyapp.resources.restore_code_prompt
+import io.github.respawnedguy.familyapp.resources.restore_code_title
+import io.github.respawnedguy.familyapp.resources.restore_code_wrong
+import io.github.respawnedguy.familyapp.resources.save_problem_retry
+import io.github.respawnedguy.familyapp.resources.tab_family
+import io.github.respawnedguy.familyapp.resources.tab_search
+import io.github.respawnedguy.familyapp.resources.tab_today
+import io.github.respawnedguy.familyapp.resources.tab_upcoming
+import io.github.respawnedguy.familyapp.resources.update_banner_hide
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Root of the shared UI (Android now, iOS later). Navigation A from the design doc:
@@ -126,7 +150,6 @@ fun App(
 
 object AppInfo {
     const val NAME = "FamilyApp"
-    const val tagline = "Schnell rein, komplett später."
 
     fun versionLabel(versionName: String): String =
         if (versionName.isBlank()) "Version unbekannt" else "Version $versionName"
@@ -148,27 +171,31 @@ private fun Onboarding(model: AppModel) {
             JoinFamilyForm(sync, name, hasOwnData = false) { invited = false }
         } else {
             Text(AppInfo.NAME, fontSize = 32.sp, fontWeight = FontWeight.Bold, color = c.text)
-            Text(AppInfo.tagline, fontSize = 17.sp, color = c.textSecondary)
-            Text("Wie heißt du?", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = c.text, modifier = Modifier.padding(top = 24.dp))
+            Text(stringResource(Res.string.app_tagline), fontSize = 17.sp, color = c.textSecondary)
+            Text(
+                stringResource(Res.string.onboarding_name_question),
+                fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = c.text,
+                modifier = Modifier.padding(top = 24.dp),
+            )
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                placeholder = { Text("Dein Vorname") },
+                placeholder = { Text(stringResource(Res.string.onboarding_name_placeholder)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { model.createFamily(name) }),
                 modifier = Modifier.fillMaxWidth(),
             )
             Button(onClick = { model.createFamily(name) }, enabled = name.isNotBlank(), modifier = Modifier.fillMaxWidth().height(52.dp)) {
-                Text("Los geht's", fontSize = 16.sp)
+                Text(stringResource(Res.string.onboarding_start), fontSize = 16.sp)
             }
             Text(
-                "Kein Konto, keine E-Mail. Damit ist deine Familie angelegt, weitere Personen fügst du unter „Familie“ hinzu.",
+                stringResource(Res.string.onboarding_no_account),
                 fontSize = 13.sp, color = c.textTertiary,
             )
             if (sync != null) {
                 OutlinedButton(onClick = { invited = true }, modifier = Modifier.fillMaxWidth().height(52.dp)) {
-                    Text("Ich wurde eingeladen", fontSize = 16.sp)
+                    Text(stringResource(Res.string.onboarding_invited), fontSize = 16.sp)
                 }
             }
         }
@@ -196,12 +223,7 @@ private fun Main(
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
             TopBar(
-                title = if (settingsOpen) "Einstellungen" else when (tab) {
-                    Tab.TODAY -> "Heute"
-                    Tab.FAMILY -> "Familie"
-                    Tab.UPCOMING -> "Demnächst"
-                    Tab.SEARCH -> "Suchen"
-                },
+                title = stringResource(if (settingsOpen) Res.string.common_settings else tab.label),
                 data = data,
                 onAvatar = { model.openSettings() },
             )
@@ -234,7 +256,9 @@ private fun SaveProblemBanner(message: String, onRetry: () -> Unit) {
             .semantics { liveRegion = LiveRegionMode.Assertive },
     ) {
         Text(message, color = c.overdue, fontSize = 14.sp)
-        TextButton(onClick = onRetry, modifier = Modifier.align(Alignment.End)) { Text("Erneut speichern") }
+        TextButton(onClick = onRetry, modifier = Modifier.align(Alignment.End)) {
+            Text(stringResource(Res.string.save_problem_retry))
+        }
     }
 }
 
@@ -245,32 +269,44 @@ private fun RestoreCodeDialog(request: RestoreCodeRequest, model: AppModel) {
     var code by remember(request) { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = { model.cancelRestore() },
-        title = { Text("Wiederherstellungscode") },
+        title = { Text(stringResource(Res.string.restore_code_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    if (request.wrong) "Dieser Code öffnet die Sicherung nicht. Bitte genau prüfen." else "Gib den Code ein, den du beim Einrichten der Sicherung aufgeschrieben hast.",
+                    stringResource(
+                        if (request.wrong) Res.string.restore_code_wrong else Res.string.restore_code_prompt,
+                    ),
                     color = if (request.wrong) c.overdue else c.text,
                 )
-                OutlinedTextField(value = code, onValueChange = { code = it }, singleLine = true, label = { Text("z. B. 7K3M-Q9TB-…") })
+                OutlinedTextField(
+                    value = code, onValueChange = { code = it }, singleLine = true,
+                    label = { Text(stringResource(Res.string.restore_code_example)) },
+                )
             }
         },
-        confirmButton = { TextButton(onClick = { model.restoreWithCode(code) }, enabled = code.isNotBlank()) { Text("Öffnen") } },
-        dismissButton = { TextButton(onClick = { model.cancelRestore() }) { Text("Abbrechen") } },
+        confirmButton = {
+            TextButton(onClick = { model.restoreWithCode(code) }, enabled = code.isNotBlank()) {
+                Text(stringResource(Res.string.restore_code_open))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { model.cancelRestore() }) { Text(stringResource(Res.string.common_cancel)) }
+        },
     )
 }
 
 @Composable
 private fun TopBar(title: String, data: FamilyData, onAvatar: () -> Unit) {
     val c = LocalFamilyColors.current
+    val settings = stringResource(Res.string.common_settings)
     Row(
         Modifier.fillMaxWidth().statusBarsPadding().padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(title, Modifier.weight(1f), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = c.text)
         Box(
-            Modifier.size(48.dp).clip(CircleShape).clickable(onClickLabel = "Einstellungen", onClick = onAvatar)
-                .semantics { contentDescription = "Einstellungen" },
+            Modifier.size(48.dp).clip(CircleShape).clickable(onClickLabel = settings, onClick = onAvatar)
+                .semantics { contentDescription = settings },
             contentAlignment = Alignment.Center,
         ) { PersonDot(data.self, 36.dp) }
     }
@@ -284,12 +320,13 @@ private fun BottomBar(selected: Tab?, inboxCount: Int, first: CaptureAction, mod
         Modifier.fillMaxWidth().background(c.card).navigationBarsPadding().heightIn(min = 80.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        NavItem("Heute", FamilyIcons.Today, selected == Tab.TODAY, badge = inboxCount) { model.select(Tab.TODAY) }
-        NavItem("Familie", FamilyIcons.Family, selected == Tab.FAMILY) { model.select(Tab.FAMILY) }
+        NavItem(Tab.TODAY, FamilyIcons.Today, selected == Tab.TODAY, badge = inboxCount) { model.select(Tab.TODAY) }
+        NavItem(Tab.FAMILY, FamilyIcons.Family, selected == Tab.FAMILY) { model.select(Tab.FAMILY) }
         // Erfassen: centre, slightly raised (D2). The first tap starts speech at once (D3).
+        val capture = stringResource(Res.string.nav_capture)
         Column(
             Modifier.weight(1f).semantics { role = Role.Button }
-                .clickable(onClickLabel = "Erfassen") { model.startCapture("Knopf", model.elapsedMs()) },
+                .clickable(onClickLabel = capture) { model.startCapture("Knopf", model.elapsedMs()) },
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(
@@ -303,15 +340,27 @@ private fun BottomBar(selected: Tab?, inboxCount: Int, first: CaptureAction, mod
                 }
                 Icon(icon, contentDescription = null, tint = c.onAccent, modifier = Modifier.size(30.dp))
             }
-            Text("Erfassen", fontSize = 12.sp, color = c.text, fontWeight = FontWeight.SemiBold, modifier = Modifier.offset(y = (-6).dp))
+            Text(
+                capture,
+                fontSize = 12.sp, color = c.text, fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.offset(y = (-6).dp),
+            )
         }
-        NavItem("Demnächst", FamilyIcons.Upcoming, selected == Tab.UPCOMING) { model.select(Tab.UPCOMING) }
-        NavItem("Suchen", FamilyIcons.Search, selected == Tab.SEARCH) { model.select(Tab.SEARCH) }
+        NavItem(Tab.UPCOMING, FamilyIcons.Upcoming, selected == Tab.UPCOMING) { model.select(Tab.UPCOMING) }
+        NavItem(Tab.SEARCH, FamilyIcons.Search, selected == Tab.SEARCH) { model.select(Tab.SEARCH) }
     }
 }
 
+private val Tab.label: StringResource
+    get() = when (this) {
+        Tab.TODAY -> Res.string.tab_today
+        Tab.FAMILY -> Res.string.tab_family
+        Tab.UPCOMING -> Res.string.tab_upcoming
+        Tab.SEARCH -> Res.string.tab_search
+    }
+
 @Composable
-private fun RowScope.NavItem(label: String, icon: ImageVector, selected: Boolean, badge: Int = 0, onClick: () -> Unit) {
+private fun RowScope.NavItem(tab: Tab, icon: ImageVector, selected: Boolean, badge: Int = 0, onClick: () -> Unit) {
     val c = LocalFamilyColors.current
     Column(
         Modifier.weight(1f).heightIn(min = 80.dp).selectable(selected = selected, role = Role.Tab, onClick = onClick),
@@ -331,7 +380,12 @@ private fun RowScope.NavItem(label: String, icon: ImageVector, selected: Boolean
                 )
             }
         }
-        Text(label, fontSize = 12.sp, color = if (selected) c.text else c.textSecondary, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal)
+        Text(
+            stringResource(tab.label),
+            fontSize = 12.sp,
+            color = if (selected) c.text else c.textSecondary,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+        )
     }
 }
 
@@ -363,7 +417,9 @@ private fun FeedbackBar(feedback: Feedback?, model: AppModel, reducedMotion: Boo
         ) {
             Text(f.message, Modifier.weight(1f).padding(vertical = 14.dp), color = c.background, fontSize = 14.sp)
             if (f.undo != null) {
-                TextButton(onClick = { model.undo(f) }) { Text("Rückgängig", color = c.background, fontWeight = FontWeight.Bold) }
+                TextButton(onClick = { model.undo(f) }) {
+                    Text(stringResource(Res.string.feedback_undo), color = c.background, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
@@ -383,6 +439,8 @@ private fun UpdateBanner(updates: UpdateController, modifier: Modifier) {
     val c = LocalFamilyColors.current
     Column(modifier.statusBarsPadding().padding(12.dp).clip(RoundedCornerShape(16.dp)).background(c.background)) {
         UpdateSection(updates)
-        TextButton(onClick = { hiddenFor = state }, modifier = Modifier.align(Alignment.End)) { Text("Ausblenden") }
+        TextButton(onClick = { hiddenFor = state }, modifier = Modifier.align(Alignment.End)) {
+            Text(stringResource(Res.string.update_banner_hide))
+        }
     }
 }

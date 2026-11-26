@@ -305,10 +305,14 @@ Prüfung (Anfang von P1-4): `AccessibilityTest` in `app/shared/src/jvmTest` stel
 
 Noch nicht geprüft: Prüfungen des Accessibility Test Framework auf Android (Kontrast, Beschriftung) und Screenshots bei Schriftgröße 2,0; beides braucht den Emulator-Job. Ein TalkBack-Durchgang durch Nils steht aus.
 
-### 26.11.2026: P1-5 Datumsparser, P1-9 Gefahrenanalyse, P1-11
+Noch offen aus P1: P1-4 Rest (Android-Prüfungen, Screenshots bei 200 % Schrift), P1-5 Datumsparser-Korpus, P1-7 Texte in Ressourcen (begonnen, siehe unten), P1-8 Bedrohungsmodell, P1-9 FMEA, P1-10 Referenzmessung.
 
-- **P1-5:** 12 Eigenschaftstests über 1 000 Tage (`DateParserPropertiesTest`) und ein öffentlicher Korpus mit 44 typischen Sätzen (`tools/quality-check/corpus/dates.csv`, `DateCorpusTest`). Ergebnis: **0 falsche Daten**, 0 verpasste. Vier echte Fehler gefunden und behoben: „29.2.“ im Nicht-Schaltjahr, Nummern („Kapitel 4.1.“, „Nr. 3.4.“), Bezugsdaten („Rechnung vom 12.11.“) und Bereiche („15.-19.6.“ ergibt jetzt beide Enden, die Karte fragt). Ein privater Korpus echter Sprachaufnahmen (`corpus/dates-private.csv`, nie committen) wird gemessen, sobald er vorliegt.
-- **P1-9:** [Gefahrenanalyse](gefahrenanalyse.md) mit 19 Fehlerarten für „Termin falsch, fehlt, zu spät“ und „Daten weg“. Alle 14 vorher hohen Zeilen haben einen Test. Dabei neu umgesetzt: Hinweis in den Einstellungen, wenn Android die Benachrichtigungen blockiert.
-- **P1-11 (neu aus der Gefahrenanalyse):** Karte „Nur auf diesem Handy“ auf „Heute“ ab 10 Einträgen ohne Sicherungsordner und ohne gekoppeltes Gerät; „Später“ legt sie für 30 weitere Einträge beiseite (`localOnlyHintAppearsFromTenEntriesAndWaitsThirtyMoreAfterBeingPutAside`).
+### 26.11.2026: P1-7 Texte in Ressourcen, Schritt 1
 
-Noch offen aus P1: P1-4 Rest (Android-Prüfungen, Screenshots bei 200 % Schrift), P1-7 Texte in Ressourcen, P1-8 Bedrohungsmodell, P1-10 Referenzmessung.
+Die App nutzt Compose Multiplatform Resources. Alle Texte stehen in `app/shared/src/commonMain/composeResources/values/strings.xml`, Deutsch ist die Grundsprache (`values/`), eine Übersetzung käme nach `values-<sprache>/`. Der Code holt sie mit `stringResource(Res.string.…)`; die Klasse `Res` ist modulintern (`io.github.respawnedguy.familyapp.resources`).
+
+Umgestellt in Schritt 1: der Rahmen in `App.kt` (Willkommen, obere Leiste, Navigation, Speicherproblem, Wiederherstellungscode, Rückgängig, Update-Hinweis) und das Erfassen-Blatt (`ui/CaptureSheet.kt`), zusammen 32 Texte. Der Wortlaut ist unverändert, die Emulator-Tests finden die Knöpfe also weiter über ihren Text.
+
+Messung und Tor: `UiStringsTest` im Qualitätstor zählt die Text-Literale (Zeichenketten mit Buchstaben, ohne Kommentare und `$`-Platzhalter) in `App.kt`, `ui/` und `update/UpdateSection.kt` und vergleicht sie mit `tools/quality-check/config/ui-strings-baseline.txt`. Eine Datei darf nie mehr Texte im Code haben als dort steht, neue UI-Dateien starten bei 0; die Zahlen werden mit jedem Schritt gesenkt (Sperrklinke wie bei der detekt-Baseline). Stand: 214 Texte im Code, `CaptureSheet.kt` bei 0, `App.kt` bei 2 (Versionsanzeige, zieht mit den Einstellungen um).
+
+Nächste Schritte, je ein kleiner PR: (2) `Components.kt` und `Cards.kt` mit Pluralformen für „vor 3 Std.“/„vor 2 Tagen“, (3) `Screens.kt`, (4) `SettingsScreen.kt` mit `AppInfo.versionLabel` und `UpdateSection.kt`, (5) `SyncScreens.kt`, (6) Texte aus `presentation/AppModel.kt` (Rückmeldungen wie „Gespeichert.“) und Android-Benachrichtigungen, die nicht in Composables entstehen (`getString`). Danach ist das Abnahmekriterium „keine deutschen String-Literale mehr in `ui/`“ erfüllt, wenn die Baseline leer ist.
