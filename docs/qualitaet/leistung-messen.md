@@ -20,7 +20,7 @@ Zählt wird der **Median**, also der mittlere Wert. Ein einzelner langsamer Lauf
 
 Was die App nicht messen kann: deine eigene Bedienzeit, also das Herunterwischen der Schnelleinstellungen und den Tipp selbst. Das Gestaltungsdoc schätzt dafür gut eine Sekunde.
 
-Damit die Zahlen stimmen, misst der Emulator im CI bei jedem Build dasselbe mit zwei Instrumenten: mit Androids eigener Startzeit und mit der Messung der App. Weichen beide stark voneinander ab, schlägt der Build fehl. Die Emulatorzeiten selbst sind keine Referenz, weil der Emulator ohne Grafikkarte läuft. Die Referenz ist dein Handy.
+Damit die Zahlen stimmen, misst der Emulator im CI bei jedem Build dasselbe mit zwei Instrumenten: mit Androids eigener Startzeit und mit der Messung der App. Misst die App deutlich weniger als Android (geschönte Zahlen) oder grob mehr, schlägt der Build fehl. Ab Android 12 liest die App im Emulator 0,2 bis 0,5 s mehr als Android, weil sie erst endet, wenn das erste Bild wirklich fertig gezeichnet ist. Das ist die strengere Seite: Erreicht deine Messung das Ziel, stimmt es erst recht. Die Emulatorzeiten selbst sind keine Referenz, weil der Emulator ohne Grafikkarte läuft. Die Referenz ist dein Handy.
 
 ## Vorbereitung (einmal)
 
