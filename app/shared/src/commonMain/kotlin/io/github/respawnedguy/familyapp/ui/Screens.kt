@@ -1,5 +1,12 @@
 package io.github.respawnedguy.familyapp.ui
 
+import io.github.respawnedguy.familyapp.resources.urgent_title
+import io.github.respawnedguy.familyapp.resources.local_only_later
+import io.github.respawnedguy.familyapp.resources.local_only_setup
+import io.github.respawnedguy.familyapp.resources.local_only_text
+import io.github.respawnedguy.familyapp.resources.local_only_title
+import org.jetbrains.compose.resources.stringResource
+import io.github.respawnedguy.familyapp.resources.Res
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.heading
@@ -110,19 +117,18 @@ private fun LocalOnlyCard(model: AppModel) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
-            "Nur auf diesem Handy", Modifier.semantics { heading() },
+            stringResource(Res.string.local_only_title), Modifier.semantics { heading() },
             fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.text,
         )
         Text(
-            "Geht das Handy verloren, sind deine Einträge weg. Eine verschlüsselte Sicherung in einen Ordner " +
-                "oder ein zweites gekoppeltes Gerät verhindert das.",
+            stringResource(Res.string.local_only_text),
             fontSize = 14.sp, color = c.textSecondary,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = { model.openSettings(); model.chooseBackupFolder() }) {
-                Text("Sicherung einrichten")
+                Text(stringResource(Res.string.local_only_setup))
             }
-            TextButton(onClick = { model.dismissLocalOnlyHint() }) { Text("Später") }
+            TextButton(onClick = { model.dismissLocalOnlyHint() }) { Text(stringResource(Res.string.local_only_later)) }
         }
     }
 }
@@ -135,7 +141,7 @@ private fun UrgentCard(urgent: List<Reminder>, data: FamilyData, planner: Remind
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
-            "Heute wichtig", Modifier.semantics { heading() },
+            stringResource(Res.string.urgent_title), Modifier.semantics { heading() },
             fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.text,
         )
         urgent.forEach { r ->
