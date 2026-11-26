@@ -5,6 +5,7 @@ import io.github.respawnedguy.familyapp.data.InMemoryTextStore
 import io.github.respawnedguy.familyapp.domain.CaptureAction
 import io.github.respawnedguy.familyapp.domain.ItemStatus
 import io.github.respawnedguy.familyapp.domain.MemberKind
+import io.github.respawnedguy.familyapp.domain.Metric
 import io.github.respawnedguy.familyapp.domain.Source
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
@@ -58,6 +59,11 @@ private class FakePlatform(override val speech: SpeechInput?) : PlatformServices
     var notificationRequests = 0
     override fun requestNotificationPermission() { notificationRequests++ }
     override fun describeFolder(folder: String) = folder
+    var shared: String? = null
+    override fun shareText(subject: String, text: String): Boolean {
+        shared = text
+        return true
+    }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -270,5 +276,81 @@ class AppModelTest {
         m.saveText("Elternabend am Dienstag")
         m.setAssignee(m.repo.current.items.single(), m.repo.current.selfId!!)
         assertEquals(0, platform.notificationRequests)
+    }
+
+    // ---- P1-10: measurements on real devices ---------------------------------------------------
+
+    @Test
+    fun savingAfterTheSpeakerStopsIsMeasuredFromTheEndOfSpeech() = runTest {
+        val speech = FakeSpeech()
+        val platform = FakePlatform(speech)
+        val m = model(speech, platform)
+        m.startCapture("Kachel", startedAtMs = 0)
+        platform.elapsed = 700
+        speech.listener!!.onReady()
+        platform.elapsed = 4_000
+        speech.listener!!.onEndOfSpeech()
+        platform.elapsed = 4_600
+        speech.listener!!.onResult("Milch kaufen")
+        val save = m.repo.current.settings.latency.single { it.metric == Metric.SAVE_AFTER_SPEECH }
+        assertEquals(600L, save.ms)
+        assertEquals(AppModel.SPEECH_END_AUTO, save.trigger)
+        assertEquals(700L, m.repo.current.settings.latency.single { it.metric == Metric.CAPTURE_READY }.ms)
+    }
+
+    @Test
+    fun tappingFertigCountsAsTheEndOfSpeechAndIsLabelledSo() = runTest {
+        val speech = FakeSpeech()
+        val platform = FakePlatform(speech)
+        val m = model(speech, platform)
+        m.startCapture("Knopf", 0)
+        platform.elapsed = 3_000
+        m.stopListening()
+        platform.elapsed = 3_200
+        speech.listener!!.onEndOfSpeech() // arrives after the tap: the tap stays the start
+        platform.elapsed = 3_900
+        speech.listener!!.onResult("Oma anrufen")
+        val save = m.repo.current.settings.latency.single { it.metric == Metric.SAVE_AFTER_SPEECH }
+        assertEquals(900L, save.ms)
+        assertEquals(AppModel.SPEECH_END_TAP, save.trigger)
+    }
+
+    @Test
+    fun nothingUnderstoodRecordsNoSaveTime() = runTest {
+        val speech = FakeSpeech()
+        val m = model(speech)
+        m.startCapture("Knopf", 0)
+        speech.listener!!.onEndOfSpeech()
+        speech.listener!!.onResult(" ")
+        assertTrue(m.repo.current.settings.latency.none { it.metric == Metric.SAVE_AFTER_SPEECH })
+    }
+
+    @Test
+    fun coldStartsAreKeptOnlyWhenPlausible() = runTest {
+        val m = model()
+        m.recordColdStart("Symbol", 640)
+        m.recordColdStart("Symbol", 45_000) // process ran in the background before
+        m.recordColdStart("Symbol", -1)
+        assertEquals(listOf(640L), m.repo.current.settings.latency.map { it.ms })
+        assertEquals(Metric.COLD_START, m.repo.current.settings.latency.single().metric)
+        assertNull(m.latencyMedianMs(), "a cold start is not a capture measurement")
+    }
+
+    @Test
+    fun measurementsAreSharedAsCsvAndCanStartOver() = runTest {
+        val platform = FakePlatform(FakeSpeech())
+        val m = model(platform = platform)
+        m.shareMeasurements()
+        assertNull(platform.shared)
+        assertEquals("Noch keine Messwerte zum Teilen.", m.feedback.value?.message)
+        m.recordColdStart("Symbol", 640)
+        m.shareMeasurements()
+        val csv = platform.shared!!
+        assertTrue(csv.startsWith("metric,trigger,ms,"), csv)
+        assertTrue(csv.contains("COLD_START,Symbol,640,1000,"), csv)
+        assertFalse(csv.contains("Nils"), "no family data in the CSV")
+        m.clearMeasurements()
+        assertTrue(m.repo.current.settings.latency.isEmpty())
+        assertTrue(m.measurementSummary().isEmpty())
     }
 }

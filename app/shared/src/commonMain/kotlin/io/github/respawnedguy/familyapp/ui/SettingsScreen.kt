@@ -164,22 +164,7 @@ fun SettingsScreen(data: FamilyData, model: AppModel, updates: UpdateController?
             }
         }
 
-        SettingsGroup("Messwerte (nur lokal)") {
-            val median = model.latencyMedianMs()
-            val samples = s.latency
-            Text(
-                if (median == null) "Noch keine Messung: einmal per Knopf, Kachel oder Verknüpfung sprechen."
-                else "Bis die Aufnahme läuft: Median ${formatMs(median)} aus ${samples.size} Messungen (Ziel ≤ 2,0 s).",
-                fontSize = 14.sp, color = c.text,
-            )
-            samples.takeLast(5).reversed().forEach {
-                Text("${it.trigger}: ${formatMs(it.ms)} · ${ago(it.atMs, model.repo.now())}", fontSize = 12.sp, color = c.textTertiary)
-            }
-            val (one, all) = model.oneTapShare()
-            if (all > 0) {
-                Text("Karten mit einem Tap erledigt: $one von $all (${one * 100 / all} %, Ziel ≥ 70 %).", fontSize = 14.sp, color = c.text)
-            }
-        }
+        MeasurementsGroup(data, model)
 
         if (updates != null) {
             UpdateSection(updates, Modifier.padding(vertical = 8.dp))
@@ -195,7 +180,4 @@ fun SettingsScreen(data: FamilyData, model: AppModel, updates: UpdateController?
     }
 }
 
-private fun formatMs(ms: Long): String {
-    val tenths = (ms + 50) / 100
-    return "${tenths / 10},${tenths % 10} s"
-}
+

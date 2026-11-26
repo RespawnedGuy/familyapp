@@ -79,6 +79,7 @@ class MainActivity : ComponentActivity() {
             }
         })
 
+        if (savedInstanceState == null) ColdStartProbe.attach(this, app, intent)
         // A capture intent is handled before the first frame so the microphone starts in parallel.
         if (savedInstanceState == null) handleAppIntent(intent)
 

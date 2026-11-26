@@ -81,9 +81,12 @@ data class Item(
 @Serializable
 enum class CaptureAction { VOICE, PHOTO, TEXT }
 
-/** One measurement "trigger to recording is running", in milliseconds. */
+/**
+ * One local measurement in milliseconds (P1-10). [trigger] says where it started (Knopf, Kachel,
+ * Verknüpfung, Symbol). Samples from before P1-10 have no [metric] and were all [Metric.CAPTURE_READY].
+ */
 @Serializable
-data class LatencySample(val trigger: String, val ms: Long, val atMs: Long)
+data class LatencySample(val trigger: String, val ms: Long, val atMs: Long, val metric: Metric = Metric.CAPTURE_READY)
 
 @Serializable
 data class Settings(

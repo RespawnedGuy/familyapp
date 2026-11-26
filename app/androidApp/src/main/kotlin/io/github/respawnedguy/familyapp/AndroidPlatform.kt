@@ -3,6 +3,8 @@ package io.github.respawnedguy.familyapp
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.os.Debug
 import android.os.SystemClock
 import android.provider.DocumentsContract
 import android.provider.Settings
@@ -11,12 +13,17 @@ import io.github.respawnedguy.familyapp.data.BackupCrypto
 import io.github.respawnedguy.familyapp.data.BackupFolder
 import io.github.respawnedguy.familyapp.data.PhotoCleanup
 import io.github.respawnedguy.familyapp.data.StoredPhoto
+import io.github.respawnedguy.familyapp.domain.DeviceInfo
 import io.github.respawnedguy.familyapp.domain.FamilyData
+import io.github.respawnedguy.familyapp.domain.ResourceUsage
 import io.github.respawnedguy.familyapp.presentation.BackupContent
 import io.github.respawnedguy.familyapp.presentation.PlatformServices
 import io.github.respawnedguy.familyapp.presentation.RestoreRead
 import io.github.respawnedguy.familyapp.presentation.SpeechInput
 import java.io.File
+import java.time.Instant
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 /**
@@ -154,6 +161,41 @@ class AndroidPlatform(private val app: FamilyApplication) : PlatformServices {
         } ?: return null
         file.absolutePath
     }.getOrNull()
+
+    // ---- Measurements on the real phone (quality plan P1-10) -------------------------------------
+
+    override fun deviceInfo() = DeviceInfo(
+        model = "${Build.MANUFACTURER} ${Build.MODEL}".trim(),
+        osVersion = "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
+        appVersion = BuildConfig.VERSION_NAME,
+    )
+
+    /** PSS of this process (what Android itself shows as memory use) and the size of all app files. */
+    override fun resourceUsage() = ResourceUsage(
+        memoryKb = runCatching { Debug.getPss() }.getOrNull()?.takeIf { it > 0 },
+        storageBytes = runCatching { sizeOf(app.filesDir) + sizeOf(app.cacheDir) }.getOrNull(),
+    )
+
+    private fun sizeOf(dir: File): Long = dir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+
+    override fun formatLocalTime(epochMs: Long): String =
+        Instant.ofEpochMilli(epochMs).atZone(ZoneId.systemDefault()).truncatedTo(ChronoUnit.SECONDS)
+            .toOffsetDateTime().toString()
+
+    override fun shareText(subject: String, text: String): Boolean {
+        val send = Intent(Intent.ACTION_SEND).setType("text/plain")
+            .putExtra(Intent.EXTRA_SUBJECT, subject)
+            .putExtra(Intent.EXTRA_TEXT, text)
+        val chooser = Intent.createChooser(send, subject)
+        val a = activity
+        return runCatching {
+            if (a != null) {
+                a.startActivity(chooser)
+            } else {
+                app.startActivity(chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            }
+        }.isSuccess
+    }
 
     companion object {
         const val MAX_SHARED_BYTES = 20L * 1024 * 1024

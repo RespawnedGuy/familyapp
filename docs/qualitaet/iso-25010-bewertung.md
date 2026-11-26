@@ -305,4 +305,28 @@ Prüfung (Anfang von P1-4): `AccessibilityTest` in `app/shared/src/jvmTest` stel
 
 Noch nicht geprüft: Prüfungen des Accessibility Test Framework auf Android (Kontrast, Beschriftung) und Screenshots bei Schriftgröße 2,0; beides braucht den Emulator-Job. Ein TalkBack-Durchgang durch Nils steht aus.
 
-Noch offen aus P1: P1-4 Rest (Android-Prüfungen, Screenshots bei 200 % Schrift), P1-5 Datumsparser-Korpus, P1-7 Texte in Ressourcen, P1-8 Bedrohungsmodell, P1-9 FMEA, P1-10 Referenzmessung.
+### 26.11.2026: P1-10 Messpunkte für die Referenzmessung
+
+| Teil | Umsetzung | Beleg |
+| --- | --- | --- |
+| Bis die Aufnahme läuft (D8 a) | Gab es schon; die Kachel misst jetzt ab dem Entsperren statt ab dem Tipp auf das gesperrte Handy, wie D8 es formuliert | `voiceCaptureSavesWithoutTapAndRecordsLatency` |
+| Speichern nach Sprechende (D8 b) | Neu: von `onEndOfSpeech` des Erkenners bis gespeichert; ein Tipp auf „Fertig“ zählt als Sprechende und wird getrennt ausgewiesen („Fertig getippt“), weil D8 „ohne Tipp“ verlangt | `savingAfterTheSpeakerStopsIsMeasuredFromTheEndOfSpeech`, `tappingFertigCountsAsTheEndOfSpeechAndIsLabelledSo` |
+| Kaltstart | Neu: Prozessstart bis erstes Bild (`ColdStartProbe`), nur wenn der Prozess für diesen Start entstand; dazu `reportFullyDrawn` | `coldStartsAreKeptOnlyWhenPlausible` |
+| Auswertung | Median, 90-%-Wert (nächster Rang, ohne Interpolation) und Ziel je Messwert; je Messwert die letzten 50 Werte, damit häufige Kaltstarts die selteneren Aufnahme-Messungen nicht verdrängen | `MeasurementsTest` |
+| Export | „Messwerte teilen“ schickt eine CSV (RFC 4180) über das Android-Teilen-Menü, nur Zeiten, Gerät und Versionen. Abweichung vom Plan: Teilen statt Datei im Sicherungsordner, weil das ohne PC direkt in die Claude-App oder Mail geht | `csvHoldsTimesAndDeviceButNoFamilyData`, `measurementsAreSharedAsCsvAndCanStartOver` |
+| Speicher | Arbeitsspeicher (PSS) und Größe der App-Dateien in den Einstellungen und in der CSV | – |
+| Gegenprobe im CI | `emulator-perf.sh` startet die App je 10-mal kalt über Symbol und Erfassen (Android 8 und 16) und vergleicht die Messung der App mit Androids `am start -W` (TotalTime). Schlägt fehl, wenn die App kaum misst oder grob abweicht; Emulatorzeiten werden nur berichtet | `pruefbericht-leistung-api*.txt`, `leistung-api*.csv` am Release |
+| Anleitung | [leistung-messen.md](leistung-messen.md): Messreihe auf dem Handy ohne PC, Akku über die Android-Einstellungen | – |
+
+Bewusst nicht gemacht: Macrobenchmark. Er misst im CI-Emulator dieselbe Spanne wie `am start -W`, braucht aber ein eigenes Modul aus Google Maven. Sinnvoll erst mit Baseline Profile (P2-5) auf echtem Gerät.
+
+**Referenzwerte (offen, trägt Claude nach Nils' Messung ein):**
+
+| Gerät | Bis Aufnahme läuft, Kachel (Median / 90 %) | Speichern nach Sprechende | Kaltstart | Arbeitsspeicher | Akku/Tag |
+| --- | --- | --- | --- | --- | --- |
+| Pixel (Nils) | – | – | – | – | – |
+| Android 8 (falls vorhanden) | – | – | – | – | – |
+
+Abnahme P1-10 ist erst erfüllt, wenn die Pixel-Zeile ausgefüllt ist und der Median „bis Aufnahme läuft“ ≤ 2 s liegt.
+
+Noch offen aus P1: P1-4 Rest (Android-Prüfungen, Screenshots bei 200 % Schrift), P1-5 Datumsparser-Korpus, P1-7 Texte in Ressourcen, P1-8 Bedrohungsmodell, P1-9 FMEA, P1-10 Referenzwerte vom Gerät.

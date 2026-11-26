@@ -12,6 +12,7 @@ import io.github.respawnedguy.familyapp.domain.ItemStatus
 import io.github.respawnedguy.familyapp.domain.LatencySample
 import io.github.respawnedguy.familyapp.domain.Member
 import io.github.respawnedguy.familyapp.domain.MemberKind
+import io.github.respawnedguy.familyapp.domain.Metric
 import io.github.respawnedguy.familyapp.domain.Origin
 import io.github.respawnedguy.familyapp.domain.Settings
 import io.github.respawnedguy.familyapp.domain.Source
@@ -122,6 +123,8 @@ object PreviewData {
             latency = listOf(
                 LatencySample("Kachel", 840, NOW_MS - DAY),
                 LatencySample("Knopf", 410, NOW_MS - 3 * HOUR),
+                LatencySample("Symbol", 620, NOW_MS - 2 * HOUR, Metric.COLD_START),
+                LatencySample("Sprechpause", 380, NOW_MS - 3 * HOUR, Metric.SAVE_AFTER_SPEECH),
             ),
         ),
     )
