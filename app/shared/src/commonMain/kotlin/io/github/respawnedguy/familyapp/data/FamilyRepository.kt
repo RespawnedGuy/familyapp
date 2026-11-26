@@ -17,6 +17,8 @@ import io.github.respawnedguy.familyapp.domain.Settings
 import io.github.respawnedguy.familyapp.domain.Source
 import io.github.respawnedguy.familyapp.domain.Tombstone
 import io.github.respawnedguy.familyapp.domain.readyToConfirm
+import io.github.respawnedguy.familyapp.sync.SyncMerge
+import io.github.respawnedguy.familyapp.sync.SyncRecords
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -399,6 +401,44 @@ class FamilyRepository(
 
     private fun newestStamp(d: FamilyData): Long? =
         (d.members.map { it.stamp.wallMs } + d.items.map { it.stamp.wallMs } + d.tombstones.map { it.stamp.wallMs }).maxOrNull()
+
+    // ---- Sync between family devices (ADR 0003, ADR 0006) ---------------------------------------
+
+    /**
+     * Applies records another device sent (newest stamp per record wins, see [SyncMerge]).
+     * [photoPath] maps a photo file name to its path on this device. Returns how many records changed.
+     */
+    fun applySync(records: SyncRecords, photoPath: (String) -> String): Int {
+        observeAll(records)
+        val applied = SyncMerge.apply(current, records, photoPath)
+        if (applied.changed > 0) update { SyncMerge.apply(it, records, photoPath).data }
+        return applied.changed
+    }
+
+    /** This device joined a family by pairing: take over its data, keep own entries (see [SyncMerge.adopt]). */
+    fun joinFamily(records: SyncRecords, selfMemberId: String?, photoPath: (String) -> String) {
+        observeAll(records)
+        val family = records.copy(
+            items = records.items.map { it.copy(photoPath = it.photoPath?.let { path -> photoPath(photoName(path)) }) },
+        )
+        update { SyncMerge.adopt(it, family, selfMemberId, clock::tick) }
+    }
+
+    /** A person got their own paired phone ("eigenes Handy" in the family list). */
+    fun markHasDevice(id: String) {
+        update { d ->
+            val members = d.members.map { m ->
+                if (m.id == id && !m.hasDevice) m.copy(hasDevice = true, stamp = clock.tick()) else m
+            }
+            d.copy(members = members)
+        }
+    }
+
+    private fun observeAll(records: SyncRecords) {
+        records.members.forEach { clock.observe(it.stamp) }
+        records.items.forEach { clock.observe(it.stamp) }
+        records.tombstones.forEach { clock.observe(it.stamp) }
+    }
 
     companion object {
         const val MAX_LATENCY_SAMPLES = 50

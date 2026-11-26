@@ -18,14 +18,17 @@ val pkg = "kotlin/io/github/respawnedguy/familyapp"
 sourceSets {
     main {
         // androidMain/data holds the backup encryption: plain JDK code, so it runs here too.
-        kotlin.setSrcDirs(listOf("domain", "data", "presentation", "update").map { "$shared/commonMain/$pkg/$it" } + "$shared/androidMain/$pkg/data")
+        kotlin.setSrcDirs(
+            listOf("domain", "data", "presentation", "update", "sync").map { "$shared/commonMain/$pkg/$it" } +
+                listOf("data", "sync").map { "$shared/androidMain/$pkg/$it" },
+        )
         kotlin.exclude("**/AndroidTextStore.kt")
         kotlin.exclude("**/UpdateSection.kt") // Compose UI
     }
     test {
         kotlin.setSrcDirs(
-            listOf("domain", "data", "presentation", "update").map { "$shared/commonTest/$pkg/$it" } +
-                "$shared/androidUnitTest/$pkg/data" + "probes",
+            listOf("domain", "data", "presentation", "update", "sync").map { "$shared/commonTest/$pkg/$it" } +
+                listOf("data", "sync").map { "$shared/androidUnitTest/$pkg/$it" } + "probes",
         )
     }
 }
