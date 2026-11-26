@@ -135,4 +135,10 @@
     <string name="kitchen_shopping_checked">Im Wagen</string>
     <string name="kitchen_shopping_clear">Abgehakte entfernen</string>
     <string name="kitchen_shopping_for">für %1$s</string>
+    <string name="recipe_ai_title">Rezepte mit Cloud-KI</string>
+    <string name="recipe_ai_explain">Finden die Regeln in einem geteilten Instagram-Rezept keine Zutaten, liest Claude (Anthropic) den Text. Dafür geht nur der Rezepttext an Anthropic, keine Familiendaten. Das Ergebnis bleibt ein Vorschlag. Braucht einen eigenen API-Schlüssel von console.anthropic.com. Kosten: wenige Cent pro Rezept.</string>
+    <string name="recipe_ai_on">An. Schlüssel endet auf …%1$s</string>
+    <string name="recipe_ai_off">Cloud-KI ausschalten</string>
+    <string name="recipe_ai_key">API-Schlüssel</string>
+    <string name="recipe_ai_enable">Cloud-KI einschalten</string>
 </resources>

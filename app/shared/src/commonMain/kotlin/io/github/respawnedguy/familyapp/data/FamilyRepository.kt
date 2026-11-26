@@ -355,6 +355,9 @@ class FamilyRepository(
 
     fun setAllowOnlineSpeech(allowed: Boolean) = settings { it.copy(allowOnlineSpeech = allowed) }
 
+    /** Empty or blank switches the cloud AI for recipes off. */
+    fun setRecipeAiKey(key: String?) = settings { it.copy(recipeAiKey = key?.trim()?.takeIf { k -> k.isNotEmpty() }) }
+
     fun setBackupFolder(folder: String?) = settings { it.copy(backupFolder = folder, lastBackupError = null) }
 
     fun setBackupCode(code: String) = settings { it.copy(backupCode = code) }

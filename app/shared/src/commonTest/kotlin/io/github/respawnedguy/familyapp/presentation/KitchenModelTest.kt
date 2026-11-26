@@ -2,11 +2,17 @@ package io.github.respawnedguy.familyapp.presentation
 
 import io.github.respawnedguy.familyapp.data.FamilyRepository
 import io.github.respawnedguy.familyapp.data.InMemoryTextStore
+import io.github.respawnedguy.familyapp.data.AiOutcome
+import io.github.respawnedguy.familyapp.data.InstagramPages
+import io.github.respawnedguy.familyapp.data.RecipeAi
+import io.github.respawnedguy.familyapp.domain.recipe.AiRecipe
+import io.github.respawnedguy.familyapp.domain.recipe.RecipeImport
 import io.github.respawnedguy.familyapp.domain.recipe.RecipeStatus
 import io.github.respawnedguy.familyapp.domain.recipe.ShoppingList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
@@ -16,8 +22,13 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-private class KitchenPlatform : PlatformServices {
+private class KitchenPlatform(
+    private val ai: RecipeAi? = null,
+    override val instagramPages: InstagramPages? = null,
+) : PlatformServices {
     val screenOn = mutableListOf<Boolean>()
+    val aiKeys = mutableListOf<String>()
+    override fun recipeAi(apiKey: String): RecipeAi? { aiKeys += apiKey; return ai }
     override val speech: SpeechInput? = null
     override fun elapsedMs() = 0L
     override fun reducedMotion() = false
@@ -74,6 +85,153 @@ class KitchenModelTest {
         assertEquals(3, filled.ingredients.size)
         assertEquals("https://www.instagram.com/reel/XYZ/", filled.sourceUrl)
         assertEquals(RecipeStatus.CONFIRMED, filled.status)
+    }
+
+    /** An embed page as Instagram serves it for an image post (structure only, invented text). */
+    private fun embedPage(text: String) =
+        "<div class=\"Caption\"><a class=\"CaptionUsername\" href=\"#\">koch.beispiel</a><br><br>" +
+            text.replace("\n", "<br>") + "<div class=\"CaptionComments\"></div></div>"
+
+    @Test
+    fun sharedInstagramLinkGetsItsCaptionAndStaysASuggestion() = runTest {
+        val asked = mutableListOf<String>()
+        val m = model(KitchenPlatform { path -> asked += path; embedPage(caption) })
+        m.captureShared("https://www.instagram.com/reel/XYZ/?igsh=abc", null)
+        assertEquals(RecipeActions.FETCHING_CAPTION, m.feedback.value?.message)
+        runCurrent()
+        assertEquals(listOf("/p/XYZ/embed/captioned/"), asked)
+        val recipe = m.repo.current.recipes.single()
+        assertEquals("Ofengemüse für 2 Personen", recipe.title)
+        assertEquals(3, recipe.ingredients.size)
+        assertEquals(2, recipe.steps.size)
+        assertEquals(RecipeStatus.SUGGESTED, recipe.status, "a person still confirms (HITL)")
+        assertEquals("https://www.instagram.com/reel/XYZ/", recipe.sourceUrl)
+        assertEquals(caption, recipe.sourceText)
+        assertEquals(RecipeActions.CAPTION_FETCHED, m.feedback.value?.message)
+        // Undo takes back only the fetched text; the link-only suggestion stays.
+        m.undo(m.feedback.value!!)
+        val back = m.repo.recipeStore.recipe(recipe.id)!!
+        assertTrue(back.ingredients.isEmpty())
+        assertEquals(RecipeImport.INSTAGRAM_TITLE, back.title)
+    }
+
+    @Test
+    fun unreachableInstagramLeavesTheLinkAndSaysSo() = runTest {
+        val m = model(KitchenPlatform { null })
+        m.captureShared("https://www.instagram.com/p/XYZ/", null)
+        runCurrent()
+        val recipe = m.repo.current.recipes.single()
+        assertTrue(recipe.ingredients.isEmpty())
+        assertEquals(RecipeImport.INSTAGRAM_TITLE, recipe.title)
+        assertEquals(RecipeActions.CAPTION_UNAVAILABLE, m.feedback.value?.message)
+    }
+
+    @Test
+    fun captionWithoutIngredientsAsksForThem() = runTest {
+        val m = model(KitchenPlatform { embedPage("Unser liebstes Abendessen! Rezept im Video \uD83D\uDE0D") })
+        m.captureShared("https://www.instagram.com/p/XYZ/", null)
+        runCurrent()
+        val recipe = m.repo.current.recipes.single()
+        assertEquals(RecipeStatus.SUGGESTED, recipe.status)
+        assertEquals(RecipeActions.CAPTION_WITHOUT_INGREDIENTS, m.feedback.value?.message)
+        assertTrue(recipe.sourceText!!.startsWith("Unser liebstes Abendessen"))
+    }
+
+    @Test
+    fun recipeChangedWhileFetchingIsNotOverwritten() = runTest {
+        lateinit var m: AppModel
+        m = model(
+            KitchenPlatform {
+                // The person edits the suggestion before Instagram answers.
+                val id = m.repo.current.recipes.single().id
+                m.kitchen.recipes.fillFromText(id, "Eigenes Rezept\nZutaten:\n1 Ei\n2 Brötchen\nZubereitung:\n1. Braten.")
+                embedPage(caption)
+            },
+        )
+        m.captureShared("https://www.instagram.com/p/XYZ/", null)
+        runCurrent()
+        assertEquals("Eigenes Rezept", m.repo.current.recipes.single().title)
+    }
+
+    private val videoCaption = "Unser liebstes Abendessen! Alles steht im Video \uD83D\uDE0D"
+
+    @Test
+    fun cloudAiReadsWhatTheRulesCannotAndItStaysASuggestion() = runTest {
+        val asked = mutableListOf<String>()
+        lateinit var m: AppModel
+        var messageWhileAsking: String? = null
+        val ai = RecipeAi { text ->
+            asked += text
+            messageWhileAsking = m.feedback.value?.message
+            AiOutcome.Ok(AiRecipe("Abendessen", 2.0, null, listOf("2 Eier", "1 Brötchen"), listOf("Braten")))
+        }
+        val platform = KitchenPlatform(ai) { embedPage(videoCaption) }
+        m = model(platform)
+        m.setRecipeAiKey("  sk-test  ")
+        m.captureShared("https://www.instagram.com/reel/XYZ/", null)
+        runCurrent()
+        runCurrent()
+        assertEquals(RecipeActions.ASKING_AI, messageWhileAsking)
+        assertEquals(listOf("sk-test"), platform.aiKeys)
+        assertEquals(listOf(videoCaption), asked, "only the public caption goes to the AI")
+        val recipe = m.repo.current.recipes.single()
+        assertEquals("Abendessen", recipe.title)
+        assertEquals(2, recipe.ingredients.size)
+        assertEquals(RecipeStatus.SUGGESTED, recipe.status)
+        assertEquals(videoCaption, recipe.sourceText)
+        assertEquals(RecipeActions.AI_FILLED, m.feedback.value?.message)
+        // Undo takes back only the AI's part: the caption stays.
+        m.undo(m.feedback.value!!)
+        assertTrue(m.repo.current.recipes.single().ingredients.isEmpty())
+        assertEquals(videoCaption, m.repo.current.recipes.single().sourceText)
+    }
+
+    @Test
+    fun cloudAiFailureAndEmptyAnswerAreSaid() = runTest {
+        val m = model(KitchenPlatform({ AiOutcome.Failed("Kein Guthaben beim KI-Anbieter.") }) { embedPage(videoCaption) })
+        m.setRecipeAiKey("sk-test")
+        m.captureShared("https://www.instagram.com/reel/XYZ/", null)
+        runCurrent()
+        runCurrent()
+        assertEquals("${RecipeActions.AI_FAILED} Kein Guthaben beim KI-Anbieter.", m.feedback.value?.message)
+
+        val n = model(KitchenPlatform({ AiOutcome.Ok(AiRecipe("Nichts")) }) { embedPage(videoCaption) })
+        n.setRecipeAiKey("sk-test")
+        n.captureShared("https://www.instagram.com/p/ABC/", null)
+        runCurrent()
+        runCurrent()
+        assertEquals(RecipeActions.AI_FOUND_NOTHING, n.feedback.value?.message)
+        assertTrue(n.repo.current.recipes.single().ingredients.isEmpty())
+    }
+
+    @Test
+    fun cloudAiStaysUnusedWithoutKeyOrWhenRulesSucceed() = runTest {
+        val platform = KitchenPlatform({ error("must not be called") }) { embedPage(videoCaption) }
+        val m = model(platform)
+        m.captureShared("https://www.instagram.com/reel/XYZ/", null)
+        runCurrent()
+        assertTrue(platform.aiKeys.isEmpty(), "no key, no AI")
+        assertEquals(RecipeActions.CAPTION_WITHOUT_INGREDIENTS, m.feedback.value?.message)
+
+        val withKey = KitchenPlatform({ error("must not be called") }) { embedPage(caption) }
+        val n = model(withKey)
+        n.setRecipeAiKey("sk-test")
+        n.captureShared("https://www.instagram.com/reel/XYZ/", null)
+        runCurrent()
+        assertTrue(withKey.aiKeys.isEmpty(), "the rules found the recipe, no AI needed")
+        assertEquals(RecipeActions.CAPTION_FETCHED, n.feedback.value?.message)
+        n.setRecipeAiKey(" ")
+        assertEquals(null, n.repo.current.settings.recipeAiKey)
+    }
+
+    @Test
+    fun otherSharedLinksFetchNothing() = runTest {
+        val asked = mutableListOf<String>()
+        val m = model(KitchenPlatform { path -> asked += path; null })
+        m.captureShared(caption + "\nhttps://www.instagram.com/p/XYZ/", null)
+        m.captureShared("https://example.org/rezept", null)
+        runCurrent()
+        assertTrue(asked.isEmpty(), "a full caption or another site needs no fetch: $asked")
     }
 
     @Test

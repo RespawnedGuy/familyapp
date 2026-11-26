@@ -166,6 +166,8 @@ Prinzip „schnell rein, komplett später“: Teilen speichert sofort den Link a
 
 ### Weg 1: Instagram teilen
 
+> **Stand 26.11.2026, [ADR 0007](entscheidungen/0007-instagram-text-ohne-yt-dlp.md):** Die App holt die Caption selbst über die öffentliche Einbettungsseite des Beitrags, ohne yt-dlp und ohne GPL. Findet die Regel-Engine darin keine Zutaten, kann optional Claude den Text lesen (eigener API-Schlüssel). Die Tabelle unten ist der Stand der Konzeptphase.
+
 Das Teilen-Menü von Instagram übergibt der App **nur einen Link** (`instagram.com/reel/…` oder `/p/…`), keine Datei. Der Knackpunkt ohne Server ist deshalb nicht die Erkennung, sondern **an Text und Ton zu kommen**.
 
 | Weg | Wie ohne Server | Bewertung |
@@ -246,7 +248,7 @@ Ablauf in der Woche: Montag liegt unter **Heute** eine Karte „Diese Woche gün
 2. **schema.org/Recipe als Datenmodell und Austauschformat**, ergänzt um strukturierte Zutaten und Familienfelder. Export als JSON-LD-ZIP, keine eigene Formaterfindung.
 3. **Die App baut die Mealie-Grundfunktionen nach:** Rezept-Ansicht mit Portionen umrechnen, Übersicht mit Suche über Zutaten, Kochmodus mit wachem Bildschirm und Timern aus dem Text, gemeinsame Einkaufsliste nach Markt und Abteilung. Alte Rezepte nur optional per schema.org-JSON übernehmen.
 4. **Eine Warteschlange auf dem Gerät für alle drei Wege**: Teilen speichert sofort, Verarbeitung im Hintergrund, Stand sichtbar, Ergebnis als Vorschlagskarte im Eingang (HITL).
-5. **Instagram wie im SurfaceLab über yt-dlp, jetzt in der App** (`youtubedl-android`, yt-dlp zur Laufzeit aktualisierbar), Rückfall angemeldete WebView, letzter Rückfall „Datei teilen“.
+5. *(Ersetzt durch ADR 0007: eigener Abruf der Einbettungsseite, kein yt-dlp.)* Ursprünglich: **Instagram wie im SurfaceLab über yt-dlp, jetzt in der App** (`youtubedl-android`, yt-dlp zur Laufzeit aktualisierbar), Rückfall angemeldete WebView, letzter Rückfall „Datei teilen“.
 6. **Erkennung nur lokal:** ML Kit Text Recognition für Bilder und Videobilder, ML Kit GenAI Speech Recognition für Ton (Deutsch, Pixel 10). Beide Alpha-/Beta-APIs hinter eigenen Schnittstellen.
 7. **Regeln zuerst, Gemini Nano als Verstärker** für Fließtext und Gesprochenes. Claude bleibt für den Import als Schalter erhalten (Nils' Freigabe vom 01.11.), mit eigenem Schlüssel direkt vom Handy, standardmäßig aus.
 8. **Zutat-Schlüssel beim Import festlegen und bestätigen**, damit Angebots- und Saisonabgleich später ein Nachschlagen ist. Startkatalog aus Synonymen und Plural-Regeln von `preisvergleich`.
@@ -256,7 +258,7 @@ Ablauf in der Woche: Montag liegt unter **Heute** eine Karte „Diese Woche gün
 12. **Vorschläge deterministisch mit Begründung**, Montags als Karte unter Heute, Auswahl per Antippen, daraus Einkaufsliste mit Zuständigkeit.
 13. **Videos und Originalmedien nicht speichern**, nur Titelbild (klein) und Quelllink.
 14. **Erst ein Spike, dann Bau** (nächster Abschnitt). Der Prototyp-Thread v0.2 bleibt davon unberührt.
-15. **Lizenz entscheiden, bevor Download-Code in die App kommt:** Für den Spike `youtubedl-android` nehmen (schnell, erprobt). Vor dem Verteilen an andere Familien entscheiden: App unter GPL-3.0 stellen oder yt-dlp selbst einbetten.
+15. *(Entschieden am 26.11.2026: kein GPL, eigener Abruf, ADR 0007.)* Ursprünglich: **Lizenz entscheiden, bevor Download-Code in die App kommt:** Für den Spike `youtubedl-android` nehmen (schnell, erprobt). Vor dem Verteilen an andere Familien entscheiden: App unter GPL-3.0 stellen oder yt-dlp selbst einbetten.
 16. **Der SurfaceLab-Importer läuft weiter, bis die App ihn im Vergleich einholt.** Abschalten erst, wenn der Spike die Abnahmekriterien erfüllt.
 
 ## Nächster Schritt: Spike „Rezept-Import“

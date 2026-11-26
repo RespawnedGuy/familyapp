@@ -13,6 +13,8 @@ import android.view.WindowManager
 import androidx.core.content.FileProvider
 import io.github.respawnedguy.familyapp.data.BackupCrypto
 import io.github.respawnedguy.familyapp.data.BackupFolder
+import io.github.respawnedguy.familyapp.data.HttpClaudeRecipeAi
+import io.github.respawnedguy.familyapp.data.HttpInstagramPages
 import io.github.respawnedguy.familyapp.data.PhotoCleanup
 import io.github.respawnedguy.familyapp.data.ShareRejection
 import io.github.respawnedguy.familyapp.data.SharedImage
@@ -42,6 +44,12 @@ class AndroidPlatform(private val app: FamilyApplication) : PlatformServices {
     var allowOnlineSpeech: () -> Boolean = { false }
 
     override val speech: SpeechInput = AndroidSpeech(app, { activity }, { allowOnlineSpeech() })
+
+    /** Caption of a shared Instagram post, fetched without login or yt-dlp (ADR 0007). */
+    override val instagramPages = HttpInstagramPages()
+
+    /** Optional, only with the API key from the settings (ADR 0007). */
+    override fun recipeAi(apiKey: String) = HttpClaudeRecipeAi(apiKey)
 
     override fun elapsedMs(): Long = SystemClock.elapsedRealtime()
 
