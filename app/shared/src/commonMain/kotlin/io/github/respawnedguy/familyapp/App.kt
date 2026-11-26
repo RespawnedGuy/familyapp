@@ -159,7 +159,7 @@ private fun Onboarding(model: AppModel) {
                 keyboardActions = KeyboardActions(onDone = { model.createFamily(name) }),
                 modifier = Modifier.fillMaxWidth(),
             )
-            Button(onClick = { model.createFamily(name) }, enabled = name.isNotBlank(), modifier = Modifier.fillMaxWidth().height(52.dp)) {
+            Button(onClick = { model.createFamily(name) }, enabled = name.isNotBlank(), modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
                 Text("Los geht's", fontSize = 16.sp)
             }
             Text(
@@ -167,7 +167,7 @@ private fun Onboarding(model: AppModel) {
                 fontSize = 13.sp, color = c.textTertiary,
             )
             if (sync != null) {
-                OutlinedButton(onClick = { invited = true }, modifier = Modifier.fillMaxWidth().height(52.dp)) {
+                OutlinedButton(onClick = { invited = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
                     Text("Ich wurde eingeladen", fontSize = 16.sp)
                 }
             }

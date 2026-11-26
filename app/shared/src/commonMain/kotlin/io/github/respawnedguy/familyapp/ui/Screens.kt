@@ -305,7 +305,8 @@ fun UpcomingScreen(data: FamilyData, model: AppModel) {
                         fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                     )
                     Column(Modifier.weight(1f)) {
-                        Text(item.title, color = c.text, fontSize = 15.sp, maxLines = 2)
+                        // No line limit: this row cannot be opened, so a shortened title could never be read in full.
+                        Text(item.title, color = c.text, fontSize = 15.sp)
                         val note = buildList {
                             if (item.status == ItemStatus.INBOX) add("noch nicht bestätigt")
                             if (overdue != null && item.status == ItemStatus.OPEN) add(overdue)
