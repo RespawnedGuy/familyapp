@@ -27,7 +27,9 @@ public class ShareSourceActivity extends Activity {
         send.putExtra(Intent.EXTRA_STREAM, uri);
         if (in.hasExtra("text")) send.putExtra(Intent.EXTRA_TEXT, in.getStringExtra("text"));
         send.setClipData(ClipData.newRawUri("", uri));
-        send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        // Own task for the FamilyApp: otherwise it stays on top of this app's task, and the next
+        // "am start" of this activity only brings that old task back without sharing again.
+        send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(send);
         finish();
     }
