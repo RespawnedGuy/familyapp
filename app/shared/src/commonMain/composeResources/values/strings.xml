@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  UI texts of the app (quality plan P1-7). German is the default language (folder values/).
+  A translation goes into values-<language>/strings.xml with the same names.
+  Names: <screen>_<what>, shared words start with common_. Use plurals for counted texts.
+  Placeholders: %1$s (text), %1$d (number). Kept in sync with the code by the quality gate
+  (tools/quality-check, UiStringsTest): texts in already converted files must come from here.
+-->
+<resources>
+    <!-- Shared words -->
+    <string name="common_cancel">Abbrechen</string>
+    <string name="common_settings">Einstellungen</string>
+    <string name="common_photo">Foto</string>
+
+    <!-- Tabs and bottom bar (design D1/D2) -->
+    <string name="tab_today">Heute</string>
+    <string name="tab_family">Familie</string>
+    <string name="tab_upcoming">Demnächst</string>
+    <string name="tab_search">Suchen</string>
+    <string name="nav_capture">Erfassen</string>
+
+    <!-- Onboarding -->
+    <string name="app_tagline">Schnell rein, komplett später.</string>
+    <string name="onboarding_name_question">Wie heißt du?</string>
+    <string name="onboarding_name_placeholder">Dein Vorname</string>
+    <string name="onboarding_start">Los geht's</string>
+    <string name="onboarding_no_account">Kein Konto, keine E-Mail. Damit ist deine Familie angelegt, weitere Personen fügst du unter „Familie“ hinzu.</string>
+    <string name="onboarding_invited">Ich wurde eingeladen</string>
+
+    <!-- Saving problem banner (P0-1) -->
+    <string name="save_problem_retry">Erneut speichern</string>
+
+    <!-- Recovery code dialog -->
+    <string name="restore_code_title">Wiederherstellungscode</string>
+    <string name="restore_code_wrong">Dieser Code öffnet die Sicherung nicht. Bitte genau prüfen.</string>
+    <string name="restore_code_prompt">Gib den Code ein, den du beim Einrichten der Sicherung aufgeschrieben hast.</string>
+    <string name="restore_code_example">z. B. 7K3M-Q9TB-…</string>
+    <string name="restore_code_open">Öffnen</string>
+
+    <!-- Feedback bar and update banner -->
+    <string name="feedback_undo">Rückgängig</string>
+    <string name="update_banner_hide">Ausblenden</string>
+
+    <!-- Capture sheet (design D3, D8) -->
+    <string name="capture_listening">Ich höre zu …</string>
+    <string name="capture_mic_starting">Mikrofon startet …</string>
+    <string name="capture_example">Zum Beispiel: „Mia braucht bis Donnerstag neue Hausschuhe“</string>
+    <string name="capture_saves_itself">Gespeichert wird von selbst, sobald du aufhörst zu sprechen.</string>
+    <string name="capture_done">Fertig</string>
+    <string name="capture_speak_again">Nochmal sprechen</string>
+    <string name="capture_text_placeholder">Was ist zu tun?</string>
+    <string name="capture_save">Speichern</string>
+    <string name="capture_speak">Sprechen</string>
+    <string name="capture_type">Tippen</string>
+    <!-- Settings: measurements on real phones (P1-10) -->
+    <string name="measure_title">Messwerte (nur lokal)</string>
+    <string name="measure_none">Noch keine Messung. Öffne die App ein paar Mal neu und sprich einmal per Knopf, Kachel oder Verknüpfung.</string>
+    <string name="measure_one_tap">Karten mit einem Tap erledigt: %1$d von %2$d (%3$d %, Ziel ≥ 70 %).</string>
+    <string name="measure_share">Messwerte teilen</string>
+    <string name="measure_restart">Messreihe neu beginnen</string>
+    <string name="measure_share_note">Teilen schickt eine Tabelle (CSV) nur mit Zeiten, Handymodell und App-Version, ohne Einträge oder Namen.</string>
+</resources>

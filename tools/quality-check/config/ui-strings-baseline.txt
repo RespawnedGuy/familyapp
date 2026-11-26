@@ -1,0 +1,9 @@
+# Quality plan P1-7: text literals still in the UI code, per file (UiStringsTest).
+# Numbers may only go down. Files not listed must stay at 0. Total at start (26.11.2026): 214.
+App.kt 2
+ui/Cards.kt 43
+ui/Components.kt 9
+ui/Screens.kt 46
+ui/SettingsScreen.kt 35
+ui/SyncScreens.kt 58
+update/UpdateSection.kt 17

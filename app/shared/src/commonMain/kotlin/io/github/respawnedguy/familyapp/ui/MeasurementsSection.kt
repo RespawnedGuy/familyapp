@@ -12,8 +12,16 @@ import io.github.respawnedguy.familyapp.domain.MeasurementText
 import io.github.respawnedguy.familyapp.domain.Metric
 import io.github.respawnedguy.familyapp.domain.ResourceUsage
 import io.github.respawnedguy.familyapp.presentation.AppModel
+import io.github.respawnedguy.familyapp.resources.Res
+import io.github.respawnedguy.familyapp.resources.measure_none
+import io.github.respawnedguy.familyapp.resources.measure_one_tap
+import io.github.respawnedguy.familyapp.resources.measure_restart
+import io.github.respawnedguy.familyapp.resources.measure_share
+import io.github.respawnedguy.familyapp.resources.measure_share_note
+import io.github.respawnedguy.familyapp.resources.measure_title
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.jetbrains.compose.resources.stringResource
 
 private const val PERCENT = 100
 private const val RECENT_SAMPLES = 3
@@ -31,14 +39,10 @@ fun MeasurementsGroup(data: FamilyData, model: AppModel) {
     val usage by produceState<ResourceUsage?>(null, samples.size) {
         value = withContext(Dispatchers.Default) { model.resourceUsage() }
     }
-    SettingsGroup("Messwerte (nur lokal)") {
+    SettingsGroup(stringResource(Res.string.measure_title)) {
         val summaries = model.measurementSummary()
         if (summaries.isEmpty()) {
-            Text(
-                "Noch keine Messung. Öffne die App ein paar Mal neu und sprich einmal per Knopf, " +
-                    "Kachel oder Verknüpfung.",
-                fontSize = 14.sp, color = c.text,
-            )
+            Text(stringResource(Res.string.measure_none), fontSize = 14.sp, color = c.text)
         }
         summaries.forEach { summary ->
             Text(MeasurementText.line(summary), fontSize = 14.sp, color = c.text)
@@ -52,7 +56,7 @@ fun MeasurementsGroup(data: FamilyData, model: AppModel) {
         val (one, all) = model.oneTapShare()
         if (all > 0) {
             Text(
-                "Karten mit einem Tap erledigt: $one von $all (${one * PERCENT / all} %, Ziel ≥ 70 %).",
+                stringResource(Res.string.measure_one_tap, one, all, one * PERCENT / all),
                 fontSize = 14.sp, color = c.text,
             )
         }
@@ -64,11 +68,10 @@ fun MeasurementsGroup(data: FamilyData, model: AppModel) {
             )
         }
         // One below the other: side by side they would not fit at 200 % font size.
-        OutlinedButton(onClick = { model.shareMeasurements() }) { Text("Messwerte teilen") }
-        if (samples.isNotEmpty()) TextButton(onClick = { model.clearMeasurements() }) { Text("Messreihe neu beginnen") }
-        Text(
-            "Teilen schickt eine Tabelle (CSV) nur mit Zeiten, Handymodell und App-Version, ohne Einträge oder Namen.",
-            fontSize = 12.sp, color = c.textTertiary,
-        )
+        OutlinedButton(onClick = { model.shareMeasurements() }) { Text(stringResource(Res.string.measure_share)) }
+        if (samples.isNotEmpty()) {
+            TextButton(onClick = { model.clearMeasurements() }) { Text(stringResource(Res.string.measure_restart)) }
+        }
+        Text(stringResource(Res.string.measure_share_note), fontSize = 12.sp, color = c.textTertiary)
     }
 }

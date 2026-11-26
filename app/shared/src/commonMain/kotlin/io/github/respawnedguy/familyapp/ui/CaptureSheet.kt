@@ -58,6 +58,20 @@ import androidx.compose.ui.unit.sp
 import io.github.respawnedguy.familyapp.domain.CaptureAction
 import io.github.respawnedguy.familyapp.presentation.AppModel
 import io.github.respawnedguy.familyapp.presentation.CaptureState
+import io.github.respawnedguy.familyapp.resources.Res
+import io.github.respawnedguy.familyapp.resources.capture_done
+import io.github.respawnedguy.familyapp.resources.capture_example
+import io.github.respawnedguy.familyapp.resources.capture_listening
+import io.github.respawnedguy.familyapp.resources.capture_mic_starting
+import io.github.respawnedguy.familyapp.resources.capture_save
+import io.github.respawnedguy.familyapp.resources.capture_saves_itself
+import io.github.respawnedguy.familyapp.resources.capture_speak
+import io.github.respawnedguy.familyapp.resources.capture_speak_again
+import io.github.respawnedguy.familyapp.resources.capture_text_placeholder
+import io.github.respawnedguy.familyapp.resources.capture_type
+import io.github.respawnedguy.familyapp.resources.common_cancel
+import io.github.respawnedguy.familyapp.resources.common_photo
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Capture sheet (design D3): opened by the centre button and already listening. "Foto" sits in
@@ -90,7 +104,9 @@ fun CaptureSheet(state: CaptureState, model: AppModel, reducedMotion: Boolean) {
                 CaptureState.Typing -> Typing(model)
                 is CaptureState.Problem -> {
                     Text(state.message, color = c.text, fontSize = 16.sp)
-                    TextButton(onClick = { model.switchCapture(CaptureAction.VOICE) }) { Text("Nochmal sprechen") }
+                    TextButton(onClick = { model.switchCapture(CaptureAction.VOICE) }) {
+                        Text(stringResource(Res.string.capture_speak_again))
+                    }
                 }
                 else -> Unit
             }
@@ -109,18 +125,19 @@ private fun ColumnScope.Listening(state: CaptureState.Listening, model: AppModel
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Box(Modifier.size(16.dp).scale(pulse).clip(CircleShape).background(if (state.ready) c.overdue else c.outline))
         Text(
-            if (state.ready) "Ich höre zu …" else "Mikrofon startet …",
+            stringResource(if (state.ready) Res.string.capture_listening else Res.string.capture_mic_starting),
             color = c.text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
         )
     }
+    val example = stringResource(Res.string.capture_example)
     Text(
-        state.partial.ifEmpty { "Zum Beispiel: „Mia braucht bis Donnerstag neue Hausschuhe“" },
+        state.partial.ifEmpty { example },
         color = if (state.partial.isEmpty()) c.textTertiary else c.text,
         fontSize = if (state.partial.isEmpty()) 15.sp else 20.sp,
         modifier = Modifier.heightIn(min = 56.dp),
     )
-    Text("Gespeichert wird von selbst, sobald du aufhörst zu sprechen.", color = c.textTertiary, fontSize = 12.sp)
-    if (state.ready) TextButton(onClick = { model.stopListening() }) { Text("Fertig") }
+    Text(stringResource(Res.string.capture_saves_itself), color = c.textTertiary, fontSize = 12.sp)
+    if (state.ready) TextButton(onClick = { model.stopListening() }) { Text(stringResource(Res.string.capture_done)) }
 }
 
 @Composable
@@ -131,7 +148,7 @@ private fun ColumnScope.Typing(model: AppModel) {
     OutlinedTextField(
         value = text,
         onValueChange = { text = it },
-        placeholder = { Text("Was ist zu tun?") },
+        placeholder = { Text(stringResource(Res.string.capture_text_placeholder)) },
         // Enter saves (soft keyboard "Fertig" and hardware keyboards alike); no newline in a quick note.
         modifier = Modifier.fillMaxWidth().focusRequester(focus).onPreviewKeyEvent {
             if (it.key != Key.Enter && it.key != Key.NumPadEnter) return@onPreviewKeyEvent false
@@ -142,7 +159,9 @@ private fun ColumnScope.Typing(model: AppModel) {
         keyboardActions = KeyboardActions(onDone = { model.saveText(text) }),
         minLines = 2,
     )
-    Button(onClick = { model.saveText(text) }, enabled = text.isNotBlank(), modifier = Modifier.align(Alignment.End)) { Text("Speichern") }
+    Button(onClick = { model.saveText(text) }, enabled = text.isNotBlank(), modifier = Modifier.align(Alignment.End)) {
+        Text(stringResource(Res.string.capture_save))
+    }
 }
 
 @Composable
@@ -151,9 +170,9 @@ private fun BottomRow(state: CaptureState, model: AppModel) {
     Row(Modifier.fillMaxWidth().heightIn(min = 80.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
             if (state == CaptureState.Typing) {
-                SheetAction("Sprechen") { model.switchCapture(CaptureAction.VOICE) }
+                SheetAction(stringResource(Res.string.capture_speak)) { model.switchCapture(CaptureAction.VOICE) }
             } else {
-                SheetAction("Tippen") { model.switchCapture(CaptureAction.TEXT) }
+                SheetAction(stringResource(Res.string.capture_type)) { model.switchCapture(CaptureAction.TEXT) }
             }
         }
         Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -161,10 +180,13 @@ private fun BottomRow(state: CaptureState, model: AppModel) {
                 Modifier.size(64.dp).clip(CircleShape).background(c.accent).clickable { model.switchCapture(CaptureAction.PHOTO) },
                 contentAlignment = Alignment.Center,
             ) { Icon(FamilyIcons.Camera, contentDescription = null, tint = c.onAccent, modifier = Modifier.size(30.dp)) }
-            Text("Foto", color = c.text, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp))
+            Text(
+                stringResource(Res.string.common_photo),
+                color = c.text, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp),
+            )
         }
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-            SheetAction("Abbrechen") { model.dismissCapture() }
+            SheetAction(stringResource(Res.string.common_cancel)) { model.dismissCapture() }
         }
     }
 }
