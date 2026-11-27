@@ -116,6 +116,8 @@ class GeminiRecipeRequestTest {
     @Test
     fun providerFollowsTheKeysPrefix() {
         assertEquals(AiProvider.GEMINI, AiProvider.ofKey("AIzaSyExample"))
+        assertEquals(AiProvider.GEMINI, AiProvider.ofKey("AQ.Ab8RN6Example"), "AI Studio's newer key format")
+        assertNull(AiProvider.ofKey("AQExample"), "the dot belongs to the prefix")
         assertEquals(AiProvider.CLAUDE, AiProvider.ofKey("sk-ant-api03-example"))
         assertNull(AiProvider.ofKey("sk-or-v1-example"))
         assertNull(AiProvider.ofKey(""))

@@ -140,7 +140,7 @@
     <string name="recipe_ai_on">An: %1$s. Schlüssel endet auf …%2$s</string>
     <string name="recipe_ai_gemini">Google Gemini</string>
     <string name="recipe_ai_claude">Claude (Anthropic)</string>
-    <string name="recipe_ai_unknown">Schlüssel nicht erkannt. Gemini-Schlüssel beginnen mit „AIza“, Claude-Schlüssel mit „sk-ant-“.</string>
+    <string name="recipe_ai_unknown">Schlüssel nicht erkannt. Gemini-Schlüssel beginnen mit „AQ.“ oder „AIza“, Claude-Schlüssel mit „sk-ant-“.</string>
     <string name="recipe_ai_off">Cloud-KI ausschalten</string>
     <string name="recipe_ai_key">API-Schlüssel</string>
     <string name="recipe_ai_enable">Cloud-KI einschalten</string>
