@@ -39,6 +39,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -86,8 +88,12 @@ import org.jetbrains.compose.resources.stringResource
 fun FamilyScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reducedMotion: Boolean) {
     val section by model.section.collectAsState()
     Column(Modifier.fillMaxSize()) {
-        FamilyTabs(section) { model.openSection(it) }
-        Box(Modifier.weight(1f).fillMaxWidth()) {
+        // Drawn above the list: a list item scrolled half out at the top must neither show through
+        // nor shorten the tabs' touch targets for TalkBack (emulator ATF check, 27.11.2026).
+        FamilyTabs(section, Modifier.zIndex(1f).background(LocalFamilyColors.current.background)) {
+            model.openSection(it)
+        }
+        Box(Modifier.weight(1f).fillMaxWidth().clipToBounds()) {
             when (section) {
                 FamilySection.TASKS -> FamilyTasks(data, model, photos, reducedMotion)
                 FamilySection.CONTACTS -> ContactListScreen(data, model)
@@ -193,8 +199,8 @@ private val FamilySection.label: StringResource
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun FamilyTabs(selected: FamilySection, onSelect: (FamilySection) -> Unit) {
-    val padding = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 4.dp)
+private fun FamilyTabs(selected: FamilySection, modifier: Modifier, onSelect: (FamilySection) -> Unit) {
+    val padding = modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 4.dp)
     if (largeFont()) {
         FlowRow(
             padding.selectableGroup(),
@@ -229,14 +235,20 @@ private fun FamilyTab(
         fontSize = 14.sp,
         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
     )
+    // The touch target is the whole slot, like the bottom bar: nothing clips it, so TalkBack and the
+    // Accessibility Test Framework see the full 48 dp; the pill is drawn inside.
     Box(
-        modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
-            .background(if (selected) c.accent else c.card)
-            .selectable(selected = selected, role = Role.Tab, onClick = onClick)
-            .padding(horizontal = if (fit) 4.dp else 16.dp, vertical = 12.dp),
+        modifier.heightIn(min = 48.dp).selectable(selected = selected, role = Role.Tab, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        if (fit) FitLabel(label, style) else Text(label, style = style)
+        Box(
+            (if (fit) Modifier.fillMaxWidth() else Modifier).heightIn(min = 40.dp).clip(RoundedCornerShape(12.dp))
+                .background(if (selected) c.accent else c.card)
+                .padding(horizontal = if (fit) 4.dp else 16.dp, vertical = 8.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (fit) FitLabel(label, style) else Text(label, style = style)
+        }
     }
 }
 
