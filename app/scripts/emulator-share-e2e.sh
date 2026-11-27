@@ -21,7 +21,7 @@ pass() { echo "OK    $1"; }
 fail() { echo "FEHLER $1"; FAILED=1; }
 HERE="$(cd "$(dirname "$0")" && pwd)"
 # No single adb call may hang the job: on API 26 one share call once blocked for hours.
-adb() { timeout 90 command adb "$@"; }
+adb() { timeout 90 adb "$@"; }  # timeout runs the adb binary, not this function
 SIZE="$(adb shell wm size | grep -o '[0-9]*x[0-9]*' | tail -1)"; W="${SIZE%x*}"; H="${SIZE#*x}"
 swipe_up() { adb shell input swipe $((W / 2)) $((H * 3 / 4)) $((W / 2)) $((H / 3)) 300; sleep 1; }
 dump() {
@@ -50,7 +50,9 @@ from_adb() { # <uri> <text>: adb plays an app that sends a link (no URI grant po
 }
 from_app() { # <kind> <text>: the test app shares one of its files with a read grant
   # Fresh task each time: a second start must not just resurface the previous share.
-  adb shell am start -W --activity-clear-task -n "$SRC/.ShareSourceActivity" --es kind "$1" --es text "'$2'" >/dev/null 2>&1
+  # No -W: the test app hands over and finishes at once, and on API 26 `am start -W` then waits
+  # for a launch that never reports done (blocked the release for 6 hours). expect() waits instead.
+  adb shell am start --activity-clear-task -n "$SRC/.ShareSourceActivity" --es kind "$1" --es text "'$2'" >/dev/null 2>&1
 }
 expect() { # <label> <regex of the message>
   if wait_text "$2" 20; then pass "$1"; else fail "$1"; fi
@@ -97,7 +99,12 @@ echo "-- Kochbibliothek: geteilter Instagram-Link wird Rezeptvorschlag (TE-7)"
 tap() { seen "$1" && adb shell input tap $(python3 "$HERE/ui-tap.py" "$OUT/ui.xml" "$1" "$PKG"); }
 adb shell am start -W -n "$PKG/.MainActivity" -a android.intent.action.SEND -t text/plain \
   --es android.intent.extra.TEXT "'https://www.instagram.com/reel/E2Etest1/?igsh=abc'" >/dev/null 2>&1
-expect "Instagram-Link als Rezeptvorschlag gespeichert" "Link als Rezeptvorschlag gespeichert\..*"
+# The app then tries to fetch the caption (ADR 0007). The fake post has none, so the first message is
+# soon replaced by "nicht abrufbar": either one shows the link was saved as a suggestion.
+# Waits longer than expect(): two page requests with 10 s connect and read timeouts each.
+LINK_SAVED="(Link als Rezeptvorschlag gespeichert|Text von Instagram nicht abrufbar)\..*"
+wait_text "$LINK_SAVED" 60 && pass "Instagram-Link als Rezeptvorschlag gespeichert" || fail "Instagram-Link als Rezeptvorschlag gespeichert"
+wait_gone "$LINK_SAVED" 20 || true
 tap "Familie"
 if wait_text "Kochbibliothek" 10 && tap "Rezepte" && wait_text "Rezept von Instagram" 10; then
   pass "Vorschlag steht in der Kochbibliothek unter Familie"
