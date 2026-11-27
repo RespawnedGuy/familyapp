@@ -32,6 +32,17 @@ Alle Abrufe liefen im eingebauten Browser auf Nils' Rechner (normaler Heimanschl
 | **Lidl** | Prospekt-Schnittstelle `endpoints.leaflets.schwarz/v4/flyer` (wie `lidl.py`) | regional („region“ im Prospekt, mehrere Fassungen derselben Woche) | **Nur Non-Food als Produkte** (184 Produkte im Aktionsprospekt KW 48, alle aus Haushalt, Garten, Wein …). Lebensmittel stehen nur als Seitenbild im Prospekt, dazu je Seite Schlagwörter aus der Texterkennung („Avocado, Spitzkohl, Bio Gurken, Zucchini“) ohne Preise und Rezept-Links („rezepte.lidl.de/…?q=Spitzkohl“) | `*id=*` und `*search?q=*` gesperrt, Prospekt-Schnittstelle auf eigener Domain |
 | REWE | – | – | Bot-Schutz (siehe kochbibliothek.md, Empfehlung 10) | – |
 
+### Grundsatz: nur Märkte, die wir automatisch lesen dürfen (Nils, 27.11.2026)
+
+Technische Bot-Abwehr wird nie umgangen. Ein Markt kommt nur in die App, wenn **alle** Punkte erfüllt sind, sonst lassen wir ihn weg:
+
+1. Die benutzten Pfade sind in der `robots.txt` nicht gesperrt.
+2. Die Nutzungsbedingungen enthalten keinen Vorbehalt gegen automatisches Auslesen (§ 44b Abs. 3 UrhG, maschinenlesbar oder ausdrücklich).
+3. Der Abruf klappt mit einer normalen HTTP-Anfrage der App, ehrlich als App gekennzeichnet. Kein Captcha, keine JavaScript-Prüfung, kein Nachahmen eines Browser-Fingerabdrucks, keine unsichtbare WebView, kein Wechsel der Kennung, wenn eine Anfrage abgelehnt wird.
+4. Wird ein Markt später abgelehnt (HTTP 403, 429, Challenge-Seite), schaltet die App ihn ab und zeigt „Kaufland lässt sich gerade nicht automatisch lesen“. Es gibt keinen zweiten Versuch mit anderen Mitteln.
+
+Das ist strenger als beim Instagram-Abruf (dort rettet eine WebView den Abruf, ADR 0007): Für Angebote gibt es diesen Rückfall ausdrücklich nicht. Deshalb ist Prüfung 1 auf dem echten Handy ein Tor: Ein Markt, der dort nur mit Tricks antwortet, fällt raus. REWE fällt schon jetzt raus.
+
 Folgen für das Konzept:
 
 1. **Aldi Süd ist die beste Quelle**, nicht Aldi Nord: Filialgenau, strukturiert, mit Ersparnis. Aldi Nord bleibt bundesweit, das reicht für Rezeptvorschläge.
@@ -153,7 +164,7 @@ Neue Eingänge: Antworten von vier fremden Websites. Sie sind nicht vertrauensw�
 
 1. **Ort per Adresse oder PLZ in Einstellungen › Einkauf, benutzt wird nur die PLZ**, aufgelöst über eine mitgelieferte GeoNames-PLZ-Tabelle. Kein Geocoder, die Adresse verlässt das Handy nicht.
 2. **Händlersuche über die Filialsuchen der Märkte** (Aldi Süd über Uberall, Kaufland über `klstorebygeo`), nicht über OpenStreetMap. Gefundene Filiale wird angezeigt und ist änderbar. Overpass höchstens später und abschaltbar.
-3. **Stufe 1 mit Aldi Süd, Aldi Nord, Kaufland, Lidl.** Lidl nur „im Angebot“ ohne Preis, solange Lebensmittel dort nur als Prospektbild vorliegen. REWE weiterhin nicht.
+3. **Stufe 1 mit Aldi Süd, Aldi Nord, Kaufland, Lidl, sofern sie den Grundsatz oben erfüllen.** Keine Bot-Abwehr umgehen, kein WebView-Rückfall; wer ablehnt, wird abgeschaltet. Lidl nur „im Angebot“ ohne Preis, solange Lebensmittel dort nur als Prospektbild vorliegen. REWE nicht.
 4. **Ein Adapter je Markt mit eigenem Test und sichtbarem Zustand**, ein ausgefallener Markt stört die anderen nicht.
 5. **Jedes Gerät ruft selbst ab**, beim Öffnen, wenn älter als 3 Tage oder neue Woche, nur im WLAN. Ersetzt Empfehlung 9 der Kochbibliothek (WorkManager auf einem Android-Handy plus Abgleich).
 6. **Saisonkalender als eigene feste Tabelle** mit „Saison“ und „Lager“ (halb), etwa 50 Arten, geprüft gegen das BZfE-Poster, ohne dessen Grafik oder Tabelle zu übernehmen.
@@ -174,7 +185,7 @@ Neue Eingänge: Antworten von vier fremden Websites. Sie sind nicht vertrauensw�
 
 ## Prüfung
 
-1. **Abruf auf dem echten Handy:** Nils trägt seine PLZ ein. Abnahme: Für jeden der vier Märkte zeigt die Diagnose-Zeile mindestens 30 Lebensmittel-Angebote (Lidl: mindestens 10 Schlagwörter), Aldi Süd und Kaufland nennen eine Filiale, die er kennt.
+1. **Abruf auf dem echten Handy (Tor):** Nils trägt seine PLZ ein. Ein Markt, der mit der normalen App-Anfrage abgelehnt wird oder eine Challenge-Seite liefert, fällt raus. Abnahme für die übrigen: Für jeden der vier Märkte zeigt die Diagnose-Zeile mindestens 30 Lebensmittel-Angebote (Lidl: mindestens 10 Schlagwörter), Aldi Süd und Kaufland nennen eine Filiale, die er kennt.
 2. **Abgleich gegen eine echte Woche:** Die Angebote einer Woche (aus Prüfung 1, nur auf dem Handy, nicht im Repo) gegen 20 Rezepte der Familienbibliothek. Nils markiert jede gezählte Zuordnung als richtig oder falsch. Abnahme: höchstens 1 von 20 Zuordnungen falsch, kein verarbeitetes Produkt (Joghurt, Saft …) als frische Zutat.
 3. **Saisonkalender:** Jede Zeile der App-Tabelle gegen das BZfE-Poster; Abweichungen von mehr als einem Monat an Haupt-Erntezeiten werden korrigiert oder begründet.
 4. **Ablauf:** Vom App-Start bis „steht auf der Liste“ höchstens 3 Tipps, wenn Tag und Personenzahl passen (Karte, „Auf die Einkaufsliste“; die Vorbelegung spart den Rest).
@@ -183,7 +194,7 @@ Neue Eingänge: Antworten von vier fremden Websites. Sie sind nicht vertrauensw�
 
 - [ ] Kaufland: Wie kommt die App filialgenau an die Angebotsseite (Parameter oder Cookie)? Bis dahin IP-Zuordnung im WLAN.
 - [ ] Lidl: Welche Region gilt für welche Filiale (mehrere Prospektfassungen derselben Woche)? `lidl.py`-Ausgabe zum Vergleich.
-- [ ] `robots.txt` von `asl.api.aldi-sued.de` und Nutzungsbedingungen der vier Märkte auf einen Vorbehalt nach § 44b UrhG prüfen (offen seit 21.11.).
+- [ ] **Tor vor dem Bau jedes Adapters:** `robots.txt` von `asl.api.aldi-sued.de` und `endpoints.leaflets.schwarz` sowie die Nutzungsbedingungen der vier Märkte auf einen Vorbehalt nach § 44b UrhG prüfen. Fällt ein Markt durch, kommt er nicht in die App.
 - [ ] Bleibt Uberall als Filialquelle für Aldi Süd stabil? Rückfall: Filial-Sitemap `aldi-sued.de/sitemap_stores.xml`.
 
 ## Quellen (alle abgerufen am 27.11.2026)
