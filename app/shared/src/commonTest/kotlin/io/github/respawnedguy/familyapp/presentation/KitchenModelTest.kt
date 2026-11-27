@@ -5,6 +5,10 @@ import io.github.respawnedguy.familyapp.data.InMemoryTextStore
 import io.github.respawnedguy.familyapp.data.AiOutcome
 import io.github.respawnedguy.familyapp.data.InstagramPages
 import io.github.respawnedguy.familyapp.data.RecipeAi
+import io.github.respawnedguy.familyapp.domain.MemberKind
+import io.github.respawnedguy.familyapp.domain.contacts.ContactDraft
+import io.github.respawnedguy.familyapp.domain.contacts.ContactSource
+import io.github.respawnedguy.familyapp.domain.contacts.EntryKind
 import io.github.respawnedguy.familyapp.domain.recipe.AiRecipe
 import io.github.respawnedguy.familyapp.domain.recipe.RecipeImport
 import io.github.respawnedguy.familyapp.domain.recipe.RecipeStatus
@@ -167,13 +171,17 @@ class KitchenModelTest {
         }
         val platform = KitchenPlatform(ai) { embedPage(videoCaption) }
         m = model(platform)
+        // KT-4: the family has contacts and portfolio facts; none of it may reach the AI.
+        val mia = m.repo.addMember("Mia", MemberKind.CHILD)
+        m.repo.contactStore.add(listOf(ContactDraft("Dr. Lindner", phones = listOf("0351 123456"))), ContactSource.MANUAL, mia.id)
+        m.repo.portfolioStore.save(mia.id, null, EntryKind.SIZE, "Schuhgröße", "31")
         m.setRecipeAiKey("  sk-test  ")
         m.captureShared("https://www.instagram.com/reel/XYZ/", null)
         runCurrent()
         runCurrent()
         assertEquals(RecipeActions.ASKING_AI, messageWhileAsking)
         assertEquals(listOf("sk-test"), platform.aiKeys)
-        assertEquals(listOf(videoCaption), asked, "only the public caption goes to the AI")
+        assertEquals(listOf(videoCaption), asked, "only the public caption goes to the AI, no contact or fact (KT-4)")
         val recipe = m.repo.current.recipes.single()
         assertEquals("Abendessen", recipe.title)
         assertEquals(2, recipe.ingredients.size)

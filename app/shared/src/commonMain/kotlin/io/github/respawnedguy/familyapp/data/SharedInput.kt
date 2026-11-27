@@ -13,6 +13,18 @@ object SharedInput {
     /** An 8K photo has 33 megapixels; anything above this is a decompression bomb, not a letter. */
     const val MAX_IMAGE_PIXELS = 100_000_000L
 
+    /** Same limit as [io.github.respawnedguy.familyapp.domain.contacts.VCard.MAX_CHARS] (threat model KT-1). */
+    const val MAX_VCARD_BYTES = 1_000_000L
+
+    private val VCARD_TYPES = setOf("text/x-vcard", "text/vcard", "text/directory")
+
+    /** What the contacts app shares ("Kontakt teilen"); parameters such as `;charset=utf-8` are ignored. */
+    fun isVCard(mimeType: String?): Boolean =
+        mimeType?.trim()?.lowercase()?.substringBefore(';')?.trim() in VCARD_TYPES
+
+    /** A shared vCard file must come from another app's content provider, like an image (TE-1, KT-1). */
+    fun vcardAllowed(scheme: String?, ownProvider: Boolean): Boolean = scheme?.lowercase() == "content" && !ownProvider
+
     /** A long school mail fits easily; a shared 50 MB text would bloat every backup and sync. */
     const val MAX_TEXT_CHARS = 20_000
 

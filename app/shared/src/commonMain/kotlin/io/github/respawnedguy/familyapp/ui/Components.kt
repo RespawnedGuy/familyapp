@@ -52,6 +52,13 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt
+import io.github.respawnedguy.familyapp.domain.FamilyData
+import io.github.respawnedguy.familyapp.presentation.KitchenRoute
+import io.github.respawnedguy.familyapp.presentation.PeopleRoute
+import io.github.respawnedguy.familyapp.presentation.Tab
+import io.github.respawnedguy.familyapp.resources.Res
+import io.github.respawnedguy.familyapp.resources.common_settings
+import org.jetbrains.compose.resources.stringResource
 
 private const val DOT_INITIAL_SCALE = 0.45f
 private const val DOT_QUESTION_SCALE = 0.5f
@@ -266,4 +273,19 @@ fun SettingsGroup(title: String, content: @Composable () -> Unit) {
         )
         content()
     }
+}
+
+/** Settings, contacts and the kitchen lie over the tabs, in this order. */
+@Composable
+internal fun mainTitle(
+    settingsOpen: Boolean,
+    people: PeopleRoute?,
+    kitchen: KitchenRoute?,
+    tab: Tab,
+    data: FamilyData,
+): String = when {
+    settingsOpen -> stringResource(Res.string.common_settings)
+    people != null -> peopleTitle(people, data)
+    kitchen != null -> kitchenTitle(kitchen, data)
+    else -> stringResource(tab.label)
 }

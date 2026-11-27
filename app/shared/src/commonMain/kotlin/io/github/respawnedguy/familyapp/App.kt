@@ -78,7 +78,6 @@ import io.github.respawnedguy.familyapp.presentation.KitchenRoute
 import io.github.respawnedguy.familyapp.ui.CaptureSheet
 import io.github.respawnedguy.familyapp.ui.CookOverlay
 import io.github.respawnedguy.familyapp.ui.KitchenScreen
-import io.github.respawnedguy.familyapp.ui.kitchenTitle
 import io.github.respawnedguy.familyapp.ui.FamilyIcons
 import io.github.respawnedguy.familyapp.ui.FitLabel
 import io.github.respawnedguy.familyapp.ui.FamilyScreen
@@ -89,6 +88,8 @@ import io.github.respawnedguy.familyapp.ui.PairingOverlay
 import io.github.respawnedguy.familyapp.ui.LocalFamilyColors
 import io.github.respawnedguy.familyapp.ui.Motion
 import io.github.respawnedguy.familyapp.ui.PersonDot
+import io.github.respawnedguy.familyapp.ui.PeopleScreen
+import io.github.respawnedguy.familyapp.ui.mainTitle
 import io.github.respawnedguy.familyapp.ui.PhotoLoader
 import io.github.respawnedguy.familyapp.ui.SearchScreen
 import io.github.respawnedguy.familyapp.ui.SettingsScreen
@@ -227,16 +228,14 @@ private fun Main(
     val saveProblem by model.repo.saveProblem.collectAsState()
     val restoreCode by model.restoreCode.collectAsState()
     val kitchen by model.kitchen.route.collectAsState()
+    val people by model.people.route.collectAsState()
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
             val kitchenRoute = kitchen
+            val peopleRoute = people
             TopBar(
-                title = when {
-                    settingsOpen -> stringResource(Res.string.common_settings)
-                    kitchenRoute != null -> kitchenTitle(kitchenRoute, data)
-                    else -> stringResource(tab.label)
-                },
+                title = mainTitle(settingsOpen, peopleRoute, kitchenRoute, tab, data),
                 data = data,
                 onAvatar = { model.openSettings() },
             )
@@ -244,6 +243,8 @@ private fun Main(
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 if (settingsOpen) {
                     SettingsScreen(data, model, updates, versionName)
+                } else if (peopleRoute != null) {
+                    PeopleScreen(peopleRoute, data, model, photos, reducedMotion)
                 } else if (kitchenRoute != null) {
                     KitchenScreen(kitchenRoute, data, model)
                 } else when (tab) {

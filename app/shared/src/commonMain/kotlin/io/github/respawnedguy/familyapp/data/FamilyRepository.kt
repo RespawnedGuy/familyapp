@@ -19,6 +19,9 @@ import io.github.respawnedguy.familyapp.domain.Settings
 import io.github.respawnedguy.familyapp.domain.Source
 import io.github.respawnedguy.familyapp.domain.Stamp
 import io.github.respawnedguy.familyapp.domain.Tombstone
+import io.github.respawnedguy.familyapp.domain.contacts.Contact
+import io.github.respawnedguy.familyapp.domain.contacts.ContactLink
+import io.github.respawnedguy.familyapp.domain.contacts.PortfolioEntry
 import io.github.respawnedguy.familyapp.domain.recipe.Recipe
 import io.github.respawnedguy.familyapp.domain.recipe.ShoppingEntry
 import io.github.respawnedguy.familyapp.domain.readyToConfirm
@@ -44,6 +47,14 @@ class Undo internal constructor(
     internal val wholeBefore: FamilyData? = null,
     internal val recipesBefore: Map<String, Recipe?> = emptyMap(),
     internal val shoppingBefore: Map<String, ShoppingEntry?> = emptyMap(),
+    internal val people: PeopleBefore = PeopleBefore(),
+)
+
+/** Contacts, links and portfolio facts an action touched (docs/kontakte-und-portfolio.md). */
+class PeopleBefore internal constructor(
+    internal val contacts: Map<String, Contact?> = emptyMap(),
+    internal val links: Map<String, ContactLink?> = emptyMap(),
+    internal val entries: Map<String, PortfolioEntry?> = emptyMap(),
 )
 
 /** Result of restoring a backup: an error text, or the undo handle plus a note for the person. */
@@ -130,6 +141,10 @@ class FamilyRepository(
     val recipeStore: RecipeRepository by lazy { RecipeRepository(this) }
     val shoppingStore: ShoppingRepository by lazy { ShoppingRepository(this) }
 
+    /** Shared contacts and the portfolio per person (docs/kontakte-und-portfolio.md). */
+    val contactStore: ContactRepository by lazy { ContactRepository(this) }
+    val portfolioStore: PortfolioRepository by lazy { PortfolioRepository(this) }
+
     internal fun edit(change: (FamilyData) -> FamilyData) = update(change)
 
     internal fun tick(): Stamp = clock.tick()
@@ -164,11 +179,16 @@ class FamilyRepository(
         }
     }
 
-    /** Removes a member; their open items go back to the inbox so nothing silently disappears. */
+    /**
+     * Removes a member; their open items go back to the inbox so nothing silently disappears.
+     * Their contact links and portfolio facts go with them; the contacts themselves stay.
+     */
     fun removeMember(id: String): Undo? {
         if (id == current.selfId) return null
         val before = current
         val touched = before.items.filter { it.assignee == id || it.concerns == id }
+        val links = before.contactLinks.filter { it.memberId == id && !it.deleted }
+        val entries = before.portfolio.filter { it.memberId == id && !it.deleted }
         update { d ->
             d.copy(
                 members = d.members.filterNot { it.id == id },
@@ -184,9 +204,20 @@ class FamilyRepository(
                         stamp = clock.tick(),
                     )
                 },
+                contactLinks = d.contactLinks.map { l ->
+                    if (l in links) l.copy(deleted = true, changedBy = d.selfId, stamp = clock.tick()) else l
+                },
+                portfolio = d.portfolio.map { e ->
+                    if (e !in entries) e
+                    else PortfolioRepository.emptied(e).copy(changedBy = d.selfId, stamp = clock.tick())
+                },
             )
         }
-        return Undo(touched.associate { it.id to it }, mapOf(id to before.member(id)))
+        return Undo(
+            touched.associate { it.id to it },
+            mapOf(id to before.member(id)),
+            people = PeopleBefore(links = links.associateBy { it.id }, entries = entries.associateBy { it.id }),
+        )
     }
 
     // ---- Capture -------------------------------------------------------------------------------
@@ -279,6 +310,26 @@ class FamilyRepository(
             .confirmedIfReady()
     }
 
+    /**
+     * "Alles von Nils übernehmen" in the portfolio (concept E6): every open item [memberId] takes care
+     * of now has this device's person as "kümmert sich". Visible to all, one undo for all of them.
+     * Returns how many moved and the undo handle.
+     */
+    fun takeOverAll(memberId: String): Pair<Int, Undo> {
+        val me = current.selfId
+        val moved = if (me == null || memberId == me) emptyList()
+        else current.items.filter { it.status == ItemStatus.OPEN && it.assignee == memberId }
+        if (me == null || moved.isEmpty()) return 0 to Undo(emptyMap())
+        val ids = moved.map { it.id }.toSet()
+        update { d ->
+            d.copy(items = d.items.map {
+                if (it.id !in ids) it
+                else it.copy(assignee = me, assigneeOrigin = Origin.PERSON, changedBy = me, stamp = clock.tick())
+            })
+        }
+        return moved.size to Undo(moved.associateBy { it.id })
+    }
+
     fun rename(id: String, title: String): Undo = change(id) { it.copy(title = title.trim().ifEmpty { it.title }) }
 
     /** Puts a finished or dismissed item back to the inbox. */
@@ -323,6 +374,15 @@ class FamilyRepository(
                 tombstones = d.tombstones.filterNot { it.id in revived },
                 recipes = recipeStore.revert(d.recipes, undo.recipesBefore),
                 shopping = shoppingStore.revert(d.shopping, undo.shoppingBefore),
+                contacts = revertRecords(d.contacts, undo.people.contacts, Contact::id) { c, stamp ->
+                    c?.copy(stamp = stamp)
+                },
+                contactLinks = revertRecords(d.contactLinks, undo.people.links, ContactLink::id) { l, stamp ->
+                    l?.copy(stamp = stamp)
+                },
+                portfolio = revertRecords(d.portfolio, undo.people.entries, PortfolioEntry::id) { e, stamp ->
+                    e?.copy(stamp = stamp)
+                },
             )
         }
     }
@@ -341,6 +401,35 @@ class FamilyRepository(
                 settings = before.settings.copy(backupFolder = it.settings.backupFolder, latency = it.settings.latency),
             )
         }
+    }
+
+    /**
+     * Undo for records that delete themselves: the version from before comes back with a new stamp
+     * (so sync agrees); a record that did not exist before is deleted again via [deletedCopy] on the
+     * current version. [restamped] returns the old version with the given stamp.
+     */
+    private fun <T> revertRecords(
+        current: List<T>,
+        before: Map<String, T?>,
+        id: (T) -> String,
+        restamped: (T?, Stamp) -> T?,
+    ): List<T> {
+        if (before.isEmpty()) return current
+        return current.map { r ->
+            if (id(r) !in before) {
+                r
+            } else {
+                restamped(before[id(r)], clock.tick()) ?: deletedCopy(r, clock.tick())
+            }
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> deletedCopy(record: T, stamp: Stamp): T = when (record) {
+        is Contact -> ContactRepository.emptied(record).copy(stamp = stamp) as T
+        is ContactLink -> record.copy(deleted = true, stamp = stamp) as T
+        is PortfolioEntry -> PortfolioRepository.emptied(record).copy(stamp = stamp) as T
+        else -> record
     }
 
     private fun Item.inboxTapsPlus(n: Int) = if (status == ItemStatus.INBOX) inboxTaps + n else inboxTaps
@@ -442,7 +531,8 @@ class FamilyRepository(
 
     private fun allStamps(d: FamilyData): List<Stamp> =
         d.members.map { it.stamp } + d.items.map { it.stamp } + d.tombstones.map { it.stamp } +
-            d.recipes.map { it.stamp } + d.shopping.map { it.stamp }
+            d.recipes.map { it.stamp } + d.shopping.map { it.stamp } + d.contacts.map { it.stamp } +
+            d.contactLinks.map { it.stamp } + d.portfolio.map { it.stamp }
 
     // ---- Sync between family devices (ADR 0003, ADR 0006) ---------------------------------------
 
@@ -482,6 +572,9 @@ class FamilyRepository(
         records.tombstones.forEach { clock.observe(it.stamp) }
         records.recipes.forEach { clock.observe(it.stamp) }
         records.shopping.forEach { clock.observe(it.stamp) }
+        records.contacts.forEach { clock.observe(it.stamp) }
+        records.contactLinks.forEach { clock.observe(it.stamp) }
+        records.portfolio.forEach { clock.observe(it.stamp) }
     }
 
     companion object {

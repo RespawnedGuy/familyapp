@@ -74,6 +74,12 @@ class AppModel(
     /** Kitchen library: recipes, cooking mode, shopping list (docs/kochbibliothek.md). */
     val kitchen = KitchenModel(repo, platform, Background(scope, io)) { message, undo -> show(message, undo) }
 
+    /** Shared contacts and the portfolio per person (docs/kontakte-und-portfolio.md). */
+    val people = PeopleModel(repo, platform, { message, undo -> show(message, undo) }) {
+        _settingsOpen.value = false
+        kitchen.close()
+    }
+
     /** Pending latency measurement: which trigger, started when (monotonic ms). */
     private var latencyStart: Pair<String, Long>? = null
 
@@ -91,18 +97,21 @@ class AppModel(
     fun select(tab: Tab) {
         _settingsOpen.value = false
         kitchen.close()
+        people.close()
         _tab.value = tab
     }
 
     fun openSettings() {
         kitchen.close()
+        people.close()
         _settingsOpen.value = true
     }
 
-    /** System back: sheet, then settings, then the kitchen, then back to "Heute". False means: leave the app. */
+    /** System back: sheet, settings, contacts and portfolios, the kitchen, then "Heute". False means: leave the app. */
     fun handleBack(): Boolean = when {
         _capture.value != CaptureState.Closed -> { dismissCapture(); true }
         _settingsOpen.value -> { _settingsOpen.value = false; true }
+        people.back() -> true
         kitchen.back() -> true
         _tab.value != Tab.TODAY -> { _tab.value = Tab.TODAY; true }
         else -> false
@@ -321,6 +330,17 @@ class AppModel(
                 save(text.orEmpty(), Source.SHARE, photoPath, message)
             }
         }
+    }
+
+    /**
+     * A contact shared from the phone's contacts app (vCard, threat model KT-1). Null: the file was
+     * refused or unreadable, which is said out loud instead of failing silently.
+     */
+    fun captureSharedContact(vcard: String?) {
+        if (repo.current.selfId == null) return
+        _tab.value = Tab.FAMILY
+        if (vcard == null) show("Kontakt nicht übernommen: Die Datei ließ sich nicht lesen oder ist größer als 1 MB.")
+        else people.contacts.importVCard(vcard)
     }
 
     /** Only plain text can be a recipe; a shared image always stays a capture with its photo. */

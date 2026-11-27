@@ -76,5 +76,13 @@ grep -q "dataExtractionRules" <<<"$XMLTREE" \
   && pass "Regeln gegen Kopie auf ein neues Handy (dataExtractionRules)" || fail "dataExtractionRules fehlen"
 
 echo
+echo "== Kontakte ohne Adressbuch-Berechtigung (Bedrohungsmodell KT-2, KT-3)"
+for PERM in READ_CONTACTS WRITE_CONTACTS CALL_PHONE; do
+  grep -q "uses-permission: name='android.permission.$PERM'" <<<"$BADGING" \
+    && fail "Berechtigung $PERM im Manifest (Kontakte nur über Systemauswahl und Teilen)" \
+    || pass "keine Berechtigung $PERM"
+done
+
+echo
 [ $FAILED -eq 0 ] && echo "ERGEBNIS: alle Prüfungen bestanden" || echo "ERGEBNIS: mindestens eine Prüfung fehlgeschlagen"
 exit $FAILED
