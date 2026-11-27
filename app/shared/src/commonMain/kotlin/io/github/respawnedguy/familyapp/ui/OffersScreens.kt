@@ -38,6 +38,7 @@ import io.github.respawnedguy.familyapp.domain.recipe.MealPlan
 import io.github.respawnedguy.familyapp.domain.recipe.PlannedMeal
 import io.github.respawnedguy.familyapp.domain.recipe.RecipeViews
 import io.github.respawnedguy.familyapp.presentation.AppModel
+import io.github.respawnedguy.familyapp.presentation.FamilySection
 import io.github.respawnedguy.familyapp.presentation.PlanSheet
 import io.github.respawnedguy.familyapp.resources.Res
 import io.github.respawnedguy.familyapp.resources.common_cancel
@@ -61,46 +62,79 @@ import io.github.respawnedguy.familyapp.resources.offers_plan_open_recipe
 import io.github.respawnedguy.familyapp.resources.offers_plan_remove
 import io.github.respawnedguy.familyapp.resources.offers_plan_when
 import io.github.respawnedguy.familyapp.resources.offers_set_place
+import io.github.respawnedguy.familyapp.resources.offers_suggested_empty
+import io.github.respawnedguy.familyapp.resources.offers_suggested_title
+import io.github.respawnedguy.familyapp.resources.today_meals_more
 import io.github.respawnedguy.familyapp.resources.offers_today_meal
 import io.github.respawnedguy.familyapp.resources.offers_upcoming_title
 import org.jetbrains.compose.resources.stringResource
 
 /*
- * Offers, season and meal plan (docs/angebote-und-vorschlaege.md): the card under "Heute", the plan
- * under "Demnächst", the sheet "Wann? / Für wie viele?" and Einstellungen › Einkauf. Texts come from
- * the model (reasons, market lines) or from strings.xml; nothing here decides anything.
+ * Offers, season and meal plan (docs/angebote-und-vorschlaege.md): today's dish under "Heute", the
+ * suggestions above the shopping list (Familie › Einkauf), the plan under "Demnächst", the sheet
+ * "Wann? / Für wie viele?" and Einstellungen › Einkauf. Texts come from the model (reasons, market
+ * lines) or from strings.xml; nothing here decides anything.
  */
 
 /**
- * "Essen diese Woche" under Heute: today's planned dishes, then up to five recipe cards with their
- * reasons, then produce in season and on offer while the library is small. Shown only when there is
- * something to show; it never notifies (premise of 26.11.2026).
+ * Under Heute: today's planned dishes and one line to the suggestions above the shopping list.
+ * Shown only when there is something to show; it never notifies (premise of 26.11.2026).
  */
 @Composable
-internal fun MealsCard(data: FamilyData, model: AppModel) {
+internal fun TodayMealsCard(data: FamilyData, model: AppModel) {
     val c = LocalFamilyColors.current
-    // Offers change the cards, so they are read here and the card recomposes when they arrive.
+    // Offers change the count, so they are read here and the card recomposes when they arrive.
     val cache by model.offers.cache.collectAsState()
-    val today = model.today()
-    val planned = MealPlan.today(data.meals, today)
-    val recipes = model.offers.suggestions.recipes(data, cache)
-    val produce = model.offers.suggestions.ingredients(data, cache)
-    if (planned.isEmpty() && recipes.isEmpty() && produce.isEmpty()) return
+    val planned = MealPlan.today(data.meals, model.today())
+    val suggestions = model.offers.suggestions.recipes(data, cache).size
+    if (planned.isEmpty() && suggestions == 0) return
     Column(
         Modifier.fillMaxWidth().padding(top = 12.dp).clip(RoundedCornerShape(16.dp)).background(c.card).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(
             stringResource(Res.string.offers_meals_title), Modifier.semantics { heading() },
             fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.text,
         )
         planned.forEach { meal -> TodayMealRow(meal, data, model) }
+        if (suggestions > 0) {
+            TextButton(
+                onClick = { model.openSection(FamilySection.SHOPPING) },
+                modifier = Modifier.heightIn(min = 48.dp),
+            ) { Text(stringResource(Res.string.today_meals_more, suggestions)) }
+        }
+    }
+}
+
+/**
+ * "Vorgeschlagene Rezepte" on top of Familie › Einkauf: up to five recipe cards with their reasons,
+ * then produce in season and on offer while the library is small. When there is nothing to suggest
+ * it says where suggestions come from instead of leaving a gap.
+ */
+@Composable
+internal fun MealsCard(data: FamilyData, model: AppModel) {
+    val c = LocalFamilyColors.current
+    // Offers change the cards, so they are read here and the card recomposes when they arrive.
+    val cache by model.offers.cache.collectAsState()
+    val recipes = model.offers.suggestions.recipes(data, cache)
+    val produce = model.offers.suggestions.ingredients(data, cache)
+    Column(
+        Modifier.fillMaxWidth().padding(top = 12.dp).clip(RoundedCornerShape(16.dp)).background(c.card).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(
+            stringResource(Res.string.offers_suggested_title), Modifier.semantics { heading() },
+            fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.text,
+        )
+        if (recipes.isEmpty() && produce.isEmpty()) {
+            Text(stringResource(Res.string.offers_suggested_empty), fontSize = 14.sp, color = c.textSecondary)
+        }
         recipes.forEach { RecipeSuggestionRow(it, model) }
         if (produce.isNotEmpty()) {
             Text(stringResource(Res.string.offers_ingredients_title), fontSize = 14.sp, color = c.textSecondary)
             produce.forEach { IngredientRow(it, model) }
         }
-        if (data.place == null && recipes.isNotEmpty()) {
+        if (data.place == null) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     stringResource(Res.string.offers_no_place), Modifier.weight(1f),

@@ -24,13 +24,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -53,13 +51,11 @@ import io.github.respawnedguy.familyapp.resources.contact_field_organization
 import io.github.respawnedguy.familyapp.resources.contact_field_phones
 import io.github.respawnedguy.familyapp.resources.contact_new_title
 import io.github.respawnedguy.familyapp.resources.contacts_empty
-import io.github.respawnedguy.familyapp.resources.contacts_entry_counts
 import io.github.respawnedguy.familyapp.resources.contacts_from_phone
 import io.github.respawnedguy.familyapp.resources.contacts_general
 import io.github.respawnedguy.familyapp.resources.contacts_hint
 import io.github.respawnedguy.familyapp.resources.contacts_new
 import io.github.respawnedguy.familyapp.resources.contacts_nothing_found
-import io.github.respawnedguy.familyapp.resources.contacts_open
 import io.github.respawnedguy.familyapp.resources.contacts_search_placeholder
 import io.github.respawnedguy.familyapp.resources.contacts_title
 import io.github.respawnedguy.familyapp.resources.people_save
@@ -70,32 +66,11 @@ internal val PeoplePadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.d
 /** People shown as dots next to a contact in the list; more would crowd out the name. */
 private const val MAX_DOTS = 4
 
-/** Entry under "Familie", like the kitchen library: no own tab (navigation D1 has five places). */
-@Composable
-fun ContactsEntryCard(data: FamilyData, model: AppModel) {
-    val c = LocalFamilyColors.current
-    Column(
-        Modifier.fillMaxWidth().padding(top = 12.dp).clip(RoundedCornerShape(16.dp)).background(c.card).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(
-            stringResource(Res.string.contacts_title), Modifier.semantics { heading() },
-            fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.text,
-        )
-        Text(
-            stringResource(Res.string.contacts_entry_counts, ContactViews.contacts(data).size),
-            fontSize = 14.sp, color = c.textSecondary,
-        )
-        OutlinedButton(onClick = { model.people.openContacts() }) { Text(stringResource(Res.string.contacts_open)) }
-    }
-}
-
 /** Title for the top bar while contacts or a portfolio are open. */
 @Composable
 fun peopleTitle(route: PeopleRoute, data: FamilyData): String {
     val contacts = stringResource(Res.string.contacts_title)
     return when (route) {
-        PeopleRoute.Contacts -> contacts
         is PeopleRoute.Contact -> ContactViews.contact(data, route.id)?.name ?: contacts
         is PeopleRoute.EditContact ->
             stringResource(if (route.id == null) Res.string.contact_new_title else Res.string.contact_edit_title)
@@ -107,7 +82,6 @@ fun peopleTitle(route: PeopleRoute, data: FamilyData): String {
 @Composable
 fun PeopleScreen(route: PeopleRoute, data: FamilyData, model: AppModel, photos: PhotoLoader?, reducedMotion: Boolean) {
     when (route) {
-        PeopleRoute.Contacts -> ContactListScreen(data, model)
         is PeopleRoute.Contact -> {
             val contact = ContactViews.contact(data, route.id)
             if (contact == null) ContactListScreen(data, model) else ContactScreen(contact, data, model)
@@ -150,8 +124,9 @@ private fun AddContactButtons(model: AppModel, memberId: String?) {
     }
 }
 
+/** Tab "Kontakte" under Familie: the family's shared contacts with search and the two ways to add. */
 @Composable
-private fun ContactListScreen(data: FamilyData, model: AppModel) {
+internal fun ContactListScreen(data: FamilyData, model: AppModel) {
     val c = LocalFamilyColors.current
     var query by remember { mutableStateOf("") }
     val all = ContactViews.contacts(data)

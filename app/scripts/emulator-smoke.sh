@@ -93,7 +93,16 @@ wait_text "Alles sortiert.*" 15 && pass "leerer Eingang zeigt \"Alles sortiert\"
 tap_text "Erfassen" 10 && pass "Erfassen geöffnet" || fail "Erfassen-Knopf fehlt"
 tap_text "Tippen" 15 && pass "Wechsel zu Tippen im Erfassen-Blatt" || fail "\"Tippen\" im Erfassen-Blatt fehlt"
 # The Android 8 keyboard autocorrects "bis" to "bus" after the space; the title check allows that.
-sleep 2; adb shell input text "Hausschuhe%sbis%sDonnerstag"; sleep 1
+# On API 36 the first key events can get lost while the keyboard is still opening (seen 27.11.2026:
+# only "Rstag" arrived). The field is checked before saving; a cut-off text is cleared and typed once more.
+for attempt in 1 2; do
+  sleep 2; adb shell input text "Hausschuhe%sbis%sDonnerstag"; sleep 1
+  if dump && grep -qE 'text="Hausschuhe b.s Donnerstag' "$OUT/ui.xml"; then break; fi
+  [ $attempt -eq 1 ] || break
+  echo "Hinweis: getippter Text kam unvollständig an, Feld wird geleert und neu getippt"
+  adb shell input keyevent KEYCODE_MOVE_END
+  adb shell input keyevent $(for _ in $(seq 40); do printf 'KEYCODE_DEL '; done)
+done
 adb shell input keyevent 66; sleep 2
 if dump && python3 "$HERE/ui-tap.py" "$OUT/ui.xml" "Speichern" "$PKG" >/dev/null; then tap_text "Speichern" 5; fi
 wait_text "Hausschuhe b.s Donnerstag.*" 10 && pass "Eintrag liegt im Eingang" || fail "Eintrag nicht im Eingang"

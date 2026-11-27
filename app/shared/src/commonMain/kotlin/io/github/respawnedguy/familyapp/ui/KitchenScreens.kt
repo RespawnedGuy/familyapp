@@ -16,21 +16,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -40,7 +38,6 @@ import io.github.respawnedguy.familyapp.domain.FamilyData
 import io.github.respawnedguy.familyapp.domain.recipe.Recipe
 import io.github.respawnedguy.familyapp.domain.recipe.RecipeStatus
 import io.github.respawnedguy.familyapp.domain.recipe.RecipeViews
-import io.github.respawnedguy.familyapp.domain.recipe.ShoppingList
 import io.github.respawnedguy.familyapp.presentation.AppModel
 import io.github.respawnedguy.familyapp.presentation.KitchenRoute
 import io.github.respawnedguy.familyapp.resources.Res
@@ -48,16 +45,12 @@ import io.github.respawnedguy.familyapp.resources.kitchen_add_recipe
 import io.github.respawnedguy.familyapp.resources.kitchen_cooked_on
 import io.github.respawnedguy.familyapp.resources.kitchen_edit_title
 import io.github.respawnedguy.familyapp.resources.kitchen_empty
-import io.github.respawnedguy.familyapp.resources.kitchen_entry_counts
-import io.github.respawnedguy.familyapp.resources.kitchen_entry_suggestions
 import io.github.respawnedguy.familyapp.resources.kitchen_ingredient_count
 import io.github.respawnedguy.familyapp.resources.kitchen_minutes
 import io.github.respawnedguy.familyapp.resources.kitchen_needs_text
 import io.github.respawnedguy.familyapp.resources.kitchen_new_title
 import io.github.respawnedguy.familyapp.resources.kitchen_nothing_found
-import io.github.respawnedguy.familyapp.resources.kitchen_open_recipes
 import io.github.respawnedguy.familyapp.resources.kitchen_search_placeholder
-import io.github.respawnedguy.familyapp.resources.kitchen_shopping_title
 import io.github.respawnedguy.familyapp.resources.kitchen_suggestion
 import io.github.respawnedguy.familyapp.resources.kitchen_title
 import kotlinx.coroutines.Dispatchers
@@ -66,58 +59,12 @@ import org.jetbrains.compose.resources.stringResource
 
 internal val KitchenPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp)
 
-/**
- * Entry under "Familie" (concept: no own tab, the library is a part of the family screen):
- * counts, waiting suggestions, and the two ways in.
- */
-@Composable
-fun KitchenEntryCard(data: FamilyData, model: AppModel) {
-    val c = LocalFamilyColors.current
-    val recipes = RecipeViews.library(data.recipes)
-    val suggestions = recipes.count { it.status == RecipeStatus.SUGGESTED }
-    val toBuy = ShoppingList.view(data.shopping).let { it.open.size + it.ask.size }
-    Column(
-        Modifier.fillMaxWidth().padding(top = 12.dp).clip(RoundedCornerShape(16.dp)).background(c.card).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(
-            stringResource(Res.string.kitchen_title), Modifier.semantics { heading() },
-            fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.text,
-        )
-        Text(
-            stringResource(Res.string.kitchen_entry_counts, recipes.size, toBuy),
-            fontSize = 14.sp, color = c.textSecondary,
-        )
-        if (suggestions > 0) {
-            Text(stringResource(Res.string.kitchen_entry_suggestions, suggestions), fontSize = 13.sp, color = c.accent)
-        }
-        val recipesButton: @Composable () -> Unit = {
-            OutlinedButton(onClick = { model.kitchen.openLibrary() }) {
-                Text(stringResource(Res.string.kitchen_open_recipes))
-            }
-        }
-        val shoppingButton: @Composable () -> Unit = {
-            OutlinedButton(onClick = { model.kitchen.openShopping() }) {
-                Text(stringResource(Res.string.kitchen_shopping_title))
-            }
-        }
-        // At large font sizes the two buttons do not fit side by side on narrow phones (P1-4).
-        if (largeFont()) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) { recipesButton(); shoppingButton() }
-        } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { recipesButton(); shoppingButton() }
-        }
-    }
-}
-
 /** Title for the top bar while the kitchen is open. */
 @Composable
 fun kitchenTitle(route: KitchenRoute, data: FamilyData): String {
     val library = stringResource(Res.string.kitchen_title)
     fun titleOf(id: String) = data.recipes.firstOrNull { it.id == id }?.title ?: library
     return when (route) {
-        KitchenRoute.Library -> library
-        KitchenRoute.Shopping -> stringResource(Res.string.kitchen_shopping_title)
         is KitchenRoute.Edit ->
             stringResource(if (route.id == null) Res.string.kitchen_new_title else Res.string.kitchen_edit_title)
         is KitchenRoute.Detail -> titleOf(route.id)
@@ -129,8 +76,6 @@ fun kitchenTitle(route: KitchenRoute, data: FamilyData): String {
 @Composable
 fun KitchenScreen(route: KitchenRoute, data: FamilyData, model: AppModel, photos: PhotoLoader?) {
     when (route) {
-        KitchenRoute.Library -> LibraryScreen(data, model, photos)
-        KitchenRoute.Shopping -> ShoppingScreen(data, model)
         is KitchenRoute.Edit -> {
             val recipe = route.id?.let { id -> data.recipes.firstOrNull { it.id == id && !it.deleted } }
             if (recipe == null) NewRecipeScreen(model) else EditRecipeScreen(recipe, model, photos)
@@ -147,8 +92,9 @@ private fun RecipeOrLibrary(id: String, data: FamilyData, model: AppModel, photo
     if (recipe == null) LibraryScreen(data, model, photos) else RecipeScreen(recipe, model, photos)
 }
 
+/** Tab "Rezepte" under Familie: search, new recipe, the whole library (suggestions marked). */
 @Composable
-private fun LibraryScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?) {
+internal fun LibraryScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?) {
     var query by remember { mutableStateOf("") }
     val all = RecipeViews.library(data.recipes)
     val shown = RecipeViews.library(data.recipes, query)

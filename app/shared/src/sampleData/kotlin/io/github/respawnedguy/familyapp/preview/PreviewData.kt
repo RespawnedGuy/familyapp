@@ -6,6 +6,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import io.github.respawnedguy.familyapp.data.FamilyJson
 import io.github.respawnedguy.familyapp.data.FamilyRepository
 import io.github.respawnedguy.familyapp.data.InMemoryTextStore
+import io.github.respawnedguy.familyapp.data.TextStore
+import io.github.respawnedguy.familyapp.data.offers.MarketSnapshot
+import io.github.respawnedguy.familyapp.data.offers.MarketStatus
+import io.github.respawnedguy.familyapp.data.offers.OfferCache
+import io.github.respawnedguy.familyapp.domain.offers.Chain
+import io.github.respawnedguy.familyapp.domain.offers.Offer
+import io.github.respawnedguy.familyapp.domain.offers.ShoppingPlace
+import io.github.respawnedguy.familyapp.domain.recipe.Ingredient
+import io.github.respawnedguy.familyapp.domain.recipe.Recipe
+import io.github.respawnedguy.familyapp.domain.recipe.RecipeStatus
+import io.github.respawnedguy.familyapp.domain.recipe.ShoppingEntry
 import io.github.respawnedguy.familyapp.domain.FamilyData
 import io.github.respawnedguy.familyapp.domain.Item
 import io.github.respawnedguy.familyapp.domain.ItemStatus
@@ -103,10 +114,60 @@ object PreviewData {
     val noDate = open("i-zahnarzt", "Zahnarzttermin vereinbaren", nils, null)
     val soon = open("i-geschenk", "Geschenk für Pauls Geburtstag", nils, LocalDate(2026, 11, 28), concerns = mia)
 
+    /** Two recipes, one of them with produce on offer below, so Familie › Einkauf shows a suggestion. */
+    val recipes = listOf(
+        recipe("r-kuerbis", "Kürbissuppe", "1 Hokkaido Kürbis", "2 Zwiebeln", "1 l Gemüsebrühe"),
+        recipe("r-ofengemuese", "Ofengemüse mit Feta", "500 g Kartoffeln", "2 Paprika", "200 g Feta"),
+    )
+
+    private fun recipe(id: String, title: String, vararg lines: String) = Recipe(
+        id = id,
+        title = title,
+        servings = 4.0,
+        ingredients = lines.map { line -> Ingredient(text = line, name = line.substringAfterLast(' ')) },
+        status = RecipeStatus.CONFIRMED,
+        createdMs = NOW_MS - 30 * DAY,
+        createdBy = lisa.id,
+        stamp = stamp,
+    )
+
+    private fun entry(id: String, name: String) =
+        ShoppingEntry(id = id, name = name, createdMs = NOW_MS - HOUR, createdBy = nils.id, stamp = stamp)
+
+    /** A city-centre postcode (never a real family address, see threat model). */
+    val place = ShoppingPlace(
+        label = "10115 Berlin",
+        postcode = "10115",
+        chains = listOf(Chain.ALDI_NORD.name, Chain.KAUFLAND.name, Chain.LIDL.name),
+        stamp = stamp,
+    )
+
+    /** Offers as this phone would keep them (invented, written after the pattern of real leaflets). */
+    val offers = OfferCache(
+        listOf(
+            MarketSnapshot(
+                Chain.ALDI_NORD, NOW_MS - HOUR, today, MarketStatus.OK,
+                listOf(
+                    Offer(Chain.ALDI_NORD, "Hokkaido Kürbis, Stück", 129, 179, 28, validUntil = LocalDate(2026, 11, 28)),
+                    Offer(Chain.ALDI_NORD, "Speisezwiebeln 2 kg", 149, validUntil = LocalDate(2026, 11, 28)),
+                    Offer(Chain.ALDI_NORD, "Clementinen 1,5 kg", 249, 299, 17, validFrom = LocalDate(2026, 11, 30)),
+                ),
+            ),
+            MarketSnapshot(
+                Chain.KAUFLAND, NOW_MS - HOUR, today, MarketStatus.OK,
+                listOf(Offer(Chain.KAUFLAND, "Deutsches Rinderhackfleisch 500 g", 399, 499, 20)),
+            ),
+            MarketSnapshot(Chain.LIDL, NOW_MS - HOUR, today, MarketStatus.OK, listOf(Offer(Chain.LIDL, "Grünkohl"))),
+        ),
+    )
+
     fun family(): FamilyData = FamilyData(
         deviceId = "preview",
         selfId = nils.id,
         members = listOf(nils, lisa, mia, oma),
+        recipes = recipes,
+        shopping = listOf(entry("s-milch", "Milch"), entry("s-brot", "Brot")),
+        places = listOf(place),
         items = listOf(
             inboxSuggested, inboxEmpty, inboxShared,
             overdue, noDate, soon,
@@ -139,6 +200,7 @@ object PreviewData {
 /** Platform stub: no microphone, no camera, no folders. Buttons that need them simply do nothing. */
 private object PreviewPlatform : PlatformServices {
     override val speech: SpeechInput? = null
+    override val offerStore: TextStore = InMemoryTextStore().also { OfferCache.save(it, PreviewData.offers) }
     override fun elapsedMs(): Long = 0
     override fun reducedMotion(): Boolean = true
     override fun takePhoto(onResult: (String?) -> Unit) = onResult(null)

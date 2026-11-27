@@ -17,6 +17,8 @@ import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import io.github.respawnedguy.familyapp.domain.ItemStatus
 import io.github.respawnedguy.familyapp.presentation.AppModel
+import io.github.respawnedguy.familyapp.presentation.FamilySection
+import io.github.respawnedguy.familyapp.presentation.Tab
 import io.github.respawnedguy.familyapp.preview.rememberPreviewModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -79,6 +81,45 @@ class AccessibilityTest {
         runOnIdle { model.openSettings() }
         waitForIdle()
         assertEquals(emptyList(), smallTouchTargets())
+    }
+
+    /** Every tab under Familie (Nils, 27.11.2026) with the sample family, offers and recipes. */
+    @Test
+    fun touchTargetsOnEveryFamilyTabAreLargeEnough() = tallPhone {
+        val model = showApp()
+        FamilySection.entries.forEach { section ->
+            runOnIdle { model.openSection(section) }
+            waitForIdle()
+            assertEquals(emptyList(), smallTouchTargets(), "tab $section")
+        }
+    }
+
+    @Test
+    fun familyTabsAnnounceWhichOneIsSelected() = runComposeUiTest {
+        val model = showApp()
+        runOnIdle { model.select(Tab.FAMILY) }
+        waitForIdle()
+        onAllNodes(isSelectable() and isSelected() and hasText("Aufgaben")).assertCountEquals(1)
+        onAllNodes(isSelectable() and hasText("Einkauf")).assertCountEquals(1)
+        runOnIdle { model.openSection(FamilySection.SHOPPING) }
+        waitForIdle()
+        onAllNodes(isSelectable() and isSelected() and hasText("Einkauf")).assertCountEquals(1)
+        onAllNodes(isSelectable() and isSelected() and hasText("Aufgaben")).assertCountEquals(0)
+    }
+
+    @Test
+    fun shoppingTabShowsSuggestionsListAndOffersInThatOrder() = tallPhone {
+        val model = showApp()
+        runOnIdle { model.openSection(FamilySection.SHOPPING) }
+        waitForIdle()
+        fun top(text: String) = onAllNodes(hasText(text), useUnmergedTree = true).fetchSemanticsNodes()
+            .also { assertTrue(it.isNotEmpty(), "„$text“ is shown") }.first().boundsInRoot.top
+        val suggestions = top("Vorgeschlagene Rezepte")
+        val list = top("Einkaufsliste")
+        val offers = top("Angebote in der Nähe")
+        assertTrue(suggestions < list && list < offers, "suggestions, then the list, then the offers")
+        top("Hokkaido Kürbis, Stück")
+        top("Grünkohl")
     }
 
     @Test

@@ -4,11 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -54,40 +53,41 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * The family's shared shopping list (docs/kochbibliothek.md "Einkaufsliste"): typed or from
  * recipes, same ingredients added up, basics as "Hast du noch …?", ticked lines move down.
+ * Items of the tab Familie › Einkauf, between the meal suggestions and the offers.
  */
-@Composable
-internal fun ShoppingScreen(data: FamilyData, model: AppModel) {
+internal fun LazyListScope.shoppingListItems(data: FamilyData, model: AppModel) {
     val view = ShoppingList.view(data.shopping)
     val titles = data.recipes.associate { it.id to it.title }
     val shopping = model.kitchen.shopping
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding = KitchenPadding,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        item { AddEntryField { shopping.addTyped(it) } }
-        if (view.isEmpty) item { EmptyNote(stringResource(Res.string.kitchen_shopping_empty)) }
-        if (view.open.isNotEmpty()) {
-            item { SectionHeader(stringResource(Res.string.kitchen_shopping_title), view.open.size) }
+    item {
+        SectionHeader(stringResource(Res.string.kitchen_shopping_title), view.open.size)
+    }
+    item { AddEntryField { shopping.addTyped(it) } }
+    if (view.isEmpty) item { EmptyNote(stringResource(Res.string.kitchen_shopping_empty)) }
+    items(view.open, key = { "o-${it.key}" }) { line ->
+        EntryRow(line, titles, Modifier.padding(top = 6.dp)) { shopping.toggle(line) }
+    }
+    if (view.ask.isNotEmpty()) {
+        item { SectionHeader(stringResource(Res.string.kitchen_shopping_ask_title), view.ask.size) }
+    }
+    items(view.ask, key = { "a-${it.key}" }) { line ->
+        AskRow(line, onNeed = { shopping.needIt(line) }, onRemove = { shopping.remove(line) })
+    }
+    if (view.checked.isNotEmpty()) {
+        item {
+            SectionHeader(stringResource(Res.string.kitchen_shopping_checked), view.checked.size)
         }
-        items(view.open, key = { "o-${it.key}" }) { line -> EntryRow(line, titles) { shopping.toggle(line) } }
-        if (view.ask.isNotEmpty()) {
-            item { SectionHeader(stringResource(Res.string.kitchen_shopping_ask_title), view.ask.size) }
-        }
-        items(view.ask, key = { "a-${it.key}" }) { line ->
-            AskRow(line, onNeed = { shopping.needIt(line) }, onRemove = { shopping.remove(line) })
-        }
-        if (view.checked.isNotEmpty()) {
-            item {
-                SectionHeader(stringResource(Res.string.kitchen_shopping_checked), view.checked.size)
-            }
-        }
-        items(view.checked, key = { "c-${it.key}" }) { line -> EntryRow(line, titles) { shopping.toggle(line) } }
-        if (view.checked.isNotEmpty()) {
-            item {
-                OutlinedButton(onClick = { shopping.clearChecked() }, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(Res.string.kitchen_shopping_clear))
-                }
+    }
+    items(view.checked, key = { "c-${it.key}" }) { line ->
+        EntryRow(line, titles, Modifier.padding(top = 6.dp)) { shopping.toggle(line) }
+    }
+    if (view.checked.isNotEmpty()) {
+        item {
+            OutlinedButton(
+                onClick = { shopping.clearChecked() },
+                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+            ) {
+                Text(stringResource(Res.string.kitchen_shopping_clear))
             }
         }
     }
@@ -121,10 +121,10 @@ private fun AddEntryField(onAdd: (String) -> Unit) {
 
 /** Whole row is the tap target (≥ 48 dp), read out as one checkbox. */
 @Composable
-private fun EntryRow(line: ShoppingLine, recipeTitles: Map<String, String>, onToggle: () -> Unit) {
+private fun EntryRow(line: ShoppingLine, recipeTitles: Map<String, String>, modifier: Modifier, onToggle: () -> Unit) {
     val c = LocalFamilyColors.current
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp)).background(c.card)
+        modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp)).background(c.card)
             .toggleable(value = line.checked, role = Role.Checkbox, onValueChange = { onToggle() })
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,

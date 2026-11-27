@@ -1,6 +1,9 @@
 package io.github.respawnedguy.familyapp.presentation
 
 import io.github.respawnedguy.familyapp.data.FamilyRepository
+import io.github.respawnedguy.familyapp.domain.offers.Chain
+import io.github.respawnedguy.familyapp.domain.offers.Offer
+import io.github.respawnedguy.familyapp.domain.offers.OfferList
 import io.github.respawnedguy.familyapp.data.InMemoryTextStore
 import io.github.respawnedguy.familyapp.data.AiOutcome
 import io.github.respawnedguy.familyapp.data.InstagramPages
@@ -387,20 +390,52 @@ class KitchenModelTest {
     @Test
     fun backWalksOutOfTheKitchenAndTabsClose() = runTest {
         val m = model()
-        m.select(Tab.FAMILY)
         m.kitchen.openLibrary()
+        assertEquals(Tab.FAMILY, m.tab.value, "the library is a tab under Familie")
+        assertEquals(FamilySection.RECIPES, m.section.value)
+        assertNull(m.kitchen.route.value)
         m.kitchen.newRecipe()
         assertTrue(m.handleBack())
-        assertEquals(KitchenRoute.Library, m.kitchen.route.value)
+        assertNull(m.kitchen.route.value, "back from a new recipe shows the tab Rezepte again")
+        assertEquals(FamilySection.RECIPES, m.section.value)
         assertTrue(m.handleBack())
-        assertNull(m.kitchen.route.value)
+        assertEquals(FamilySection.TASKS, m.section.value, "then the default tab Aufgaben")
         assertEquals(Tab.FAMILY, m.tab.value)
         m.kitchen.openShopping()
+        assertEquals(FamilySection.SHOPPING, m.section.value)
+        m.kitchen.recipes.createFromText(caption)
+        val id = m.repo.current.recipes.single().id
+        m.kitchen.openRecipe(id)
         m.select(Tab.TODAY)
         assertNull(m.kitchen.route.value)
-        m.kitchen.openShopping()
+        m.kitchen.openRecipe(id)
         m.openSettings()
         assertNull(m.kitchen.route.value)
+    }
+
+    @Test
+    fun offerGoesOnTheListWithMarketAndPriceAndUndo() = runTest {
+        val m = model()
+        val offer = Offer(Chain.ALDI_SUED, " Bio Möhren 1 kg ", priceCents = 129)
+        assertTrue(m.kitchen.shopping.openNames().isEmpty())
+        m.kitchen.shopping.addOffer(offer)
+        val entry = m.repo.current.shopping.single()
+        assertEquals("Bio Möhren 1 kg", entry.name)
+        assertEquals("bei Aldi Süd, 1,29 €", entry.offer)
+        assertEquals("„Bio Möhren 1 kg“ steht auf der Einkaufsliste.", m.feedback.value?.message)
+        assertTrue(OfferList.onList(offer, m.kitchen.shopping.openNames()), "the offer says „Auf der Liste“")
+        m.undo(m.feedback.value!!)
+        assertTrue(m.kitchen.shopping.openNames().isEmpty())
+        m.kitchen.shopping.addOffer(offer.copy(title = "  "))
+        assertTrue(m.repo.current.shopping.none { !it.deleted }, "an offer without a name adds nothing")
+    }
+
+    @Test
+    fun an8_marketTextEntersTheFamilyListOnlyOnATapAndBounded() = runTest {
+        val m = model()
+        m.kitchen.shopping.addOffer(Offer(Chain.KAUFLAND, "x".repeat(5000)))
+        val name = m.repo.current.shopping.single().name
+        assertEquals(ShoppingActions.MAX_OFFER_NAME, name.length)
     }
 
     @Test
@@ -503,7 +538,8 @@ class KitchenModelTest {
         assertEquals(RecipeActions.NO_INGREDIENTS_FOUND, m.feedback.value?.message)
         val r = m.repo.current.recipes.single()
         m.kitchen.recipes.delete(r)
-        assertEquals(KitchenRoute.Library, m.kitchen.route.value)
+        assertNull(m.kitchen.route.value)
+        assertEquals(FamilySection.RECIPES, m.section.value, "a deleted recipe returns to the library tab")
         assertIs<String>(m.feedback.value?.message)
     }
 

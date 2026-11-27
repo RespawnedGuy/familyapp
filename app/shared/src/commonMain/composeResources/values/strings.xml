@@ -19,6 +19,33 @@
     <string name="tab_search">Suchen</string>
     <string name="nav_capture">Erfassen</string>
 
+    <!-- Tabs at the top of Familie (Nils, 27.11.2026) -->
+    <string name="family_tab_tasks">Aufgaben</string>
+    <string name="family_tab_contacts">Kontakte</string>
+    <string name="family_tab_people">Personen</string>
+    <string name="family_tab_recipes">Rezepte</string>
+    <string name="family_tab_shopping">Einkauf</string>
+    <string name="family_tasks_none">Nichts offen.</string>
+    <string name="family_load_title">Lastkarte</string>
+    <string name="family_load_hint">Nur feste Fristen und Termine. Antippen filtert die Liste.</string>
+    <string name="family_unowned_none">Im Eingang ist alles verteilt.</string>
+    <string name="family_unowned_some">Im Eingang gehören %1$d Dinge noch niemandem.</string>
+    <string name="family_open_count">%1$d offen</string>
+    <string name="family_member_self">%1$s (ich)</string>
+    <string name="family_people_hint">Antippen zeigt, was man über die Person wissen muss, um einzuspringen.</string>
+    <string name="today_meals_more">%1$d Essensvorschläge ansehen</string>
+    <string name="offers_suggested_title">Vorgeschlagene Rezepte</string>
+    <string name="offers_suggested_empty">Noch keine Vorschläge. Sie entstehen aus euren Rezepten, der Saison und den Angeboten eurer Märkte.</string>
+    <string name="offers_all_title">Angebote in der Nähe</string>
+    <string name="offers_all_search">Angebote durchsuchen</string>
+    <string name="offers_all_none">Kein Angebot passt zur Suche.</string>
+    <string name="offers_all_no_place">Mit eurer Postleitzahl unter Einstellungen › Einkauf stehen hier alle Angebote eurer Märkte.</string>
+    <string name="offers_all_not_loaded">Noch keine Angebote da. Sie werden beim Öffnen der App im WLAN abgerufen.</string>
+    <string name="offers_all_add">Auf die Liste</string>
+    <string name="offers_all_on_list">Auf der Liste</string>
+    <string name="offers_all_no_price">im Angebot, Preis im Prospekt</string>
+    <string name="offers_all_add_label">%1$s auf die Einkaufsliste</string>
+
     <!-- Onboarding -->
     <string name="app_tagline">Schnell rein, komplett später.</string>
     <string name="onboarding_name_question">Wie heißt du?</string>
