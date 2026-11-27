@@ -97,7 +97,12 @@ echo "-- Kochbibliothek: geteilter Instagram-Link wird Rezeptvorschlag (TE-7)"
 tap() { seen "$1" && adb shell input tap $(python3 "$HERE/ui-tap.py" "$OUT/ui.xml" "$1" "$PKG"); }
 adb shell am start -W -n "$PKG/.MainActivity" -a android.intent.action.SEND -t text/plain \
   --es android.intent.extra.TEXT "'https://www.instagram.com/reel/E2Etest1/?igsh=abc'" >/dev/null 2>&1
-expect "Instagram-Link als Rezeptvorschlag gespeichert" "Link als Rezeptvorschlag gespeichert\..*"
+# The app then tries to fetch the caption (ADR 0007). The fake post has none, so the first message is
+# soon replaced by "nicht abrufbar": either one shows the link was saved as a suggestion.
+# Waits longer than expect(): two page requests with 10 s connect and read timeouts each.
+LINK_SAVED="(Link als Rezeptvorschlag gespeichert|Text von Instagram nicht abrufbar)\..*"
+wait_text "$LINK_SAVED" 60 && pass "Instagram-Link als Rezeptvorschlag gespeichert" || fail "Instagram-Link als Rezeptvorschlag gespeichert"
+wait_gone "$LINK_SAVED" 20 || true
 tap "Familie"
 if wait_text "Kochbibliothek" 10 && tap "Rezepte" && wait_text "Rezept von Instagram" 10; then
   pass "Vorschlag steht in der Kochbibliothek unter Familie"
