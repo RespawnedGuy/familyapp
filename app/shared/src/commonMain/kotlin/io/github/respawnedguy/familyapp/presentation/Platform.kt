@@ -85,6 +85,9 @@ interface RecipeSources {
     /** Public Instagram pages for the recipe import. Null: link-only recipes wait for pasted text. */
     val instagramPages: InstagramPages? get() = null
 
+    /** The same pages through a browser engine, tried when [instagramPages] gets no caption. */
+    val instagramBrowser: InstagramPages? get() = null
+
     /** Video files of public Instagram posts for a cloud AI that watches them. Null: caption only. */
     val instagramVideos: InstagramVideos? get() = null
 

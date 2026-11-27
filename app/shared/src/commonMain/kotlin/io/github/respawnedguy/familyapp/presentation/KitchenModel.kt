@@ -46,7 +46,9 @@ class KitchenModel internal constructor(
 ) {
     val recipes = RecipeActions(
         repo, this, show, background,
-        instagram = platform.instagramPages?.let { InstagramImport(it, platform.instagramVideos) },
+        instagram = platform.instagramPages?.let {
+            InstagramImport(it, platform.instagramVideos, platform.instagramBrowser)
+        },
         ai = { repo.current.settings.recipeAiKey?.let(platform::recipeAi) },
     )
     val shopping = ShoppingActions(repo, this, show)

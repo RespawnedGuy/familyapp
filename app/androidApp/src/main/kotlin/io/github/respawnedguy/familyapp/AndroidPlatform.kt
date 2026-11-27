@@ -55,6 +55,9 @@ class AndroidPlatform(private val app: FamilyApplication) : PlatformServices {
     /** Caption of a shared Instagram post, fetched without login or yt-dlp (ADR 0007). */
     override val instagramPages = HttpInstagramPages()
 
+    /** Invisible WebView without login, if Instagram refuses the plain fetch (ADR 0007, seen 27.11.2026). */
+    override val instagramBrowser = WebViewInstagramPages(app)
+
     /** Video of a shared reel for Gemini, in the cache only while it is read (ADR 0008). */
     override val instagramVideos = HttpInstagramVideos(File(app.cacheDir, "instagram-video"))
 
