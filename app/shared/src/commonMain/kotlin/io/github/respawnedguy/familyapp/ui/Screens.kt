@@ -83,6 +83,8 @@ fun TodayScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reduced
         if (Views.showLocalOnlyHint(data, paired)) {
             item(key = "local-only") { LocalOnlyCard(model) }
         }
+        // Meal suggestions and today's dish wait here at app start, never as a notification.
+        item { MealsCard(data, model) }
         item(key = "h-inbox") { SectionHeader("Eingang", inbox.size) }
         if (inbox.isEmpty()) {
             item(key = "e-inbox") { EmptyNote("Alles sortiert. Darüber musst du gerade nicht nachdenken.") }
@@ -330,6 +332,7 @@ fun UpcomingScreen(data: FamilyData, model: AppModel) {
     val today = model.today()
     val weeks = Views.upcoming(data, today)
     LazyColumn(Modifier.fillMaxSize(), contentPadding = ListPadding) {
+        item { UpcomingMeals(data, model) }
         weeks.forEach { week ->
             item(key = "w-${week.monday}") { SectionHeader(DateFormat.weekLabel(week.monday)) }
             if (week.items.isEmpty()) {

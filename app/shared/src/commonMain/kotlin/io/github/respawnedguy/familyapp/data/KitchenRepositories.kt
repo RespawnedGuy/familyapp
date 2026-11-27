@@ -1,5 +1,6 @@
 package io.github.respawnedguy.familyapp.data
 
+import io.github.respawnedguy.familyapp.domain.recipe.IngredientKey
 import io.github.respawnedguy.familyapp.domain.recipe.NewEntry
 import io.github.respawnedguy.familyapp.domain.recipe.PlannedMeal
 import io.github.respawnedguy.familyapp.domain.recipe.Recipe
@@ -142,9 +143,10 @@ class ShoppingRepository internal constructor(private val repo: FamilyRepository
     private val self: String? get() = repo.current.selfId
 
     /** Adds entries, from a recipe ([recipeId]) or typed. Returns the undo handle. */
-    fun addEntries(entries: List<NewEntry>, recipeId: String? = null): Undo {
+    fun addEntries(entries: List<NewEntry>, recipeId: String? = null, offers: Map<String, String> = emptyMap()): Undo {
         val created = entries.map { e ->
             ShoppingEntry(
+                offer = offers[IngredientKey.of(e.name)],
                 id = repo.nextId(),
                 name = e.name,
                 amount = e.amount,

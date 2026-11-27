@@ -375,11 +375,11 @@ class ShoppingActions internal constructor(
      * A suggestion tapped, "Wann?" and "Für wie viele?" answered (docs/angebote-und-vorschlaege.md
      * "Ablauf"): the ingredients go on the list and the dish into the plan, one undo for both.
      */
-    fun planAndAdd(recipe: Recipe, day: LocalDate?, servings: Int) {
+    fun planAndAdd(recipe: Recipe, day: LocalDate?, servings: Int, offers: Map<String, String> = emptyMap()) {
         val people = servings.coerceIn(RecipeViews.MIN_SERVINGS, RecipeViews.MAX_SERVINGS)
         repo.rememberServings(recipe, people)
         val entries = ShoppingList.fromRecipe(recipe, RecipeViews.factor(recipe, people))
-        val undo = repo.mealStore.plan(recipe.id, day, people) + store.addEntries(entries, recipe.id)
+        val undo = repo.mealStore.plan(recipe.id, day, people) + store.addEntries(entries, recipe.id, offers)
         show(planMessage(recipe.title, day, people, entries.size, repo.day()), undo)
     }
 

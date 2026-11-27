@@ -118,6 +118,8 @@ fun SettingsScreen(data: FamilyData, model: AppModel, updates: UpdateController?
             )
         }
 
+        ShoppingSettings(data, model)
+
         SettingsGroup(stringResource(Res.string.recipe_ai_title)) {
             RecipeAiSettings(s.recipeAiKey, model)
         }
@@ -201,6 +203,7 @@ fun SettingsScreen(data: FamilyData, model: AppModel, updates: UpdateController?
                 "Prototyp. Alles bleibt auf euren Geräten, keine Cloud, keine KI. Die App vibriert nicht.",
                 fontSize = 12.sp, color = c.textTertiary,
             )
+            OffersAttribution()
         }
     }
 }

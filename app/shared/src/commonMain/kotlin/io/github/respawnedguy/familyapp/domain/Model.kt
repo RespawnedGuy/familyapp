@@ -3,6 +3,7 @@ package io.github.respawnedguy.familyapp.domain
 import io.github.respawnedguy.familyapp.domain.contacts.Contact
 import io.github.respawnedguy.familyapp.domain.contacts.ContactLink
 import io.github.respawnedguy.familyapp.domain.contacts.PortfolioEntry
+import io.github.respawnedguy.familyapp.domain.offers.ShoppingPlace
 import io.github.respawnedguy.familyapp.domain.recipe.PlannedMeal
 import io.github.respawnedguy.familyapp.domain.recipe.Recipe
 import io.github.respawnedguy.familyapp.domain.recipe.ShoppingEntry
@@ -164,7 +165,10 @@ data class FamilyData(
     val portfolio: List<PortfolioEntry> = emptyList(),
     /** Planned dishes ("Wann soll es das geben?", 27.11.2026), added like recipes: older apps ignore them. */
     val meals: List<PlannedMeal> = emptyList(),
+    /** Where the family shops (0 or 1 record, [ShoppingPlace.ID]); added like recipes. */
+    val places: List<ShoppingPlace> = emptyList(),
 ) {
+    val place: ShoppingPlace? get() = places.firstOrNull { it.id == ShoppingPlace.ID }
     val self: Member? get() = members.firstOrNull { it.id == selfId }
     fun member(id: String?): Member? = id?.let { i -> members.firstOrNull { it.id == i } }
 }

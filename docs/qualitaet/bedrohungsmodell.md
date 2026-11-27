@@ -45,6 +45,7 @@ flowchart LR
   App -- "TB6: HTTPS, nur Lesen" --> CDN["*.cdninstagram.com, *.fbcdn.net<br/>Video eines Reels"]
   App -. "TB6: HTTPS, nur mit Schlüssel" .-> Claude["api.anthropic.com<br/>(optional)"]
   App -. "TB6: HTTPS, nur mit Schlüssel" .-> Gemini["generativelanguage.googleapis.com<br/>(optional)"]
+  App -. "TB6: HTTPS, nur Lesen, nur gewählte Märkte" .-> Markets["asl.api.aldi-sued.de, www.aldi-nord.de,<br/>filiale.kaufland.de, www.lidl.de,<br/>endpoints.leaflets.schwarz"]
   Share --> App
   Screen["QR-Code / Code als Text"] -- "TB4: optisch (A4)" --> NewPhone["Neues Gerät"]
   NewPhone -- "TB2: WLAN/Tailnet (A2)" --> Server
@@ -67,7 +68,7 @@ flowchart LR
 | TB3 | Gerät ↔ Ordnerdienst | `familyapp-abgleich/<Geräte-ID>.fas`, `familyapp-abgleich-fotos/*.fap`, Sicherung `FAB1` |
 | TB4 | Mensch ↔ Mensch | QR-Code mit Einmalgeheimnis, sechsstellige Prüfzahl |
 | TB5 | Prozess ↔ andere Konten des Rechners | Dateien des Hausgeräts |
-| TB6 | Gerät ↔ fremde Dienste im Internet | Abruf öffentlicher Instagram-Seiten (ADR 0007) und des Videos eines Reels (ADR 0008); optional Caption an Claude oder Caption und Video an Gemini |
+| TB6 | Gerät ↔ fremde Dienste im Internet | Abruf öffentlicher Instagram-Seiten (ADR 0007) und des Videos eines Reels (ADR 0008); optional Caption an Claude oder Caption und Video an Gemini; Wochenangebote der gewählten Märkte (Aldi Süd, Aldi Nord, Kaufland, Lidl), nach außen höchstens der Mittelpunkt des PLZ-Gebiets |
 
 ## 4. Bedrohungen und Maßnahmen
 
@@ -141,6 +142,20 @@ Status: ✓ abgesichert und geprüft · ◐ abgesichert mit Restrisiko · ✗ of
 | KT-4 | I | Kontaktdaten Dritter verlassen die Familie über einen Online-Dienst (Cloud-KI, Abruf) | Kontakte und Portfolio werden nie an Cloud-KI oder andere Dienste gegeben, unabhängig von Einstellungen | `KitchenModelTest.cloudAiReadsWhatTheRulesCannotAndItStaysASuggestion` (Familie mit Kontakt und Info, die KI bekommt nur die Bildunterschrift); im Code gibt es keinen Weg von Kontakten zu einem Netzaufruf | ✓ |
 | KT-5 | I | „Ins Telefonbuch“ macht einen Familienkontakt für alle Apps mit Kontaktzugriff (Messenger) lesbar | Nur einzeln auf Tap über den System-Dialog (`ContactsContract.Intents.Insert`), Hinweis dauerhaft unter dem Knopf | `PeopleModelTest.otherAppsGetOnlySafeValues` | ◐ akzeptiert |
 
+### Wochenangebote der Märkte (TB6; Stufe 1b umgesetzt 27.11.2026)
+
+Neuer Eingang: Antworten von fünf fremden Hosts ([Angebote, Saison und Essensvorschläge](../angebote-und-vorschlaege.md)). Dazu kommt der Grundsatz von Nils vom 27.11.2026: Bot-Abwehr wird nie umgangen, ein Markt, der ablehnt, wird abgeschaltet (AN-5).
+
+| ID | STRIDE | Bedrohung | Maßnahme | Beleg | Status |
+| --- | --- | --- | --- | --- | --- |
+| AN-1 | D | Ein Markt (oder wer sich dazwischen schiebt) liefert eine riesige oder endlose Antwort, oder leitet weiter | Nur HTTPS zu fünf festen Hosts, keine Weiterleitung, HTML höchstens 5 MB (Kaufland-Seite 3,8 MB), JSON höchstens 2 MB, Lesen bricht nach der Grenze ab, 15 s Zeitlimit | `HttpMarketsTest.an1_redirectsAreNotFollowed`, `an1_tooLargeAnswersAreDropped` | ✓ |
+| AN-2 | T, D | Kaputte oder feindliche Antwort: falsche Typen, tief verschachteltes JSON, Skripte, Links, sehr lange Namen | Antworten werden nur als JSON/Text gelesen, nie ausgeführt; nur Text- und Zahlenfelder, keine Links und keine Bilder; Titel auf 160 Zeichen gekürzt; Verschachtelung höchstens 40 Ebenen; unbekannte Form ergibt eine leere Liste, nie einen Absturz | `MarketParsersTest.an2_*` | ✓ |
+| AN-3 | I | Die Wohnadresse verlässt das Handy (an Märkte oder einen Geocoder) | Kein Geocoder; Adresse bleibt auf den Familiengeräten, benutzt wird nur die PLZ über die mitgelieferte GeoNames-Tabelle; nach außen geht nur der PLZ-Mittelpunkt (auf 0,01° gerundet) an die Kaufland-Filialsuche; keine Cookies, die Kennung der App enthält keine Geräte- oder Familiendaten | `MarketFetchTest.an3_kauflandGetsOnlyThePostcodeCentreAndOffersAreFilteredToTheStore`, `OffersModelTest.firstPlaceSuggestsMarketsAndReadsThemOnWlan`, `HttpMarketsTest.an5_normalAnswerWithAnHonestLabelAndNoCookies` | ✓ |
+| AN-4 | T, E | Eine Antwort schiebt der App eine andere Adresse unter (Filialnummer oder Prospekt-ID mit `../` oder fremdem Host) | Adressen nur aus festen Mustern; Filialnummer nur `^[A-Z]{2}\d{3,6}$`, Prospekt-ID nur `aktionsprospekt-…`, höchstens 3 Prospekte; jeder Abruf prüft den Host gegen die feste Liste | `MarketFetchTest.an4_storeIdsFromAnAnswerNeverBuildOtherUrls`, `an4_lidlLeafletIdsAreCheckedAndCapped`, `an4_everyUrlGoesToAnAllowedHost`; `HttpMarketsTest.serverErrorsAndForeignHostsAreFailures` | ✓ |
+| AN-5 | S (Rechtsrahmen) | Die App umgeht Bot-Abwehr oder tarnt sich als Browser | Ehrliche Kennung `FamilyApp (…)`, keine Browser-Kennung, keine WebView, kein Captcha; 401/403/429 oder eine Challenge-Seite schaltet den Markt ab („… lässt sich gerade nicht automatisch lesen“), kein zweiter Versuch mit anderen Mitteln; nur die Person kann „Nochmal versuchen“ (dieselbe Anfrage) | `HttpMarketsTest.an5_*`, `MarketFetchTest.an5_refusalStopsTheMarketAtOnce`, `OfferCacheTest.an5_refusedStaysOffWhateverTheAge`, `OffersModelTest.an5_refusedMarketIsSwitchedOffUntilThePersonAsksAgain` | ◐ Prüfung 1 auf dem echten Handy steht aus |
+| AN-6 | T, D | Ein Familiengerät mit neuerer App schickt einen unbekannten Markt, oder die „Passt nicht“-Liste wächst ohne Ende | Märkte als Namen gespeichert, unbekannte werden übersprungen statt die Familiendaten unlesbar zu machen; höchstens 500 „Passt nicht“, die ältesten gehen zuerst; Bezeichnung des Orts höchstens 120 Zeichen | `KitchenSyncTest.an6_marketUnknownToThisVersionIsSkippedNotFatal`, `an6_passtNichtListStaysBounded` | ✓ |
+| AN-7 | D | Die lokale Angebotsdatei ist kaputt oder stammt aus einer anderen Version | Datei liegt getrennt von den Familiendaten (`angebote.json`, nicht in der Sicherung); unlesbar heißt leer, der nächste Abruf füllt sie wieder | `OfferCacheTest.an7_storedCacheRoundTripsAndBrokenFilesStartEmpty` | ✓ |
+
 ### Geschützte Einträge im Portfolio (A4, A5, A6, A8; geplant)
 
 | ID | STRIDE | Bedrohung | Maßnahme | Beleg | Status |
@@ -179,4 +194,4 @@ Status: ✓ abgesichert und geprüft · ◐ abgesichert mit Restrisiko · ✗ of
 
 ## 7. Pflege
 
-Dieses Dokument wird angepasst, wenn ein neuer Eingang dazukommt (z. B. Mail-Abruf, Widget, Relay aus ADR 0002), sich ein Format oder der Handshake ändert, oder eine Maßnahme aus Abschnitt 5 umgesetzt ist. Neue Tests oder Prüfungen, die eine Bedrohung abdecken, nennen ihre ID im Kommentar (Suche nach `TE-`, `NE-`, `OR-`, `HG-`, `GE-`, `KT-`, `TR-`).
+Dieses Dokument wird angepasst, wenn ein neuer Eingang dazukommt (z. B. Mail-Abruf, Widget, Relay aus ADR 0002), sich ein Format oder der Handshake ändert, oder eine Maßnahme aus Abschnitt 5 umgesetzt ist. Neue Tests oder Prüfungen, die eine Bedrohung abdecken, nennen ihre ID im Kommentar (Suche nach `TE-`, `NE-`, `OR-`, `HG-`, `GE-`, `KT-`, `TR-`, `AN-`).

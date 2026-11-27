@@ -1,6 +1,6 @@
 # Angebote, Saison und Essensvorschläge – Konzept
 
-Stand: 27.11.2026 · Status: **angenommen** (PR #50), Stufe 1a umgesetzt · baut auf [kochbibliothek.md](kochbibliothek.md) auf
+Stand: 27.11.2026 · Status: **angenommen** (PR #50), Stufe 1a und 1b umgesetzt, Prüfung 1 auf dem Handy steht aus · baut auf [kochbibliothek.md](kochbibliothek.md) auf
 
 ## Umsetzungsstand
 
@@ -13,7 +13,19 @@ Stand: 27.11.2026 · Status: **angenommen** (PR #50), Stufe 1a umgesetzt · baut
 - „Wann? / Für wie viele?“ als Aktion `ShoppingActions.planAndAdd`: Liste und Plan in einem Schritt, ein Rückgängig für beides.
 - Zuletzt genutzte Personenzahl pro Handy (`Settings.lastServings`), Vorgabe beim Öffnen eines Rezepts; Rezepte ohne Portionsangabe starten immer bei 1 und ändern die Vorgabe nicht.
 
-**Noch nicht drin (Stufe 1b):** Abruf und Parser der Märkte, Einstellungen › Einkauf mit PLZ-Tabelle, Oberfläche (Vorschläge unter Heute, Blatt „Wann/Wie viele“, Plan unter Heute und Demnächst).
+**Stufe 1b (27.11.2026), Logik im Qualitätstor getestet, Oberfläche nur im CI-Bau geprüft:**
+
+- **Ort:** Einstellungen › Einkauf nimmt Adresse oder PLZ, benutzt wird nur die PLZ. `domain/offers/Postcodes.kt` mit der GeoNames-Tabelle (10.815 PLZ, Mittelpunkt auf 0,01° gerundet, 140 kB als Text im Code, Prüfsumme beim Einlesen verglichen). Namensnennung CC BY 4.0 unter „Über“.
+- **Ort und Märkte sind ein abgeglichener Datensatz** (`ShoppingPlace`, feste ID, neuester Stempel gewinnt), damit nur einer ihn einträgt. Darin auch die „Passt nicht“-Liste der Familie (höchstens 500). Märkte stehen als Namen drin, damit eine ältere App einen neuen Markt überspringt statt die Familiendaten nicht mehr zu lesen. Vorbelegung beim ersten Ort: Kaufland, Lidl und Aldi Nord (PLZ 0–3) oder Aldi Süd (PLZ 6–9), bei 4/5 kein Aldi; alles abwählbar.
+- **Abruf** `data/offers/MarketFetch.kt` mit einem Adapter je Markt, Android-Anfrage `HttpMarkets` (ehrliche Kennung `FamilyApp (…)`, keine Cookies, keine Weiterleitung, 5 MB HTML / 2 MB JSON). 401/403/429 oder eine Challenge-Seite schalten den Markt ab, bis jemand „Nochmal versuchen“ tippt (dieselbe Anfrage). Fehlschlag (Netz, Server) wird beim nächsten Öffnen nach einer Stunde wiederholt.
+  - **Aldi Süd:** alle Seiten der Wochenangebote. Abweichung von Empfehlung 2: Die App nutzt die Vorgabe-Filiale der Website (`servicePoint=B384`) statt der nächsten Filiale, weil die Filialliste nur über einen fremden Dienst (Uberall) mit dessen Schlüssel kommt. Die Unterschiede zwischen Filialen waren klein (111 bis 121 Angebote, gleicher Kern).
+  - **Kaufland:** nächste Filiale über `klstorebygeo` mit dem PLZ-Mittelpunkt, Angebote aus der Übersichtsseite, gefiltert auf die Artikelnummern der Filiale (`/.kloffers.storeName=…json`). Damit ist der offene Punkt „filialgenau“ ohne Cookie gelöst. Eine andere Filiale wählt man über eine andere PLZ (die Filialsuche selbst ist in der `robots.txt` gesperrt, deshalb keine Liste).
+  - **Aldi Nord:** bundesweit aus `__NEXT_DATA__`. **Lidl:** Schlagwörter der Rezept-Links aus den aktuellen Aktionsprospekten (höchstens 3), ohne Preis.
+- **Wann:** beim Öffnen der App, wenn älter als 3 Tage oder neue Woche, von selbst nur im WLAN (`unmeteredNetwork`, Berechtigung `ACCESS_NETWORK_STATE`); „Jetzt abrufen“ geht auch mobil. Die Angebote liegen in `angebote.json` auf dem Gerät, nicht in den Familiendaten und nicht in der Sicherung.
+- **Oberfläche:** „Essen diese Woche“ unter Heute (heutiges Gericht, bis zu 5 Rezeptkarten mit Begründung und „Passt nicht“, Saison-Zutaten im Angebot solange weniger als 3 Rezeptkarten), Blatt „Wann? / Für wie viele?“, Essensplan unter Demnächst (Tippen: verschieben, entfernen, Rezept ansehen), Markt und Preis an Listeneinträgen aus Angeboten (Empfehlung 12), Diagnose-Zeile je Markt in den Einstellungen.
+- **Bedrohungsmodell:** AN-1 bis AN-7 in [bedrohungsmodell.md](qualitaet/bedrohungsmodell.md).
+
+**Offen:** Prüfung 1 (Abruf auf Nils' Handy) ist das Tor für jeden Markt; Prüfungen 2 bis 4.
 
 ## Kurzfassung
 
@@ -205,10 +217,10 @@ Neue Eingänge: Antworten von vier fremden Websites. Sie sind nicht vertrauensw�
 
 ## Offene Punkte
 
-- [ ] Kaufland: Wie kommt die App filialgenau an die Angebotsseite (Parameter oder Cookie)? Bis dahin IP-Zuordnung im WLAN.
+- [x] Kaufland filialgenau: Übersichtsseite gefiltert auf die Artikelnummern aus `/.kloffers.storeName=…json` (Stufe 1b).
 - [ ] Lidl: Welche Region gilt für welche Filiale (mehrere Prospektfassungen derselben Woche)? `lidl.py`-Ausgabe zum Vergleich.
-- [ ] **Tor vor dem Bau jedes Adapters:** `robots.txt` von `asl.api.aldi-sued.de` und `endpoints.leaflets.schwarz` sowie die Nutzungsbedingungen der vier Märkte auf einen Vorbehalt nach § 44b UrhG prüfen. Fällt ein Markt durch, kommt er nicht in die App.
-- [ ] Bleibt Uberall als Filialquelle für Aldi Süd stabil? Rückfall: Filial-Sitemap `aldi-sued.de/sitemap_stores.xml`.
+- [x] **Tor vor dem Bau jedes Adapters** (27.11.2026): Die API-Hosts `asl.api.aldi-sued.de` und `endpoints.leaflets.schwarz` haben keine `robots.txt`, die benutzten Pfade der Websites sind nicht gesperrt, Impressum und Nutzungsbedingungen der vier Märkte enthalten keinen Vorbehalt nach § 44b UrhG. Bleibt bei jeder Änderung eines Adapters zu wiederholen.
+- [ ] Aldi Süd filialgenau ohne fremden Schlüssel: Filial-Sitemap `aldi-sued.de/sitemap_stores.xml` prüfen (bis dahin Vorgabe-Filiale der Website).
 
 ## Quellen (alle abgerufen am 27.11.2026)
 

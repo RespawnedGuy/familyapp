@@ -1,5 +1,6 @@
 package io.github.respawnedguy.familyapp.data
 
+import io.github.respawnedguy.familyapp.data.offers.ShoppingPlaceRepository
 import io.github.respawnedguy.familyapp.domain.CaptureAction
 import io.github.respawnedguy.familyapp.domain.CURRENT_SCHEMA
 import io.github.respawnedguy.familyapp.domain.CaptureRules
@@ -22,6 +23,7 @@ import io.github.respawnedguy.familyapp.domain.Tombstone
 import io.github.respawnedguy.familyapp.domain.contacts.Contact
 import io.github.respawnedguy.familyapp.domain.contacts.ContactLink
 import io.github.respawnedguy.familyapp.domain.contacts.PortfolioEntry
+import io.github.respawnedguy.familyapp.domain.offers.ShoppingPlace
 import io.github.respawnedguy.familyapp.domain.recipe.PlannedMeal
 import io.github.respawnedguy.familyapp.domain.recipe.Recipe
 import io.github.respawnedguy.familyapp.domain.recipe.ShoppingEntry
@@ -59,6 +61,8 @@ class KitchenBefore internal constructor(
     internal val recipes: Map<String, Recipe?> = emptyMap(),
     internal val shopping: Map<String, ShoppingEntry?> = emptyMap(),
     internal val meals: Map<String, PlannedMeal?> = emptyMap(),
+    /** The shopping place before a "Passt nicht" (the only place change with undo). */
+    internal val places: Map<String, ShoppingPlace?> = emptyMap(),
 )
 
 /** Both actions reverted by one tap ("Kürbissuppe: Do, 4 Personen, 7 Zutaten auf der Liste", plan and list). */
@@ -70,6 +74,7 @@ internal operator fun Undo.plus(other: Undo): Undo = Undo(
         recipesBefore + other.recipesBefore,
         shoppingBefore + other.shoppingBefore,
         mealsBefore + other.mealsBefore,
+        kitchen.places + other.kitchen.places,
     ),
     people = PeopleBefore(
         people.contacts + other.people.contacts,
@@ -169,6 +174,7 @@ class FamilyRepository(
     val recipeStore: RecipeRepository by lazy { RecipeRepository(this) }
     val shoppingStore: ShoppingRepository by lazy { ShoppingRepository(this) }
     val mealStore: MealPlanRepository by lazy { MealPlanRepository(this) }
+    val placeStore: ShoppingPlaceRepository by lazy { ShoppingPlaceRepository(this) }
 
     /** Shared contacts and the portfolio per person (docs/kontakte-und-portfolio.md). */
     val contactStore: ContactRepository by lazy { ContactRepository(this) }
@@ -415,6 +421,9 @@ class FamilyRepository(
                 meals = revertRecords(d.meals, undo.mealsBefore, PlannedMeal::id) { m, stamp ->
                     m?.copy(stamp = stamp)
                 },
+                places = revertRecords(d.places, undo.kitchen.places, ShoppingPlace::id) { p, stamp ->
+                    p?.copy(stamp = stamp)
+                },
             )
         }
     }
@@ -574,7 +583,8 @@ class FamilyRepository(
     private fun allStamps(d: FamilyData): List<Stamp> =
         d.members.map { it.stamp } + d.items.map { it.stamp } + d.tombstones.map { it.stamp } +
             d.recipes.map { it.stamp } + d.shopping.map { it.stamp } + d.contacts.map { it.stamp } +
-            d.contactLinks.map { it.stamp } + d.portfolio.map { it.stamp } + d.meals.map { it.stamp }
+            d.contactLinks.map { it.stamp } + d.portfolio.map { it.stamp } + d.meals.map { it.stamp } +
+            d.places.map { it.stamp }
 
     // ---- Sync between family devices (ADR 0003, ADR 0006) ---------------------------------------
 
@@ -619,6 +629,7 @@ class FamilyRepository(
         records.contactLinks.forEach { clock.observe(it.stamp) }
         records.portfolio.forEach { clock.observe(it.stamp) }
         records.meals.forEach { clock.observe(it.stamp) }
+        records.places.forEach { clock.observe(it.stamp) }
     }
 
     companion object {

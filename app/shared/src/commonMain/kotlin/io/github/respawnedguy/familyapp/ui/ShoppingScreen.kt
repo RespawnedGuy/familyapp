@@ -145,6 +145,8 @@ private fun EntryRow(line: ShoppingLine, recipeTitles: Map<String, String>, onTo
                     color = c.textTertiary, fontSize = 12.sp,
                 )
             }
+            // Where it is on offer (Empfehlung 12), so the person knows where to get it.
+            line.offer?.let { Text(it, color = c.textSecondary, fontSize = 12.sp) }
         }
     }
 }

@@ -75,6 +75,9 @@ class AppModel(
     /** Kitchen library: recipes, cooking mode, shopping list (docs/kochbibliothek.md). */
     val kitchen = KitchenModel(repo, platform, Background(scope, io)) { message, undo -> show(message, undo) }
 
+    /** Offers, season and meal suggestions (docs/angebote-und-vorschlaege.md). */
+    val offers = OffersModel(repo, platform, Background(scope, io), kitchen) { message, undo -> show(message, undo) }
+
     /** Shared contacts and the portfolio per person (docs/kontakte-und-portfolio.md). */
     val people = PeopleModel(repo, platform, { message, undo -> show(message, undo) }) {
         _settingsOpen.value = false
@@ -111,6 +114,7 @@ class AppModel(
     /** System back: sheet, settings, contacts and portfolios, the kitchen, then "Heute". False means: leave the app. */
     fun handleBack(): Boolean = when {
         _capture.value != CaptureState.Closed -> { dismissCapture(); true }
+        offers.plan.sheet.value != null -> { offers.plan.close(); true }
         _settingsOpen.value -> { _settingsOpen.value = false; true }
         people.back() -> true
         kitchen.back() -> true

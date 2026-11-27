@@ -15,6 +15,8 @@ data class ShoppingLine(
     val recipeIds: Set<String>,
     val checked: Boolean,
     val ask: Boolean,
+    /** Where it is on offer ("bei Aldi Süd, 1,69 €"), if it came from an offer suggestion. */
+    val offer: String? = null,
 )
 
 /** The list split the way the screen shows it. */
@@ -77,6 +79,7 @@ object ShoppingList {
             recipeIds = group.mapNotNull { it.recipeId }.toSet(),
             checked = first.checked,
             ask = first.ask,
+            offer = group.sortedByDescending { it.createdMs }.firstNotNullOfOrNull { it.offer },
         )
     }
 
