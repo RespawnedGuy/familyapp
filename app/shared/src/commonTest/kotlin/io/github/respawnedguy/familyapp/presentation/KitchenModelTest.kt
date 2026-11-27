@@ -4,6 +4,8 @@ import io.github.respawnedguy.familyapp.data.FamilyRepository
 import io.github.respawnedguy.familyapp.data.InMemoryTextStore
 import io.github.respawnedguy.familyapp.data.AiOutcome
 import io.github.respawnedguy.familyapp.data.InstagramPages
+import io.github.respawnedguy.familyapp.data.InstagramVideos
+import io.github.respawnedguy.familyapp.data.VideoClip
 import io.github.respawnedguy.familyapp.data.RecipeAi
 import io.github.respawnedguy.familyapp.domain.MemberKind
 import io.github.respawnedguy.familyapp.domain.contacts.ContactDraft
@@ -14,6 +16,13 @@ import io.github.respawnedguy.familyapp.domain.recipe.RecipeImport
 import io.github.respawnedguy.familyapp.domain.recipe.RecipeStatus
 import io.github.respawnedguy.familyapp.domain.recipe.ShoppingList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.addJsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
+import kotlinx.serialization.json.putJsonObject
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runCurrent
@@ -28,6 +37,7 @@ import kotlin.test.assertTrue
 
 private class KitchenPlatform(
     private val ai: RecipeAi? = null,
+    override val instagramVideos: InstagramVideos? = null,
     override val instagramPages: InstagramPages? = null,
 ) : PlatformServices {
     val screenOn = mutableListOf<Boolean>()
@@ -210,6 +220,101 @@ class KitchenModelTest {
         runCurrent()
         assertEquals(RecipeActions.AI_FOUND_NOTHING, n.feedback.value?.message)
         assertTrue(n.repo.current.recipes.single().ingredients.isEmpty())
+    }
+
+    /** Embed page of a reel: the media JSON with caption and video address, double encoded like Instagram's. */
+    private fun reelPage(text: String, videoUrl: String): String {
+        val media = buildJsonObject {
+            putJsonObject("gql_data") {
+                putJsonObject("shortcode_media") {
+                    put("is_video", true)
+                    put("video_url", videoUrl)
+                    putJsonObject("edge_media_to_caption") {
+                        putJsonArray("edges") { addJsonObject { putJsonObject("node") { put("text", text) } } }
+                    }
+                }
+            }
+        }
+        return "<script>{\"contextJSON\":${Json.encodeToString(String.serializer(), media.toString())}}</script>"
+    }
+
+    private class FakeVideos(private val clip: VideoClip?) : InstagramVideos {
+        val downloaded = mutableListOf<String>()
+        val discarded = mutableListOf<VideoClip>()
+        override fun download(url: String): VideoClip? { downloaded += url; return clip }
+        override fun discard(clip: VideoClip) { discarded += clip }
+    }
+
+    private class VideoAi(private val answer: AiOutcome, private val onAsk: () -> Unit = {}) : RecipeAi {
+        val withVideo = mutableListOf<Pair<String, VideoClip>>()
+        val textOnly = mutableListOf<String>()
+        override val readsVideo = true
+        override fun extract(text: String): AiOutcome { textOnly += text; return answer }
+        override fun extract(text: String, video: VideoClip): AiOutcome {
+            onAsk()
+            withVideo += text to video
+            return answer
+        }
+    }
+
+    private val cdnVideo = "https://scontent-fra5-1.cdninstagram.com/o1/v/t16/f2/m86/clip.mp4?efg=abc&oh=sig"
+
+    @Test
+    fun geminiWatchesTheReelAndTheVideoIsDeletedAfterwards() = runTest {
+        val clip = VideoClip("/cache/instagram-video/v.mp4", 1_000, "video/mp4")
+        val videos = FakeVideos(clip)
+        lateinit var m: AppModel
+        var messageWhileAsking: String? = null
+        val recipe = AiRecipe("Shakshuka", 2.0, 20, listOf("4 Eier", "1 Dose Tomaten"), listOf("Kochen"))
+        val ai = VideoAi(AiOutcome.Ok(recipe)) { messageWhileAsking = m.feedback.value?.message }
+        m = model(KitchenPlatform(ai, videos) { reelPage(videoCaption, cdnVideo) })
+        m.setRecipeAiKey("AIzaTest")
+        m.captureShared("https://www.instagram.com/reel/XYZ/", null)
+        runCurrent()
+        runCurrent()
+        assertEquals(RecipeActions.ASKING_AI_VIDEO, messageWhileAsking)
+        assertEquals(listOf(cdnVideo), videos.downloaded, "the address comes from Instagram's page, not from the link")
+        assertEquals(listOf(videoCaption to clip), ai.withVideo)
+        assertEquals(listOf(clip), videos.discarded, "TE-12: the video does not stay on the phone")
+        val saved = m.repo.current.recipes.single()
+        assertEquals("Shakshuka", saved.title)
+        assertEquals(RecipeStatus.SUGGESTED, saved.status)
+        assertEquals(RecipeActions.AI_FILLED, m.feedback.value?.message)
+    }
+
+    @Test
+    fun withoutTheVideoFileTheAiStillReadsTheCaption() = runTest {
+        val videos = FakeVideos(null)
+        val ai = VideoAi(AiOutcome.Ok(AiRecipe("Nichts")))
+        val m = model(KitchenPlatform(ai, videos) { reelPage(videoCaption, cdnVideo) })
+        m.setRecipeAiKey("AIzaTest")
+        m.captureShared("https://www.instagram.com/reel/XYZ/", null)
+        runCurrent()
+        runCurrent()
+        assertEquals(listOf(videoCaption), ai.textOnly)
+        assertTrue(videos.discarded.isEmpty())
+        assertEquals(RecipeActions.AI_FOUND_NOTHING_VIDEO, m.feedback.value?.message)
+    }
+
+    @Test
+    fun nothingInTheVideoEitherIsSaidAndTextOnlyAisNeverGetTheVideo() = runTest {
+        val videos = FakeVideos(VideoClip("/c/v.mp4", 1, "video/mp4"))
+        val m = model(KitchenPlatform(VideoAi(AiOutcome.Ok(AiRecipe("Nichts"))), videos) { reelPage(videoCaption, cdnVideo) })
+        m.setRecipeAiKey("AIzaTest")
+        m.captureShared("https://www.instagram.com/reel/XYZ/", null)
+        runCurrent()
+        runCurrent()
+        assertEquals(RecipeActions.AI_FOUND_NOTHING_IN_VIDEO, m.feedback.value?.message)
+
+        // Claude reads text only: no download at all.
+        val other = FakeVideos(VideoClip("/c/v.mp4", 1, "video/mp4"))
+        val n = model(KitchenPlatform({ AiOutcome.Ok(AiRecipe("Nichts")) }, other) { reelPage(videoCaption, cdnVideo) })
+        n.setRecipeAiKey("sk-ant-test")
+        n.captureShared("https://www.instagram.com/reel/XYZ/", null)
+        runCurrent()
+        runCurrent()
+        assertTrue(other.downloaded.isEmpty())
+        assertEquals(RecipeActions.AI_FOUND_NOTHING_VIDEO, n.feedback.value?.message)
     }
 
     @Test

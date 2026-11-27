@@ -1,6 +1,7 @@
 package io.github.respawnedguy.familyapp.presentation
 
 import io.github.respawnedguy.familyapp.data.InstagramPages
+import io.github.respawnedguy.familyapp.data.InstagramVideos
 import io.github.respawnedguy.familyapp.data.RecipeAi
 import io.github.respawnedguy.familyapp.domain.DeviceInfo
 import io.github.respawnedguy.familyapp.domain.ResourceUsage
@@ -84,7 +85,10 @@ interface RecipeSources {
     /** Public Instagram pages for the recipe import. Null: link-only recipes wait for pasted text. */
     val instagramPages: InstagramPages? get() = null
 
-    /** Cloud AI for recipe texts with this API key. Null where the platform has none. */
+    /** Video files of public Instagram posts for a cloud AI that watches them. Null: caption only. */
+    val instagramVideos: InstagramVideos? get() = null
+
+    /** Cloud AI for recipe texts with this API key (provider from the key). Null where the platform has none. */
     fun recipeAi(apiKey: String): RecipeAi? = null
 }
 

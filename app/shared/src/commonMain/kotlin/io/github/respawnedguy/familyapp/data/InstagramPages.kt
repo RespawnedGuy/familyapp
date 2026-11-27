@@ -18,9 +18,29 @@ fun interface InstagramPages {
  * yt-dlp (ADR 0007). Embed page first, the normal post page as a second chance. The result is
  * still only text for the rules; the recipe stays a suggestion until a person confirms it.
  */
-class InstagramImport(private val pages: InstagramPages) {
+class InstagramImport(private val pages: InstagramPages, private val videos: InstagramVideos? = null) {
 
     fun fetch(shortcode: String): InstagramPost? =
         pages.get(InstagramLink.embedPath(shortcode))?.let(InstagramPage::fromEmbed)
             ?: pages.get(InstagramLink.postPath(shortcode))?.let(InstagramPage::fromPostPage)
+
+    /** The video address [cloud] gets to see, or null when it reads only the caption (ADR 0008). */
+    fun videoFor(post: InstagramPost, cloud: RecipeAi): String? =
+        post.videoUrl?.takeIf { cloud.readsVideo && videos != null }
+
+    /**
+     * Asks [cloud] about the caption and, if [videoUrl] is set and the download works, the video,
+     * which is deleted again right afterwards (threat model TE-12). Second value: the AI saw the video.
+     * Blocking: off the main thread.
+     */
+    fun ask(cloud: RecipeAi, caption: String, videoUrl: String?): Pair<AiOutcome, Boolean> {
+        val source = videos
+        val clip = if (videoUrl != null && source != null) source.download(videoUrl) else null
+        if (clip == null || source == null) return cloud.extract(caption) to false
+        return try {
+            cloud.extract(caption, clip) to true
+        } finally {
+            source.discard(clip)
+        }
+    }
 }
