@@ -19,30 +19,36 @@ Die Farben in der Datei stimmen garantiert mit der App überein: Ein Test (`Penp
 
 1. **Entwerfen:** Bildschirm oder Baustein zusammenschieben. Farben immer über die Tokens wählen (Linksklick auf ein Token = Füllfarbe), dann kann Claude sie eindeutig `LocalFamilyColors` zuordnen. Ebenen sinnvoll benennen („InboxCard“, „Chip Wer“), das erleichtert die Übertragung.
 2. **Übergeben**, eine der zwei Arten:
-   - **Mit MCP (empfohlen, auf Nils' PC):** Claude liest das Board direkt aus Penpot, siehe Abschnitt 3.
-   - **Ohne MCP (geht überall, auch aus einem Projekt-Thread):** Board als PNG exportieren (*Export → PNG, 2×*) und im Thread hochladen; bei kniffligen Stellen zusätzlich aus dem Reiter **Inspect** den Code (CSS) kopieren.
+   - **Mit MCP (empfohlen, auch in Projekt-Threads):** Claude liest das Board direkt aus Penpot, siehe Abschnitt 3.
+   - **Ohne MCP (Ausweichweg):** Board als PNG exportieren (*Export → PNG, 2×*) und im Thread hochladen; bei kniffligen Stellen zusätzlich aus dem Reiter **Inspect** den Code (CSS) kopieren.
 3. **Umsetzen:** Claude baut den Entwurf mit den vorhandenen Bausteinen (`InboxCard`, `PersonChip`, `FamilyIcons`, …) in Compose, öffnet einen PR, Nils prüft im Hot-Reload-Fenster oder auf dem Handy.
 
 Auch umgekehrt möglich: Claude zeichnet einen bestehenden Bildschirm aus dem Code nach Penpot, als Ausgangspunkt für Änderungen.
 
-## 3. Claude direkt mit Penpot verbinden (MCP, auf dem eigenen PC)
+## 3. Claude direkt mit Penpot verbinden (MCP)
 
-Aus Claudes Cloud-Umgebung (Projekt-Threads) ist Penpot nicht erreichbar. Die Verbindung klappt mit Claude Code auf dem eigenen PC, z. B. im Plugin in Android Studio. Quelle der Schritte: [README des offiziellen Penpot-MCP-Servers](https://github.com/penpot/penpot/tree/develop/mcp).
+Quelle: [Penpot-Hilfe zum MCP-Server](https://help.penpot.app/mcp/). Es gibt zwei Wege; der gehostete Remote-Server ist der einfache.
 
-Einmalig: [Node.js](https://nodejs.org/) 20 oder neuer installieren.
+### A. Remote-Server mit MCP-Key (empfohlen)
 
-Jedes Mal:
+Kein Node.js, kein Terminal-Server, kein Plugin per Adresse laden.
 
-1. Terminal öffnen (unter Windows Git Bash) und starten: `npx -y @penpot/mcp@latest`. Das startet den MCP-Server (Port 4401) und das Penpot-Plugin (Port 4400). Fenster offen lassen.
-2. In Penpot die Datei öffnen → **Plugins** → Plugin über die Adresse `http://localhost:4400/manifest.json` laden → Plugin öffnen → **Connect to MCP server**. Status muss „Connected“ zeigen. Chrome fragt nach Zugriff aufs lokale Netzwerk: erlauben. Plugin-Fenster und Penpot-Tab offen lassen.
+1. In Penpot: **Your account → Integrations → MCP Server** → Status einschalten → Key erzeugen. Der Key wird nur einmal angezeigt, es gibt einen pro Person; neu erzeugen macht den alten sofort ungültig.
+2. Die angezeigte Server-URL kopieren. Sie hat die Form `https://design.penpot.app/mcp/stream?userToken=…` und **enthält den Key**. Deshalb wie ein Passwort behandeln: nicht in Chats, Threads oder ins Repo kopieren.
+3. Bei Claude eintragen, eine der Arten:
+   - **claude.ai / Claude-App:** *Einstellungen → Connectors → Add custom connector* ([claude.ai/customize/connectors](https://claude.ai/customize/connectors)), Name „Penpot“, URL einfügen. So empfiehlt es Penpot für Claude Desktop. **Das ist bei uns eingerichtet (26.11.2026):** Der Connector gilt für das ganze Konto, also in allen Claude-Desktop-Apps und auch in den Projekt-Threads (dort geprüft, Claude konnte die geöffnete Penpot-Datei lesen).
+   - Nur falls die Kommandozeile *Claude Code* installiert ist (nicht Teil von Claude Desktop): `claude mcp add --transport http penpot "<URL>"`. Fehlt sie, meldet PowerShell „Die Benennung "claude" wurde nicht … erkannt“; dann einfach den Connector-Weg nehmen.
+4. In Penpot die Datei öffnen → **File → MCP Server → Connect**. Der Penpot-Tab muss offen und aktiv bleiben (nur ein Tab gleichzeitig); Claude arbeitet immer auf der gerade geöffneten Seite.
 
-Einmalig in Claude Code (Terminal):
+Grenzen laut Penpot: Der Remote-Server hat keinen Zugriff auf lokale Dateien (Bilder von der Festplatte importieren geht nicht, Export nicht direkt in eine Datei). Für den Weg Entwurf → Compose reicht das. Penpot rät, mit lesenden Aufträgen zu beginnen; Schreiben ist möglich. MCP ausschalten oder trennen stoppt alle Änderungen sofort.
 
-```
-claude mcp add --transport http penpot http://localhost:4401/mcp
-```
+### B. Lokaler Server (nur nötig für Dateizugriff)
 
-Danach z. B. in Claude Code: „Lies das Board ‚Heute neu‘ aus Penpot und setze es in `Screens.kt` als `TodayScreen` um, mit den vorhandenen Bausteinen.“
+Einmalig [Node.js](https://nodejs.org/) 20+ installieren. Dann jedes Mal `npx -y @penpot/mcp@stable` im Terminal starten (MCP-Server Port 4401, Plugin Port 4400), in Penpot das Plugin über `http://localhost:4400/manifest.json` laden und **Connect to MCP server** klicken. Einmalig in Claude Code: `claude mcp add --transport http penpot http://localhost:4401/mcp`. Details: [README des Penpot-MCP-Servers](https://github.com/penpot/penpot/tree/develop/mcp).
+
+### Danach
+
+Zum Beispiel: „Lies das Board ‚Heute neu‘ aus Penpot und setze es in `Screens.kt` als `TodayScreen` um, mit den vorhandenen Bausteinen.“
 
 ## Selfhost (optional)
 

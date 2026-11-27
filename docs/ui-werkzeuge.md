@@ -64,7 +64,7 @@ Kriterien in der Reihenfolge ihres Gewichts: (1) passt zum Stack, also landet am
   1. Claude legt einmalig in Penpot eine Bibliothek aus den vorhandenen Bausteinen und Farben an (Code → Design), damit Nils mit echten Teilen zieht statt mit Rechtecken.
   2. Nils baut oder ändert einen Bildschirm per Drag-and-drop.
   3. Claude liest den Rahmen über MCP, setzt ihn in Compose um, öffnet einen PR; Nils prüft in der Vorschau oder auf dem Handy („FamilyApp Dev“).
-- **Einschränkung, wichtig:** Diese Cloud-Umgebung kommt nicht an penpot.app heran (Netzwerkregel, hier am 25.11. geprüft). Die MCP-Verbindung funktioniert also mit Claude Code auf Nils' PC (Desktop-App oder Plugin in Android Studio), nicht aus einem Projekt-Thread heraus. Ohne MCP geht es auch: Rahmen als PNG plus Inspect-CSS in den Thread geben.
+- **Verbindung (Stand 26.11.):** Penpots gehosteter MCP-Server mit MCP-Key, eingetragen als Custom Connector im claude.ai-Konto. Damit ist Penpot in allen Claude-Apps und auch in den Projekt-Threads verfügbar (geprüft). Die Annahme vom 25.11., das gehe nur vom eigenen PC aus, war falsch: Gesperrt war nur der direkte Netzzugriff dieser Umgebung, der Connector läuft über Anthropics Proxy. Ohne MCP geht es weiterhin: Rahmen als PNG plus Inspect-CSS in den Thread geben.
 - Selfhost auf der Synology ist optional. Die Compose-Datei startet sechs Container (Frontend, Backend, Exporter, MCP, PostgreSQL, Valkey). Für zwei Personen reicht die kostenlose Cloud, es fließen dort nur Entwürfe mit Beispieldaten, keine Familiendaten.
 
 ### Warum nicht Dyad, Appsmith, FlutterFlow
@@ -83,6 +83,6 @@ Umgesetzt im selben PR (26.11.2026):
 - Penpot: Design-Tokens `docs/gestaltung/penpot/familyapp-tokens.json` (DTCG-Format, Import in Penpot) mit Test gegen `Theme.kt`, Anleitung `docs/gestaltung/penpot/README.md`.
 - Anleitung `docs/ui-bearbeiten.md` um AGP-Warnung, Hot Reload, Claude-Code-Plugin und Penpot ergänzt.
 
-Offen bei Nils: lokales AGP-Upgrade zurücknehmen, Hot-Reload-Fenster einmal starten, Penpot-Konto anlegen und Tokens importieren. Danach als Probelauf: ein Bildschirm aus dem Code nach Penpot und zurück (mit MCP auf Nils' PC).
+Offen bei Nils: lokales AGP-Upgrade zurücknehmen, Hot-Reload-Fenster einmal starten, Penpot-Konto anlegen und Tokens importieren. Danach als Probelauf: ein Bildschirm aus dem Code nach Penpot und zurück (per Penpot-Connector, auch aus einem Projekt-Thread).
 
 Abnahme für das Gesamtziel: Nils ändert einen Bildschirm selbst (Penpot oder Code), sieht das Ergebnis innerhalb von Sekunden und bekommt es als PR mit grünem CI in die App.
