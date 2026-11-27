@@ -55,7 +55,6 @@ import kotlin.math.roundToInt
 import io.github.respawnedguy.familyapp.domain.FamilyData
 import io.github.respawnedguy.familyapp.presentation.KitchenRoute
 import io.github.respawnedguy.familyapp.presentation.PeopleRoute
-import io.github.respawnedguy.familyapp.presentation.Tab
 import io.github.respawnedguy.familyapp.resources.Res
 import io.github.respawnedguy.familyapp.resources.common_settings
 import org.jetbrains.compose.resources.stringResource
@@ -281,11 +280,11 @@ internal fun mainTitle(
     settingsOpen: Boolean,
     people: PeopleRoute?,
     kitchen: KitchenRoute?,
-    tab: Tab,
+    tabTitle: String,
     data: FamilyData,
 ): String = when {
     settingsOpen -> stringResource(Res.string.common_settings)
     people != null -> peopleTitle(people, data)
     kitchen != null -> kitchenTitle(kitchen, data)
-    else -> stringResource(tab.label)
+    else -> tabTitle
 }

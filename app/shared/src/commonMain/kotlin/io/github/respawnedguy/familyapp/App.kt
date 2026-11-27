@@ -235,7 +235,7 @@ private fun Main(
             val kitchenRoute = kitchen
             val peopleRoute = people
             TopBar(
-                title = mainTitle(settingsOpen, peopleRoute, kitchenRoute, tab, data),
+                title = mainTitle(settingsOpen, peopleRoute, kitchenRoute, stringResource(tab.label), data),
                 data = data,
                 onAvatar = { model.openSettings() },
             )
