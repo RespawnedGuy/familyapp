@@ -77,6 +77,23 @@ class RecipeRepository internal constructor(private val repo: FamilyRepository) 
         )
     }
 
+    /**
+     * Text fetched later for a suggestion that came as a link (Instagram caption, ADR 0007). Stays a
+     * suggestion: the rules filled it, a person still confirms. The link-only title gives way to the
+     * caption's title; source link and notes stay.
+     */
+    fun fillSuggestion(id: String, draft: RecipeDraft): Undo = changeRecipe(id) { r ->
+        val placeholder = draft.title == RecipeImport.UNTITLED || draft.title == RecipeImport.INSTAGRAM_TITLE
+        r.copy(
+            title = if (placeholder) r.title else draft.title,
+            servings = draft.servings ?: r.servings,
+            totalMinutes = draft.totalMinutes ?: r.totalMinutes,
+            ingredients = draft.ingredients,
+            steps = draft.steps,
+            sourceText = draft.sourceText?.take(SharedInput.MAX_TEXT_CHARS),
+        )
+    }
+
     /** "Passt" on a suggestion. */
     fun confirm(id: String): Undo = changeRecipe(id) { it.copy(status = RecipeStatus.CONFIRMED) }
 

@@ -72,7 +72,7 @@ class AppModel(
     val capture: StateFlow<CaptureState> = _capture.asStateFlow()
 
     /** Kitchen library: recipes, cooking mode, shopping list (docs/kochbibliothek.md). */
-    val kitchen = KitchenModel(repo, platform) { message, undo -> show(message, undo) }
+    val kitchen = KitchenModel(repo, platform, Background(scope, io)) { message, undo -> show(message, undo) }
 
     /** Pending latency measurement: which trigger, started when (monotonic ms). */
     private var latencyStart: Pair<String, Long>? = null
@@ -346,6 +346,8 @@ class AppModel(
     fun setFirstCaptureAction(action: CaptureAction) = repo.setFirstCaptureAction(action)
 
     fun setAllowOnlineSpeech(allowed: Boolean) = repo.setAllowOnlineSpeech(allowed)
+
+    fun setRecipeAiKey(key: String?) = repo.setRecipeAiKey(key)
 
     fun renameSelf(name: String) {
         if (name.isNotBlank()) repo.rename(name)

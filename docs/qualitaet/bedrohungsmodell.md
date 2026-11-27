@@ -40,6 +40,8 @@ flowchart LR
     Server["Abgleich-Server<br/>TCP 47420"]
   end
   OtherApp["Andere App<br/>(A1)"] -- "TB1: Intent, content://" --> Share
+  App -- "TB6: HTTPS, nur Lesen" --> Insta["www.instagram.com<br/>öffentliche Beitragsseiten"]
+  App -. "TB6: HTTPS, nur mit Schlüssel" .-> Claude["api.anthropic.com<br/>(optional)"]
   Share --> App
   Screen["QR-Code / Code als Text"] -- "TB4: optisch (A4)" --> NewPhone["Neues Gerät"]
   NewPhone -- "TB2: WLAN/Tailnet (A2)" --> Server
@@ -62,6 +64,7 @@ flowchart LR
 | TB3 | Gerät ↔ Ordnerdienst | `familyapp-abgleich/<Geräte-ID>.fas`, `familyapp-abgleich-fotos/*.fap`, Sicherung `FAB1` |
 | TB4 | Mensch ↔ Mensch | QR-Code mit Einmalgeheimnis, sechsstellige Prüfzahl |
 | TB5 | Prozess ↔ andere Konten des Rechners | Dateien des Hausgeräts |
+| TB6 | Gerät ↔ fremde Dienste im Internet | Abruf öffentlicher Instagram-Seiten (ADR 0007); optional Caption an Claude |
 
 ## 4. Bedrohungen und Maßnahmen
 
@@ -78,6 +81,9 @@ Status: ✓ abgesichert und geprüft · ◐ abgesichert mit Restrisiko · ✗ of
 | TE-5 | S | Eine fremde App legt ungefragt Einträge an | Gewollt („schnell rein“). Der Eintrag liegt im Eingang mit Quelle „geteilt“ und Rückgängig, Person und Datum bestätigt ein Mensch | Gestaltungsdoc, HITL-Prinzip | ◐ akzeptiert |
 | TE-6 | (Verlässlichkeit) | Ein abgelehntes Bild verschwindet still, die Person glaubt, der Brief sei gespeichert | **Neu:** Meldung „Gespeichert ohne Bild. …“ mit Grund, der Text bleibt erhalten | `AppModelTest.refusedSharedImage…` (2 Tests); Emulator prüft jede Meldung | ✓ |
 | TE-7 | S, T | Eine fremde App schickt Text, der wie ein Rezept aussieht, oder einen Instagram-Link; er landet ungefragt in der Kochbibliothek statt im Eingang (Kochbibliothek, 26.11.2026) | Nur Regeln entscheiden, nichts geht ins Netz: Zutatenliste **und** Schritte, oder ein Link auf einen Instagram-Beitrag mit höchstens 40 Zeichen daneben. Mit Bild bleibt es immer ein Eintrag. Landet als „Vorschlag“ mit Rückgängig, ein Mensch bestätigt | `RecipeImportTest.schoolMailIsNotARecipe`, `ingredientsWithoutStepsStayACapture`, `instagramProfileLinkIsNoRecipe`; `KitchenModelTest.recipeTextWithPhotoStaysACapture` | ✓ |
+| TE-9 | S, T, I | Ein geteilter Link bringt die App dazu, eine fremde Adresse abzurufen (SSRF über das Handy) oder fremde HTML-Seiten als Rezept zu übernehmen (Instagram-Abruf, ADR 0007) | **Neu:** Abgerufen wird nur `https://www.instagram.com` mit Pfad aus dem Shortcode (`/p/<code>/` oder `/p/<code>/embed/captioned/`, Code nur `[A-Za-z0-9_-]`, höchstens 64 Zeichen); andere Pfade schickt der Abruf gar nicht ab. Keine Cookies, keine Anmeldung | `InstagramPostTest.shortcodeOnlyFromInstagramPostLinks`, `pathsAreBuiltFromTheShortcodeOnly`; `HttpInstagramPagesTest.onlyThePathsInstagramLinkBuildsAreRequested`, `normalPageIsReadWithoutCookies` | ✓ |
+| TE-10 | D, T | Instagram (oder wer sich dazwischenschaltet) liefert riesige, kaputte oder umgeleitete Seiten; der Parser hängt oder übernimmt Unsinn | **Neu:** nur Status 200 und `text/html`, Weiterleitungen werden nicht verfolgt, höchstens 3 MB, 10 s Zeitlimit; JSON per Zeichenscan statt Regex, Caption höchstens 5 000 Zeichen; Ergebnis bleibt Vorschlag mit Rückgängig; hat jemand den Vorschlag schon geändert, wird nichts überschrieben | `HttpInstagramPagesTest` (Größe, Umleitung, Typ, Status), `InstagramPostTest.overlongCaptionIsRefused`, `loginWallAndForeignPagesGiveNothing`; `KitchenModelTest.recipeChangedWhileFetchingIsNotOverwritten` | ✓ |
+| TE-11 | I, T | Optionale Cloud-KI (Claude): Familiendaten gehen an Anthropic, der API-Schlüssel landet woanders, oder eine Caption mit versteckten Anweisungen steuert die KI (Prompt-Injection) | **Neu:** aus ohne Schlüssel; nur die öffentliche Caption eines geteilten Instagram-Beitrags geht hin, und nur wenn die Regeln keine Zutaten finden; Schlüssel nur als Header an die feste Adresse `api.anthropic.com`, nie im Body, nicht im Abgleich; Antwort nur als JSON nach festem Schema, durch den Zutaten-Parser, Werte begrenzt, Ergebnis bleibt Vorschlag | `RecipeAiTest` (Schema, Begrenzung, Fehler), `HttpClaudeRecipeAiTest.recipeComesBackWithTheRightHeaders`; `KitchenModelTest.cloudAiStaysUnusedWithoutKeyOrWhenRulesSucceed`, `cloudAiReadsWhatTheRulesCannotAndItStaysASuggestion` | ◐ Schlüssel liegt unverschlüsselt im App-Speicher wie der Wiederherstellungscode |
 | TE-8 | T, E | Geteilter oder getippter Text bringt einen Link mit anderem Schema (`intent:`, `javascript:`, `file:`), den „Quelle öffnen“ an das System gibt | Nur `http(s)://` wird als Quelle übernommen und geöffnet, alles andere bleibt Text; Tracking-Parameter (`igsh`, `utm_…`) werden entfernt | `RecipeImportTest.onlyWebLinksAreTaken`, `trackingParametersAreRemovedOthersKept` | ✓ |
 
 ### Kopplung per QR-Code (TB2, TB4, A2, A4)

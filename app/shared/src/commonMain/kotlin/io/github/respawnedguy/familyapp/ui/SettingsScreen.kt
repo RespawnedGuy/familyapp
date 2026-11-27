@@ -1,5 +1,11 @@
 package io.github.respawnedguy.familyapp.ui
 
+import io.github.respawnedguy.familyapp.resources.recipe_ai_enable
+import io.github.respawnedguy.familyapp.resources.recipe_ai_explain
+import io.github.respawnedguy.familyapp.resources.recipe_ai_key
+import io.github.respawnedguy.familyapp.resources.recipe_ai_off
+import io.github.respawnedguy.familyapp.resources.recipe_ai_on
+import io.github.respawnedguy.familyapp.resources.recipe_ai_title
 import io.github.respawnedguy.familyapp.resources.reminders_blocked
 import org.jetbrains.compose.resources.stringResource
 import io.github.respawnedguy.familyapp.resources.Res
@@ -18,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -107,6 +114,10 @@ fun SettingsScreen(data: FamilyData, model: AppModel, updates: UpdateController?
             )
         }
 
+        SettingsGroup(stringResource(Res.string.recipe_ai_title)) {
+            RecipeAiSettings(s.recipeAiKey, model)
+        }
+
         SettingsGroup("Erinnerungen") {
             // Whole row is one switch for screen readers and a large touch target (P1-6).
             Row(
@@ -191,3 +202,37 @@ fun SettingsScreen(data: FamilyData, model: AppModel, updates: UpdateController?
 }
 
 
+
+/**
+ * Optional Claude for recipes (ADR 0007). Off without a key. Says plainly what leaves the phone:
+ * only the text of a shared recipe, never family data. The key is shown masked once saved.
+ */
+@Composable
+private fun RecipeAiSettings(savedKey: String?, model: AppModel) {
+    val c = LocalFamilyColors.current
+    var key by remember { mutableStateOf("") }
+    Text(
+        stringResource(Res.string.recipe_ai_explain),
+        fontSize = 12.sp, color = c.textTertiary,
+    )
+    if (savedKey != null) {
+        Text(stringResource(Res.string.recipe_ai_on, savedKey.takeLast(KEY_TAIL)), fontSize = 15.sp, color = c.text)
+        OutlinedButton(onClick = { model.setRecipeAiKey(null) }) { Text(stringResource(Res.string.recipe_ai_off)) }
+    } else {
+        OutlinedTextField(
+            value = key,
+            onValueChange = { key = it.trim() },
+            label = { Text(stringResource(Res.string.recipe_ai_key)) },
+            singleLine = true, visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        if (key.isNotEmpty()) {
+            Button(onClick = { model.setRecipeAiKey(key); key = "" }) {
+                Text(stringResource(Res.string.recipe_ai_enable))
+            }
+        }
+    }
+}
+
+/** How much of the saved API key the settings show, so the person recognises it. */
+private const val KEY_TAIL = 4

@@ -112,6 +112,11 @@ data class Settings(
     val notificationsAsked: Boolean = false,
     /** Number of items when the "only on this phone" hint was put aside (P1-11); null = never. */
     val localOnlyHintDismissedAt: Int? = null,
+    /**
+     * Anthropic API key for reading recipes with Claude (ADR 0007); null = cloud AI off (default).
+     * Like [backupCode] only on this phone and in the encrypted backup, never synced.
+     */
+    val recipeAiKey: String? = null,
 )
 
 @Serializable

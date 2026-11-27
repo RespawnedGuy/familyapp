@@ -1,17 +1,26 @@
 package io.github.respawnedguy.familyapp.presentation
 
 import io.github.respawnedguy.familyapp.data.FamilyRepository
+import io.github.respawnedguy.familyapp.data.AiOutcome
+import io.github.respawnedguy.familyapp.data.InstagramImport
+import io.github.respawnedguy.familyapp.data.RecipeAi
 import io.github.respawnedguy.familyapp.data.RecipeEdit
 import io.github.respawnedguy.familyapp.data.Undo
+import io.github.respawnedguy.familyapp.domain.recipe.InstagramLink
+import io.github.respawnedguy.familyapp.domain.recipe.InstagramPost
 import io.github.respawnedguy.familyapp.domain.recipe.Recipe
 import io.github.respawnedguy.familyapp.domain.recipe.RecipeImport
 import io.github.respawnedguy.familyapp.domain.recipe.RecipeStatus
 import io.github.respawnedguy.familyapp.domain.recipe.RecipeViews
 import io.github.respawnedguy.familyapp.domain.recipe.ShoppingLine
 import io.github.respawnedguy.familyapp.domain.recipe.ShoppingList
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** Where in the kitchen library the person is. Null in [KitchenModel.route] means: not in the kitchen. */
 sealed interface KitchenRoute {
@@ -32,9 +41,14 @@ sealed interface KitchenRoute {
 class KitchenModel internal constructor(
     private val repo: FamilyRepository,
     private val platform: PlatformServices,
+    background: Background,
     show: (String, Undo?) -> Unit,
 ) {
-    val recipes = RecipeActions(repo, this, show)
+    val recipes = RecipeActions(
+        repo, this, show, background,
+        instagram = platform.instagramPages?.let(::InstagramImport),
+        ai = { repo.current.settings.recipeAiKey?.let(platform::recipeAi) },
+    )
     val shopping = ShoppingActions(repo, this, show)
 
     private val _route = MutableStateFlow<KitchenRoute?>(null)
@@ -88,11 +102,19 @@ class KitchenModel internal constructor(
     }
 }
 
+/** Where slow work runs: [scope] lives as long as the app model, [io] for network and files. */
+internal class Background(val scope: CoroutineScope, val io: CoroutineDispatcher)
+
 /** Creating, editing, confirming and cooking recipes. */
 class RecipeActions internal constructor(
     private val repo: FamilyRepository,
     private val nav: KitchenModel,
     private val show: (String, Undo?) -> Unit,
+    private val background: Background,
+    /** Null where the platform cannot fetch pages: link-only recipes then wait for pasted text. */
+    private val instagram: InstagramImport?,
+    /** Cloud AI if switched on in the settings (API key entered), else null. Asked each time. */
+    private val ai: () -> RecipeAi?,
 ) {
     private val store get() = repo.recipeStore
 
@@ -111,8 +133,68 @@ class RecipeActions internal constructor(
      */
     fun importShared(text: String) {
         val draft = RecipeImport.fromText(text)
-        val (_, undo) = store.add(draft, RecipeStatus.SUGGESTED)
-        show(if (draft.needsText) SHARED_LINK_ONLY else SHARED_RECIPE, undo)
+        val (recipe, undo) = store.add(draft, RecipeStatus.SUGGESTED)
+        val shortcode = draft.sourceUrl?.let(InstagramLink::shortcode)
+        val fetcher = instagram
+        if (!draft.needsText || shortcode == null || fetcher == null) {
+            show(if (draft.needsText) SHARED_LINK_ONLY else SHARED_RECIPE, undo)
+            return
+        }
+        // Instagram hands over only the link: fetch the caption on the phone (ADR 0007).
+        show(FETCHING_CAPTION, undo)
+        background.scope.launch {
+            val post = withContext(background.io) { runCatching { fetcher.fetch(shortcode) }.getOrNull() }
+            fillFromInstagram(recipe, post)
+        }
+    }
+
+    /** Puts the fetched caption into the suggestion, unless somebody touched it in the meantime. */
+    private fun fillFromInstagram(added: Recipe, post: InstagramPost?) {
+        val untouched = store.recipe(added.id)?.stamp == added.stamp
+        when {
+            !untouched -> Unit
+            post == null -> show(CAPTION_UNAVAILABLE, null)
+            else -> fillCaption(added.id, post)
+        }
+    }
+
+    private fun fillCaption(id: String, post: InstagramPost) {
+        val draft = RecipeImport.fromText(post.caption)
+        val undo = store.fillSuggestion(id, draft)
+        val cloud = if (draft.needsText) ai() else null
+        val filled = store.recipe(id)
+        if (cloud == null || filled == null) {
+            show(
+                when {
+                    !draft.needsText -> CAPTION_FETCHED
+                    post.isVideo -> CAPTION_WITHOUT_INGREDIENTS_VIDEO
+                    else -> CAPTION_WITHOUT_INGREDIENTS
+                },
+                undo,
+            )
+        } else {
+            // The rules found no ingredients; the person switched the cloud AI on (ADR 0007).
+            show(ASKING_AI, undo)
+            background.scope.launch {
+                val outcome = withContext(background.io) {
+                    runCatching { cloud.extract(post.caption) }.getOrElse { AiOutcome.Failed(AI_NO_ANSWER) }
+                }
+                fillFromAi(filled, post, outcome)
+            }
+        }
+    }
+
+    /** The AI's reading goes into the suggestion like the rules' would; a person still confirms. */
+    private fun fillFromAi(filled: Recipe, post: InstagramPost, outcome: AiOutcome) {
+        val current = store.recipe(filled.id) ?: return
+        if (current.stamp != filled.stamp) return
+        val draft = (outcome as? AiOutcome.Ok)?.recipe?.toDraft(post.caption)
+        when {
+            outcome is AiOutcome.Failed -> show("$AI_FAILED ${outcome.reason}", null)
+            draft == null || draft.needsText ->
+                show(if (post.isVideo) AI_FOUND_NOTHING_VIDEO else AI_FOUND_NOTHING, null)
+            else -> show(AI_FILLED, store.fillSuggestion(filled.id, draft))
+        }
     }
 
     fun save(id: String, edit: RecipeEdit) {
@@ -161,6 +243,21 @@ class RecipeActions internal constructor(
         const val NO_INGREDIENTS_FOUND = "Gespeichert. Keine Zutatenliste erkannt, bitte unter „Bearbeiten“ ergänzen."
         const val SHARED_RECIPE = "Als Rezeptvorschlag gespeichert. Liegt unter Familie › Kochbibliothek."
         const val SHARED_LINK_ONLY = "Link als Rezeptvorschlag gespeichert. Text fehlt noch, siehe Kochbibliothek."
+        const val FETCHING_CAPTION = "Link als Rezeptvorschlag gespeichert. Hole den Text von Instagram …"
+        const val CAPTION_FETCHED = "Rezepttext von Instagram geholt. Vorschlag liegt in der Kochbibliothek."
+        const val CAPTION_WITHOUT_INGREDIENTS =
+            "Text von Instagram geholt, aber keine Zutatenliste darin. Bitte im Vorschlag ergänzen."
+        const val CAPTION_WITHOUT_INGREDIENTS_VIDEO =
+            "Text von Instagram geholt, aber keine Zutatenliste darin. Steht das Rezept nur im Video? Bitte ergänzen."
+        const val ASKING_AI = "Text von Instagram geholt. Die Regeln finden keine Zutaten, frage die Cloud-KI …"
+        const val AI_FILLED = "Rezept mit Cloud-KI ausgelesen. Bitte im Vorschlag prüfen."
+        const val AI_FAILED = "Cloud-KI hat nicht geholfen."
+        const val AI_NO_ANSWER = "Keine Antwort."
+        const val AI_FOUND_NOTHING = "Auch die Cloud-KI findet im Text kein Rezept. Bitte im Vorschlag ergänzen."
+        const val AI_FOUND_NOTHING_VIDEO =
+            "Auch die Cloud-KI findet im Text kein Rezept. Steht es nur im Video? Bitte ergänzen."
+        const val CAPTION_UNAVAILABLE =
+            "Text von Instagram nicht abrufbar. Beschreibung in Instagram kopieren und im Vorschlag einfügen."
         const val CONFIRMED = "Rezept bestätigt."
         const val DELETED = "Rezept gelöscht."
         const val COOKED = "Als gekocht vermerkt."

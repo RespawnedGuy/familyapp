@@ -1,5 +1,7 @@
 package io.github.respawnedguy.familyapp.presentation
 
+import io.github.respawnedguy.familyapp.data.InstagramPages
+import io.github.respawnedguy.familyapp.data.RecipeAi
 import io.github.respawnedguy.familyapp.domain.DeviceInfo
 import io.github.respawnedguy.familyapp.domain.ResourceUsage
 
@@ -26,7 +28,7 @@ interface SpeechInput {
  * Everything the shared UI needs from the platform. Android implements it in androidApp;
  * iOS gets its own implementation when the iOS app is built.
  */
-interface PlatformServices : DeviceMeasurements, ScreenControl {
+interface PlatformServices : DeviceMeasurements, ScreenControl, RecipeSources {
     /** Null where no recognizer is available; the capture sheet then offers text instead. */
     val speech: SpeechInput?
 
@@ -74,6 +76,15 @@ sealed interface RestoreRead {
     data object NeedsCode : RestoreRead
     data object WrongCode : RestoreRead
     data class Failed(val message: String) : RestoreRead
+}
+
+/** Where recipe text comes from besides the person (ADR 0007). Defaults: nothing, the person pastes. */
+interface RecipeSources {
+    /** Public Instagram pages for the recipe import. Null: link-only recipes wait for pasted text. */
+    val instagramPages: InstagramPages? get() = null
+
+    /** Cloud AI for recipe texts with this API key. Null where the platform has none. */
+    fun recipeAi(apiKey: String): RecipeAi? = null
 }
 
 /** Display control for the kitchen library. Default: nothing (platforms without it). */
