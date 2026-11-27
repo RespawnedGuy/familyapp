@@ -421,6 +421,68 @@ class KitchenModelTest {
     }
 
     @Test
+    fun suggestionTappedPlansDishAndFillsListWithOneUndo() = runTest {
+        val m = model()
+        m.kitchen.recipes.createFromText(caption)
+        val recipe = m.repo.current.recipes.single()
+        val saturday = LocalDate(2026, 11, 21)
+        m.kitchen.shopping.planAndAdd(recipe, saturday, 4)
+        val meal = m.repo.current.meals.single()
+        assertEquals(saturday to 4, meal.day to meal.servings)
+        assertEquals("1 kg", ShoppingList.view(m.repo.current.shopping).open.single { it.name == "Kartoffeln" }.amounts)
+        assertEquals("Ofengemüse für 2 Personen: morgen, 4 Personen, 3 Zutaten auf der Liste.", m.feedback.value?.message)
+        m.undo(m.feedback.value!!)
+        assertTrue(m.repo.current.meals.all { it.deleted })
+        assertTrue(m.repo.current.shopping.all { it.deleted })
+    }
+
+    @Test
+    fun lastUsedNumberOfPeopleIsTheNextDefault() = runTest {
+        val m = model()
+        m.kitchen.recipes.createFromText(caption) // für 2 Personen
+        val first = m.repo.current.recipes.single()
+        m.kitchen.openRecipe(first.id)
+        assertEquals(2, m.kitchen.servings.value, "ohne Vorgabe: Portionen des Rezepts")
+        m.kitchen.shopping.planAndAdd(first, null, 5)
+        assertEquals(5, m.repo.current.settings.lastServings)
+        m.kitchen.recipes.createFromText(caption.replace("für 2 Personen", "für 6 Personen"))
+        val second = m.repo.current.recipes.first { it.id != first.id }
+        m.kitchen.openRecipe(second.id)
+        assertEquals(5, m.kitchen.servings.value)
+        m.kitchen.setServings(3)
+        m.kitchen.startCooking(second.id)
+        assertEquals(3, m.repo.current.settings.lastServings)
+    }
+
+    @Test
+    fun recipeWithoutServingsIsNeverMultipliedByLastNumber() = runTest {
+        val m = model()
+        m.repo.setLastServings(4)
+        m.kitchen.recipes.createFromText("Pfannkuchen\nZutaten:\n200 g Mehl\n2 Eier\nZubereitung:\nVerrühren und backen.")
+        val recipe = m.repo.current.recipes.single()
+        assertNull(recipe.servings)
+        m.kitchen.openRecipe(recipe.id)
+        assertEquals(1, m.kitchen.servings.value)
+        m.kitchen.shopping.addRecipe(recipe)
+        assertEquals(4, m.repo.current.settings.lastServings, "Zahl für ein Rezept ohne Portionen wird nicht gemerkt")
+        assertEquals("2", ShoppingList.view(m.repo.current.shopping).open.single { it.name == "Eier" }.amounts)
+    }
+
+    @Test
+    fun cookingTicksOffTheDishPlannedForToday() = runTest {
+        val m = model()
+        m.kitchen.recipes.createFromText(caption)
+        val recipe = m.repo.current.recipes.single()
+        m.kitchen.shopping.planAndAdd(recipe, friday, 2)
+        m.kitchen.startCooking(recipe.id)
+        m.kitchen.recipes.cooked(recipe.id)
+        assertTrue(m.repo.current.meals.single().done)
+        m.undo(m.feedback.value!!)
+        assertFalse(m.repo.current.meals.single().done)
+        assertNull(m.repo.recipeStore.recipe(recipe.id)?.cookedOn)
+    }
+
+    @Test
     fun servingsStayInBounds() = runTest {
         val m = model()
         m.kitchen.setServings(0)

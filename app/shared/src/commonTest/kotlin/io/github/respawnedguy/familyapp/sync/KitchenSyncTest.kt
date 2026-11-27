@@ -50,6 +50,21 @@ class KitchenSyncTest {
     private val text = "Salat\nZutaten:\n1 Gurke\n2 Tomaten\n1 EL Öl\nZubereitung:\nSchneiden und mischen."
 
     @Test
+    fun plannedDishReachesTheOtherPhoneAndRemovalToo() = runTest {
+        val (a, b, ticks) = pair()
+        val (recipe, _) = a.recipeStore.add(RecipeImport.fromText(text), RecipeStatus.CONFIRMED)
+        a.mealStore.plan(recipe.id, friday, 4)
+        meet(a, b)
+        val meal = b.current.meals.single()
+        assertEquals(friday to 4, meal.day to meal.servings)
+        ticks.second()
+        b.mealStore.remove(meal.id)
+        meet(a, b)
+        assertTrue(a.current.meals.single().deleted)
+        assertEquals(0, SyncMerge.newerThan(a.current, SyncMerge.digest(b.current)).size)
+    }
+
+    @Test
     fun recipeEditAndDeletionReachTheOtherPhone() = runTest {
         val (a, b, ticks) = pair()
         val (recipe, _) = a.recipeStore.add(RecipeImport.fromText(text), RecipeStatus.SUGGESTED)

@@ -1,11 +1,13 @@
 package io.github.respawnedguy.familyapp.data
 
 import io.github.respawnedguy.familyapp.domain.recipe.NewEntry
+import io.github.respawnedguy.familyapp.domain.recipe.PlannedMeal
 import io.github.respawnedguy.familyapp.domain.recipe.Recipe
 import io.github.respawnedguy.familyapp.domain.recipe.RecipeDraft
 import io.github.respawnedguy.familyapp.domain.recipe.RecipeImport
 import io.github.respawnedguy.familyapp.domain.recipe.RecipeStatus
 import io.github.respawnedguy.familyapp.domain.recipe.ShoppingEntry
+import kotlinx.datetime.LocalDate
 
 /** What the edit form hands back; the repository turns it into a new version of the recipe. */
 data class RecipeEdit(
@@ -50,7 +52,7 @@ class RecipeRepository internal constructor(private val repo: FamilyRepository) 
             stamp = repo.tick(),
         )
         repo.edit { it.copy(recipes = it.recipes + recipe) }
-        return recipe to Undo(emptyMap(), recipesBefore = mapOf(recipe.id to null))
+        return recipe to Undo(emptyMap(), kitchen = KitchenBefore(recipes = mapOf(recipe.id to null)))
     }
 
     private fun changeRecipe(id: String, block: (Recipe) -> Recipe): Undo {
@@ -62,7 +64,7 @@ class RecipeRepository internal constructor(private val repo: FamilyRepository) 
                 },
             )
         }
-        return Undo(emptyMap(), recipesBefore = mapOf(id to before))
+        return Undo(emptyMap(), kitchen = KitchenBefore(recipes = mapOf(id to before)))
     }
 
     /** Saving the edit form also confirms a suggestion: somebody looked at it. */
@@ -157,7 +159,7 @@ class ShoppingRepository internal constructor(private val repo: FamilyRepository
         }
         if (created.isEmpty()) return Undo(emptyMap())
         repo.edit { it.copy(shopping = it.shopping + created) }
-        return Undo(emptyMap(), shoppingBefore = created.associate { it.id to null })
+        return Undo(emptyMap(), kitchen = KitchenBefore(shopping = created.associate { it.id to null }))
     }
 
     private fun changeEntries(ids: Collection<String>, block: (ShoppingEntry) -> ShoppingEntry): Undo {
@@ -171,7 +173,7 @@ class ShoppingRepository internal constructor(private val repo: FamilyRepository
                 },
             )
         }
-        return Undo(emptyMap(), shoppingBefore = before.associateBy { it.id })
+        return Undo(emptyMap(), kitchen = KitchenBefore(shopping = before.associateBy { it.id }))
     }
 
     /** Ticks or unticks a line (all its entries). Everybody sees who ticked it. */
@@ -197,4 +199,59 @@ class ShoppingRepository internal constructor(private val repo: FamilyRepository
                 else -> before[e.id]?.copy(stamp = repo.tick()) ?: e.copy(deleted = true, stamp = repo.tick())
             }
         }
+}
+
+/**
+ * The family's meal plan (docs/angebote-und-vorschlaege.md "Essensplan"). Same state and clock as
+ * [FamilyRepository]; every change is a new version with a new stamp, removing sets `deleted`.
+ */
+class MealPlanRepository internal constructor(private val repo: FamilyRepository) {
+
+    private val self: String? get() = repo.current.selfId
+
+    private fun meal(id: String): PlannedMeal? = repo.current.meals.firstOrNull { it.id == id && !it.deleted }
+
+    /** Plans [recipeId] for [day] (null: "Ohne Tag") with [servings]. */
+    fun plan(recipeId: String, day: LocalDate?, servings: Int): Undo {
+        val meal = PlannedMeal(
+            id = repo.nextId(),
+            recipeId = recipeId,
+            day = day,
+            servings = servings,
+            plannedBy = self.orEmpty(),
+            createdMs = repo.now(),
+            changedBy = self,
+            stamp = repo.tick(),
+        )
+        repo.edit { it.copy(meals = it.meals + meal) }
+        return Undo(emptyMap(), kitchen = KitchenBefore(meals = mapOf(meal.id to null)))
+    }
+
+    private fun change(id: String, block: (PlannedMeal) -> PlannedMeal): Undo {
+        val before = meal(id) ?: return Undo(emptyMap())
+        repo.edit { d ->
+            d.copy(
+                meals = d.meals.map {
+                    if (it.id == id) block(it).copy(changedBy = d.selfId, stamp = repo.tick()) else it
+                },
+            )
+        }
+        return Undo(emptyMap(), kitchen = KitchenBefore(meals = mapOf(id to before)))
+    }
+
+    fun move(id: String, day: LocalDate?): Undo = change(id) { it.copy(day = day) }
+
+    fun remove(id: String): Undo = change(id) { it.copy(deleted = true) }
+
+    /**
+     * "Gekocht?" in the cooking mode: the dish planned for this recipe nearest to [today]
+     * (today, else the earliest open one) is ticked off.
+     */
+    fun markCooked(recipeId: String, today: LocalDate): Undo? {
+        val open = repo.current.meals.filter { it.recipeId == recipeId && !it.deleted && !it.done }
+        val target = open.firstOrNull { it.day == today }
+            ?: open.filter { it.day == null || it.day <= today }.minByOrNull { it.day ?: today }
+            ?: return null
+        return change(target.id) { it.copy(done = true) }
+    }
 }

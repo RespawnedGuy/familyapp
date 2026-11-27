@@ -29,8 +29,19 @@ object RecipeViews {
     /** Factor from the recipe's servings to [servings]; a recipe without servings counts as one batch. */
     fun factor(recipe: Recipe, servings: Int): Double = servings / (recipe.servings ?: 1.0)
 
-    /** Servings to start with: the recipe's own, or 1 batch when it does not say. */
-    fun startServings(recipe: Recipe): Int = max(MIN_SERVINGS, (recipe.servings ?: 1.0).toInt())
+    /**
+     * Servings to start with (docs/angebote-und-vorschlaege.md, Empfehlung 10): the number last used
+     * on this phone, else the recipe's own. A recipe without servings starts at 1 batch, so its
+     * amounts are never multiplied by the last used number of people.
+     */
+    fun startServings(recipe: Recipe, lastUsed: Int? = null): Int = when {
+        recipe.servings == null -> MIN_SERVINGS
+        lastUsed != null -> lastUsed.coerceIn(MIN_SERVINGS, MAX_SERVINGS)
+        else -> max(MIN_SERVINGS, recipe.servings.toInt())
+    }
+
+    /** Only a number chosen for a recipe that has servings is worth remembering as "last used". */
+    fun remembers(recipe: Recipe): Boolean = recipe.servings != null
 
     /**
      * Ingredients a step mentions, for the cooking mode (concept: "Zutat-Name kommt im Schritttext

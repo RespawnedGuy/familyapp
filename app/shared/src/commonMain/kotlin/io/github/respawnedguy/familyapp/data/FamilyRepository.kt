@@ -22,6 +22,7 @@ import io.github.respawnedguy.familyapp.domain.Tombstone
 import io.github.respawnedguy.familyapp.domain.contacts.Contact
 import io.github.respawnedguy.familyapp.domain.contacts.ContactLink
 import io.github.respawnedguy.familyapp.domain.contacts.PortfolioEntry
+import io.github.respawnedguy.familyapp.domain.recipe.PlannedMeal
 import io.github.respawnedguy.familyapp.domain.recipe.Recipe
 import io.github.respawnedguy.familyapp.domain.recipe.ShoppingEntry
 import io.github.respawnedguy.familyapp.domain.readyToConfirm
@@ -45,9 +46,36 @@ class Undo internal constructor(
     internal val itemsBefore: Map<String, Item?>,
     internal val membersBefore: Map<String, Member?> = emptyMap(),
     internal val wholeBefore: FamilyData? = null,
-    internal val recipesBefore: Map<String, Recipe?> = emptyMap(),
-    internal val shoppingBefore: Map<String, ShoppingEntry?> = emptyMap(),
+    internal val kitchen: KitchenBefore = KitchenBefore(),
     internal val people: PeopleBefore = PeopleBefore(),
+) {
+    internal val recipesBefore: Map<String, Recipe?> get() = kitchen.recipes
+    internal val shoppingBefore: Map<String, ShoppingEntry?> get() = kitchen.shopping
+    internal val mealsBefore: Map<String, PlannedMeal?> get() = kitchen.meals
+}
+
+/** Recipes, shopping entries and planned dishes an action touched (kitchen library). */
+class KitchenBefore internal constructor(
+    internal val recipes: Map<String, Recipe?> = emptyMap(),
+    internal val shopping: Map<String, ShoppingEntry?> = emptyMap(),
+    internal val meals: Map<String, PlannedMeal?> = emptyMap(),
+)
+
+/** Both actions reverted by one tap ("Kürbissuppe: Do, 4 Personen, 7 Zutaten auf der Liste", plan and list). */
+internal operator fun Undo.plus(other: Undo): Undo = Undo(
+    itemsBefore = itemsBefore + other.itemsBefore,
+    membersBefore = membersBefore + other.membersBefore,
+    wholeBefore = wholeBefore ?: other.wholeBefore,
+    kitchen = KitchenBefore(
+        recipesBefore + other.recipesBefore,
+        shoppingBefore + other.shoppingBefore,
+        mealsBefore + other.mealsBefore,
+    ),
+    people = PeopleBefore(
+        people.contacts + other.people.contacts,
+        people.links + other.people.links,
+        people.entries + other.people.entries,
+    ),
 )
 
 /** Contacts, links and portfolio facts an action touched (docs/kontakte-und-portfolio.md). */
@@ -140,6 +168,7 @@ class FamilyRepository(
     /** The kitchen library: recipes and the shopping list, on the same state and clock. */
     val recipeStore: RecipeRepository by lazy { RecipeRepository(this) }
     val shoppingStore: ShoppingRepository by lazy { ShoppingRepository(this) }
+    val mealStore: MealPlanRepository by lazy { MealPlanRepository(this) }
 
     /** Shared contacts and the portfolio per person (docs/kontakte-und-portfolio.md). */
     val contactStore: ContactRepository by lazy { ContactRepository(this) }
@@ -383,6 +412,9 @@ class FamilyRepository(
                 portfolio = revertRecords(d.portfolio, undo.people.entries, PortfolioEntry::id) { e, stamp ->
                     e?.copy(stamp = stamp)
                 },
+                meals = revertRecords(d.meals, undo.mealsBefore, PlannedMeal::id) { m, stamp ->
+                    m?.copy(stamp = stamp)
+                },
             )
         }
     }
@@ -429,6 +461,7 @@ class FamilyRepository(
         is Contact -> ContactRepository.emptied(record).copy(stamp = stamp) as T
         is ContactLink -> record.copy(deleted = true, stamp = stamp) as T
         is PortfolioEntry -> PortfolioRepository.emptied(record).copy(stamp = stamp) as T
+        is PlannedMeal -> record.copy(deleted = true, stamp = stamp) as T
         else -> record
     }
 
@@ -443,6 +476,11 @@ class FamilyRepository(
     fun setFirstCaptureAction(action: CaptureAction) = settings { it.copy(firstCaptureAction = action) }
 
     fun setAllowOnlineSpeech(allowed: Boolean) = settings { it.copy(allowOnlineSpeech = allowed) }
+
+    /** Remembers the number of people last used for a recipe (default for the next one, per phone). */
+    fun setLastServings(servings: Int) {
+        if (current.settings.lastServings != servings) settings { it.copy(lastServings = servings) }
+    }
 
     /** Empty or blank switches the cloud AI for recipes off. */
     fun setRecipeAiKey(key: String?) = settings { it.copy(recipeAiKey = key?.trim()?.takeIf { k -> k.isNotEmpty() }) }
@@ -536,7 +574,7 @@ class FamilyRepository(
     private fun allStamps(d: FamilyData): List<Stamp> =
         d.members.map { it.stamp } + d.items.map { it.stamp } + d.tombstones.map { it.stamp } +
             d.recipes.map { it.stamp } + d.shopping.map { it.stamp } + d.contacts.map { it.stamp } +
-            d.contactLinks.map { it.stamp } + d.portfolio.map { it.stamp }
+            d.contactLinks.map { it.stamp } + d.portfolio.map { it.stamp } + d.meals.map { it.stamp }
 
     // ---- Sync between family devices (ADR 0003, ADR 0006) ---------------------------------------
 
@@ -580,6 +618,7 @@ class FamilyRepository(
         records.contacts.forEach { clock.observe(it.stamp) }
         records.contactLinks.forEach { clock.observe(it.stamp) }
         records.portfolio.forEach { clock.observe(it.stamp) }
+        records.meals.forEach { clock.observe(it.stamp) }
     }
 
     companion object {

@@ -1,6 +1,19 @@
 # Angebote, Saison und Essensvorschläge – Konzept
 
-Stand: 27.11.2026 · Status: **Vorschlag** (bitte kommentieren, Unkommentiertes gilt als angenommen) · baut auf [kochbibliothek.md](kochbibliothek.md) auf
+Stand: 27.11.2026 · Status: **angenommen** (PR #50), Stufe 1a umgesetzt · baut auf [kochbibliothek.md](kochbibliothek.md) auf
+
+## Umsetzungsstand
+
+**Stufe 1a (27.11.2026), ohne Netz, im Qualitätstor getestet:**
+
+- Saisonkalender `domain/offers/SeasonCalendar.kt`: 52 Arten mit Saison und Lager, Schlüssel entstehen aus dem Namen wie bei Rezeptzeilen, Komposita („Hokkaidokürbis“) finden den längsten Eintrag, Doppelgänger wie Knoblauch, Schnittlauch, Kichererbsen zählen nie. Neue Synonyme in `IngredientKey`: Äpfel/Apfel, Karotte/Möhre, Porree/Lauch, Zwetschge/Pflaume, Rote Beete/Bete, Paprikaschote/Paprika.
+- Abgleich `OfferMatch`: Kompositum-Regel, Verarbeitungs-Sperre (Joghurt, Saft, Mark, Sauce, Pflanzen …), „Passt nicht“-Schlüssel. Tests mit Titeln nach dem Muster echter Angebote („Reis“ ist kein Eis, „Seelachs“ als bekannter Fehlgriff, den „Passt nicht“ abfängt).
+- Vorschläge `Suggestions`: Punkte, Begründungen, Ausschluss (21 Tage, geplant, unbestätigt), Zutatenvorschläge, Gültigkeit der Angebote.
+- Essensplan: `PlannedMeal` als zusätzliches Feld in Daten und Abgleich (Schema bleibt 2), `MealPlanRepository` (planen, verschieben, entfernen, beim Kochen abhaken), `MealPlan` (heute, demnächst, nächster freier Tag).
+- „Wann? / Für wie viele?“ als Aktion `ShoppingActions.planAndAdd`: Liste und Plan in einem Schritt, ein Rückgängig für beides.
+- Zuletzt genutzte Personenzahl pro Handy (`Settings.lastServings`), Vorgabe beim Öffnen eines Rezepts; Rezepte ohne Portionsangabe starten immer bei 1 und ändern die Vorgabe nicht.
+
+**Noch nicht drin (Stufe 1b):** Abruf und Parser der Märkte, Einstellungen › Einkauf mit PLZ-Tabelle, Oberfläche (Vorschläge unter Heute, Blatt „Wann/Wie viele“, Plan unter Heute und Demnächst).
 
 ## Kurzfassung
 
