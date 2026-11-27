@@ -206,7 +206,8 @@ Neue Eingänge: Antworten von vier fremden Websites. Sie sind nicht vertrauensw�
 
 1. **Stufe 1a (in der Cloud testbar, Qualitätstor):** Saisonkalender, Produkt-Abgleich, Punkte, „zuletzt genutzte Zahl“, Essensplan-Datensatz und Abgleich, Parser der vier Märkte gegen Testdateien.
 2. **Stufe 1b (Handy):** Adapter mit echtem Abruf, Einstellungen › Einkauf, Diagnose-Zeile je Markt, Vorschläge unter Heute, Blatt „Wann/Wie viele“. Signierte APK über CI wie immer.
-3. **Später:** Lidl-Preise per Texterkennung aus Prospektseiten, Netto/Penny/Edeka prüfen, Südfrüchte-Saison, Rezeptidee per KI, Einkaufsliste nach Markt sortiert.
+3. **Später:** Lidl-Preise per Texterkennung aus Prospektseiten, Südfrüchte-Saison, Rezeptidee per KI, Einkaufsliste nach Markt sortiert.
+4. **Stufe 2 (weitere Märkte und Filialen):** Prüfung von 50 Märkten in [angebote-maerkte.md](angebote-maerkte.md).
 
 ## Prüfung
 
