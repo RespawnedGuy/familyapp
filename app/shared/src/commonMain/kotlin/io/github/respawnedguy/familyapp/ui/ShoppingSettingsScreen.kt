@@ -36,6 +36,9 @@ import io.github.respawnedguy.familyapp.resources.offers_kaufland_find
 import io.github.respawnedguy.familyapp.resources.offers_kaufland_other
 import io.github.respawnedguy.familyapp.resources.offers_kaufland_store
 import io.github.respawnedguy.familyapp.resources.offers_markets
+import io.github.respawnedguy.familyapp.resources.offers_not_readable
+import io.github.respawnedguy.familyapp.resources.offers_penny_nearby
+import io.github.respawnedguy.familyapp.resources.offers_penny_store
 import io.github.respawnedguy.familyapp.resources.offers_refresh
 import io.github.respawnedguy.familyapp.resources.offers_rejected_item
 import io.github.respawnedguy.familyapp.resources.offers_rejected_remove
@@ -43,6 +46,8 @@ import io.github.respawnedguy.familyapp.resources.offers_rejected_title
 import io.github.respawnedguy.familyapp.resources.offers_retry
 import io.github.respawnedguy.familyapp.resources.offers_rules
 import io.github.respawnedguy.familyapp.resources.offers_settings_title
+import io.github.respawnedguy.familyapp.resources.offers_store_choose
+import io.github.respawnedguy.familyapp.resources.offers_store_distance
 import io.github.respawnedguy.familyapp.resources.offers_waiting_wifi
 import org.jetbrains.compose.resources.stringResource
 
