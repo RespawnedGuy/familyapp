@@ -212,6 +212,8 @@ Jedes Feld zeigt, woher es kommt (Regel, Texterkennung, Sprache, lokale KI), und
 
 ## Angebote und Vorschläge
 
+> Fortgeschrieben am 27.11.2026 mit live geprüften Quellen in [angebote-und-vorschlaege.md](angebote-und-vorschlaege.md) (Händlersuche per PLZ, Saisonkalender, Ablauf „Wann/Wie viele“).
+
 ### Wer holt die Angebote, ohne Server?
 
 | Variante | Wie | Bewertung |
@@ -253,7 +255,7 @@ Ablauf in der Woche: Montag liegt unter **Heute** eine Karte „Diese Woche gün
 6. **Erkennung nur lokal:** ML Kit Text Recognition für Bilder und Videobilder, ML Kit GenAI Speech Recognition für Ton (Deutsch, Pixel 10). Beide Alpha-/Beta-APIs hinter eigenen Schnittstellen.
 7. **Regeln zuerst, Gemini Nano als Verstärker** für Fließtext und Gesprochenes. Claude bleibt für den Import als Schalter erhalten (Nils' Freigabe vom 01.11.), mit eigenem Schlüssel direkt vom Handy, standardmäßig aus.
 8. **Zutat-Schlüssel beim Import festlegen und bestätigen**, damit Angebots- und Saisonabgleich später ein Nachschlagen ist. Startkatalog aus Synonymen und Plural-Regeln von `preisvergleich`.
-9. **Angebote holt ein Android-Handy per WorkManager**, wöchentlich mit WLAN und Ladegerät; das Ergebnis geht per Sync an alle. Dauer-Peer nur, wenn es ihn ohnehin gibt.
+9. *(Ersetzt durch [angebote-und-vorschlaege.md](angebote-und-vorschlaege.md), Empfehlung 5: jedes Gerät ruft beim Öffnen selbst ab.)* Ursprünglich: **Angebote holt ein Android-Handy per WorkManager**, wöchentlich mit WLAN und Ladegerät; das Ergebnis geht per Sync an alle. Dauer-Peer nur, wenn es ihn ohnehin gibt.
 10. **Aldi Nord, Lidl, Kaufland zuerst, REWE nicht in die App**, weil es einen Bot-Schutz umgehen müsste. Jede Familie holt nur für sich, keine zentrale Angebotsdatenbank.
 11. **Abgleichslogik aus `preisvergleich` nach Kotlin portieren** (`shared/`, reine Logik mit Tests), statt neu zu schreiben.
 12. **Vorschläge deterministisch mit Begründung**, Montags als Karte unter Heute, Auswahl per Antippen, daraus Einkaufsliste mit Zuständigkeit.
