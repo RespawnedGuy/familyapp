@@ -29,7 +29,7 @@ Spike `spikes/p2p-sync/`: `gradle test`, `gradle build`, CLI per `gradle install
 
 ## Ordner
 
-- `docs/` Konzept, `docs/qualitaet/` ISO-25010-Bewertung, Umsetzungsstand und Bedrohungsmodell, `docs/qualitaet/leistung-messen.md` Leistungsmessung auf dem Handy ohne PC, `docs/kochbibliothek.md` Kochbibliothek mit Rezeptimport und Angeboten, `docs/entscheidungen/` ADRs, `docs/gestaltung/` Optik, Haptik, Klickwege, `docs/android-installieren.md` Sideloading-Anleitung, `docs/ui-bearbeiten.md` UI in Android Studio bearbeiten (Vorschauen in `app/shared/src/androidMain/.../preview/`), `docs/ui-werkzeuge.md` Werkzeugwahl für gemeinsame UI-Arbeit (Penpot, Hot Reload), `docs/gestaltung/penpot/` Penpot-Anleitung und Design-Tokens
+- `docs/` Konzept, `docs/qualitaet/` ISO-25010-Bewertung, Umsetzungsstand und Bedrohungsmodell, `docs/qualitaet/leistung-messen.md` Leistungsmessung auf dem Handy ohne PC, `docs/kochbibliothek.md` Kochbibliothek mit Rezeptimport und Angeboten, `docs/kontakte-und-portfolio.md` gemeinsame Kontakte und Portfolio je Person (Codes mit Tresorschlüssel), `docs/entscheidungen/` ADRs, `docs/gestaltung/` Optik, Haptik, Klickwege, `docs/android-installieren.md` Sideloading-Anleitung, `docs/ui-bearbeiten.md` UI in Android Studio bearbeiten (Vorschauen in `app/shared/src/androidMain/.../preview/`), `docs/ui-werkzeuge.md` Werkzeugwahl für gemeinsame UI-Arbeit (Penpot, Hot Reload), `docs/gestaltung/penpot/` Penpot-Anleitung und Design-Tokens
 - `app/` KMP-App: `shared/` (gemeinsamer Compose-Code), `androidApp/`, `iosApp/` (vorbereitet), `scripts/` (APK-Prüfung, Emulator-Test)
 - `tools/family-peer/` Hausgerät als Kommandozeilenprogramm (Kopplung, Abgleich), ADR 0006
 - `tools/quality-check/` Qualitätstor und Messungen zur ISO-25010-Bewertung

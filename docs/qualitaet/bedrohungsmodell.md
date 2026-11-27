@@ -26,6 +26,7 @@
 | A5 | Finder oder Dieb eines Handys | Handys gehen verloren |
 | A6 | Ehemaliges Familienmitglied | Zielgruppe sind auch Getrennterziehende: das Gerät war rechtmäßig gekoppelt |
 | A7 | Anderes Konto auf dem Rechner des Hausgeräts | Surface, NAS oder Mini-PC mit mehreren Nutzern |
+| A8 | Kind mit eigenem gekoppelten Gerät, oder wer ein entsperrtes Familienhandy in der Hand hat | Kinder sind im Datenmodell vorgesehen; Handys werden verliehen (geplant, siehe [Kontakte und Portfolio](../kontakte-und-portfolio.md)) |
 
 Nicht betrachtet: wer Root/Administrator auf einem Familiengerät hat oder Schadsoftware mit diesen Rechten (dagegen hilft keine App), Angriffe auf Tailscale selbst, die Update-Prüfung (eigene Prüfungen in ADR 0005), iOS (noch nicht gebaut), Lieferkette der Bibliotheken.
 
@@ -68,7 +69,7 @@ flowchart LR
 
 ## 4. Bedrohungen und Maßnahmen
 
-Status: ✓ abgesichert und geprüft · ◐ abgesichert mit Restrisiko · ✗ offen (siehe Abschnitt 5). **Neu** heißt: mit diesem PR eingebaut.
+Status: ✓ abgesichert und geprüft · ◐ abgesichert mit Restrisiko · ✗ offen (siehe Abschnitt 5) · ○ geplant (Funktion noch nicht gebaut, Maßnahme ist Abnahmekriterium). **Neu** heißt: mit diesem PR eingebaut.
 
 ### Teilen (TB1, A1)
 
@@ -126,6 +127,30 @@ Status: ✓ abgesichert und geprüft · ◐ abgesichert mit Restrisiko · ✗ of
 | HG-1 | I | Ein anderes Konto auf dem Rechner liest `sync.json` (Familienschlüssel) und die Familiendaten | **Neu:** `sync.json` entsteht mit `rw-------` (vor dem ersten Byte), das Verzeichnis bekommt `rwx------`; README empfiehlt Festplattenverschlüsselung | `SyncFilesTest.theFileWithTheFamilyKeyIsReadableByItsOwnerOnly` | ◐ Administrator liest alles, Daten liegen unverschlüsselt auf der Platte |
 | HG-2 | S, D | Hausgerät ist dauernd erreichbar und damit dauernd Ziel von NE-3 bis NE-5 | Dieselben Maßnahmen wie NE-3/NE-4; README: Port nur im LAN/Tailnet, Tailscale-ACL auf Familiengeräte | `TcpTransportTest` | ◐ |
 
+### Kontakte (TB1, A1; geplant, Konzept 27.11.2026)
+
+| ID | STRIDE | Bedrohung | Maßnahme | Beleg | Status |
+| --- | --- | --- | --- | --- | --- |
+| KT-1 | D, T | Eine fremde App teilt eine riesige oder kaputte vCard (eingebettetes Foto als Base64, tausende Kontakte in einer Datei) | vCard höchstens 1 MB, `PHOTO` und unbekannte Felder werden verworfen, höchstens 20 Kontakte je Vorgang, Feldlängen begrenzt; landet mit Rückgängig | Unit-Test des vCard-Parsers; Emulator-Teilen-Test um vCard erweitern | ○ |
+| KT-2 | T, E | Eine vCard bringt `URL`/`TEL`-Werte mit fremdem Schema (`intent:`, `javascript:`), oder eine Nummer mit Steuercodes (`*#…#`), die beim Antippen ausgeführt würden | Links nur `http(s)://` (wie TE-8); Nummern nur Ziffern, `+`, Leerzeichen; Anrufen nur über `ACTION_DIAL` (Wähl-App zeigt die Nummer, nichts wird ohne Tap gewählt), keine `CALL_PHONE`-Berechtigung | Unit-Tests der Normalisierung | ○ |
+| KT-3 | I | Die App liest mehr aus dem Telefonbuch als nötig oder behält Zugriff | Keine `READ_CONTACTS`/`WRITE_CONTACTS`; Systemauswahl (`ACTION_PICK_CONTACTS` ab API 37, sonst `ACTION_PICK`) mit vorübergehendem Leserecht nur auf die gewählten Kontakte und nur angefragte Felder | `verify-apk.sh` lehnt eine APK mit diesen Berechtigungen ab | ○ |
+| KT-4 | I | Kontaktdaten Dritter verlassen die Familie über einen Online-Dienst (Cloud-KI, Abruf) | Kontakte und Portfolio werden nie an Cloud-KI oder andere Dienste gegeben, unabhängig von Einstellungen | Unit-Test: Cloud-KI-Aufruf erhält nur Rezept-Text | ○ |
+| KT-5 | I | „Ins Telefonbuch“ macht einen Familienkontakt für alle Apps mit Kontaktzugriff (Messenger) lesbar | Nur einzeln auf Tap über den System-Dialog (`ContactsContract.Intents.Insert`), Hinweis beim ersten Mal | – | ○ akzeptiert |
+
+### Geschützte Einträge im Portfolio (A4, A5, A6, A8; geplant)
+
+| ID | STRIDE | Bedrohung | Maßnahme | Beleg | Status |
+| --- | --- | --- | --- | --- | --- |
+| TR-1 | I | Wer das entsperrte Handy hält (A8), liest Fahrradschloss- oder Spindcodes | Werte verdeckt; Anzeigen nur nach Biometrie oder Gerätesperre (Keystore-Schlüssel mit Nutzer-Authentisierung, 5 Minuten), Wert 30 s sichtbar | Emulator-Test: Wert erst nach Gerätesperre | ○ |
+| TR-2 | I | Kindergerät (A8) oder Hausgerät liest Codes anderer Personen | Eigener Tresor-Hauptschlüssel nur für Erwachsenengeräte, beim Koppeln in `Welcome` übergeben, nie über den Abgleich; Kindergerät bekommt nur den eigenen Personenschlüssel (HKDF), Hausgerät keinen | Unit-Test: Kindergerät öffnet fremden Code nicht | ○ |
+| TR-3 | I | Wer den Familienschlüssel hat (verlorenes Handy, Ordnerdienst mit geleaktem Schlüssel), liest Codes | Codes zusätzlich mit Personenschlüssel versiegelt (AES-256-GCM); der Abgleich bewegt nur Chiffretext | Unit-Test: Ordnerdatei und Hausgerät enthalten keinen Codewert | ○ |
+| TR-4 | T | Ein Familiengerät hängt einen versiegelten Code an eine andere Person oder einen anderen Eintrag | AAD = Eintrags-ID, Personen-ID, Schlüsselversion | Unit-Test: umgehängter Datensatz scheitert an GCM | ○ |
+| TR-5 | I | Screenshot, Bildschirmaufnahme, Vorschau der letzten Apps (A4) | `FLAG_SECURE`, solange ein Wert sichtbar ist (gleiche Technik wie M2) | Emulator: Fensterflag geprüft | ○ |
+| TR-6 | I | Kopierter Code bleibt in der Zwischenablage, andere Apps oder Tastaturen lesen ihn | `ClipDescription.EXTRA_IS_SENSITIVE` (Android 13+), Zwischenablage nach 60 s leeren | – | ○ |
+| TR-7 | I | Code erscheint in Benachrichtigung, Suche, Notfallblatt oder Sicherung im Klartext | Nur Bezeichnungen sind suchbar, nie in Benachrichtigungen; Notfallblatt nur nach ausdrücklicher Auswahl; Sicherung enthält versiegelte Werte plus den Tresorschlüssel des Geräts, beides unter dem Wiederherstellungscode | Unit-Test: Sicherung ohne Codewert im Klartext, Wiederherstellung öffnet ihn | ○ |
+| TR-8 | I, E | Ehemaliges Familienmitglied (A6) behält den Tresorschlüssel | Wie GE-1: erst mit M1, das auch den Tresorschlüssel wechselt und alle Codes neu versiegelt (Schlüsselversion im Format von Anfang an) | – | ✗ M1 |
+| TR-9 | I | Familien speichern Passwörter und Karten-PINs, die in einen Passwortmanager gehören | Hinweis bei Bezeichnungen wie „Passwort“, „Kennwort“, „PIN Karte“; Portale als Link + Benutzername + Verweis auf den Passwortmanager | – | ○ akzeptiert |
+
 ### Gerät (A5, A6)
 
 | ID | STRIDE | Bedrohung | Maßnahme | Beleg | Status |
@@ -137,7 +162,7 @@ Status: ✓ abgesichert und geprüft · ◐ abgesichert mit Restrisiko · ✗ of
 
 | # | Maßnahme | Gegen | Warum noch nicht | Wann |
 | --- | --- | --- | --- | --- |
-| M1 | **Gerät entfernen mit Schlüsselwechsel**: neuer Familienschlüssel, verteilt nur an die übrigen Geräte, neuer Ordnerschlüssel, alte Ordnerdateien ersetzt | GE-1, NE-6 | Braucht Bedienkonzept (wer darf entfernen, was passiert mit einem Gerät, das gerade offline ist) und Protokollerweiterung | Vor der Weitergabe an weitere Familien; für Getrennterziehende Voraussetzung |
+| M1 | **Gerät entfernen mit Schlüsselwechsel**: neuer Familienschlüssel, verteilt nur an die übrigen Geräte, neuer Ordnerschlüssel, alte Ordnerdateien ersetzt; sobald es Codes gibt, auch neuer Tresorschlüssel | GE-1, NE-6, TR-8 | Braucht Bedienkonzept (wer darf entfernen, was passiert mit einem Gerät, das gerade offline ist) und Protokollerweiterung | Vor der Weitergabe an weitere Familien; für Getrennterziehende Voraussetzung |
 | M2 | `FLAG_SECURE`, solange QR-Code oder Code als Text sichtbar sind (kein Screenshot, leere Vorschau in den letzten Apps) | KO-4 | Klein; gehört in den Kopplungsbildschirm, der gerade in einem anderen Thread geändert wird | Mit der nächsten Änderung am Kopplungsbildschirm |
 | M3 | Direktabgleich nur in vertrauten Netzen: beim Koppeln gesehenes Heim-WLAN und Tailscale, sonst Server aus; gleichzeitig die Android-16-Berechtigung „Geräte im lokalen Netz“ | NE-5, NE-4 | Ändert Bedienung und hängt an der offenen Android-16-Frage aus ADR 0006 | Mit der Android-16-Berechtigung |
 | M4 | Geräteschlüssel und Signatur pro Datensatz | NE-6 | Ed25519 erst ab API 33; P-256-ECDSA ginge ab API 26 | Mit P2-2 |
@@ -150,4 +175,4 @@ Status: ✓ abgesichert und geprüft · ◐ abgesichert mit Restrisiko · ✗ of
 
 ## 7. Pflege
 
-Dieses Dokument wird angepasst, wenn ein neuer Eingang dazukommt (z. B. Mail-Abruf, Widget, Relay aus ADR 0002), sich ein Format oder der Handshake ändert, oder eine Maßnahme aus Abschnitt 5 umgesetzt ist. Neue Tests oder Prüfungen, die eine Bedrohung abdecken, nennen ihre ID im Kommentar (Suche nach `TE-`, `NE-`, `OR-`, `HG-`, `GE-`).
+Dieses Dokument wird angepasst, wenn ein neuer Eingang dazukommt (z. B. Mail-Abruf, Widget, Relay aus ADR 0002), sich ein Format oder der Handshake ändert, oder eine Maßnahme aus Abschnitt 5 umgesetzt ist. Neue Tests oder Prüfungen, die eine Bedrohung abdecken, nennen ihre ID im Kommentar (Suche nach `TE-`, `NE-`, `OR-`, `HG-`, `GE-`, `KT-`, `TR-`).

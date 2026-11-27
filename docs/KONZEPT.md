@@ -139,7 +139,8 @@ Sechs der acht Ideen passen direkt ins Konzept. Die Portal-Anbindungen (LernSax/
 | Bildaufnahme mit Routing | 1, 2 | MVP | Routing-Genauigkeit = Abnahmekriterium (80 %) |
 | Nachrichten aus LernSax, HortPro | 1, 6 | Spike vor Stufe 2 | Schnittstelle ungeklärt; Scraping mit Zugangsdaten heikel und fragil. Zwischenlösung: Portal-Mails an Familienadresse weiterleiten |
 | Essen bestellen/abbestellen beim Caterer | 5, 6 | Spike vor Stufe 2 | Jeder Caterer eigenes Portal; erst euren prüfen, sonst Erinnerung + Direktlink mit Frist |
-| Gemeinsame Kontakte | 3 | MVP (leicht) | Nur familienrelevante Kontakte, nicht ganzes Adressbuch |
+| Gemeinsame Kontakte | 3 | MVP (leicht) | Nur familienrelevante Kontakte, nicht ganzes Adressbuch. Ausgearbeitet mit Portfolio in [kontakte-und-portfolio.md](kontakte-und-portfolio.md) |
+| Portfolio je Person: offene Aufgaben als Notfallplan, Kontakte n:m, Infos und Codes (Nils, 27.11.2026) | 2, 3, 5 | nach Kontakten | Codes mit eigenem Tresorschlüssel hinter Biometrie, keine Passwörter; siehe [kontakte-und-portfolio.md](kontakte-und-portfolio.md) |
 | Termine mit Zusatzinfos und Aufwand (Nils, 22.11.2026) | 1, 2, 4 | Backlog (nach 0.3) | Beispiele: Wetter beim Wandertag; aufwendige Termine (Geburtstagsfeier) bekommen ein Aufwandsgewicht, und Aufgaben daneben (Paket abholen) werden einen Tag früher vorgeschlagen, nur als Vorschlag (HITL). Wetter braucht einen Online-Dienst (z. B. Open-Meteo, ohne Konto), daher abschaltbar; Aufwandslogik deterministisch per Stichwort-Regeln |
 
 Architektur: Portale, Händler und Caterer als austauschbare Konnektoren hinter einer gemeinsamen Schnittstelle, die nur Einträge in die Inbox liefert.
