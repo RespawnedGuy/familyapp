@@ -17,7 +17,7 @@ class HttpMarketsTest {
 
     private val server = HttpServer.create(InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0).apply { start() }
     private val base = "http://127.0.0.1:${server.address.port}"
-    private val http = HttpMarkets({ it.host == "127.0.0.1" }, timeoutMs = 5_000)
+    private val http = HttpMarkets({ it.host == "127.0.0.1" }, timeoutMs = 5_000, pauseMs = 0)
     private val requests = mutableListOf<String>()
     private var headers: Map<String, String?> = emptyMap()
 
@@ -86,5 +86,21 @@ class HttpMarketsTest {
         assertEquals(HttpAnswer.Failed("Adresse nicht erlaubt"), HttpMarkets().get("$base/kaputt", MarketHttp.Kind.JSON))
         assertEquals(HttpAnswer.Failed("Adresse nicht erlaubt"), HttpMarkets().get("http://www.lidl.de/", MarketHttp.Kind.HTML))
         assertEquals(HttpAnswer.Failed("Adresse nicht erlaubt"), http.get("kein url", MarketHttp.Kind.HTML))
+    }
+
+    @Test
+    fun politeAtLeastOneSecondBetweenRequestsToTheSameHost() {
+        serve("/a", body = "eins".toByteArray())
+        var now = 10_000L
+        val slept = mutableListOf<Long>()
+        val polite = HttpMarkets(
+            { it.host == "127.0.0.1" }, timeoutMs = 5_000, pauseMs = 1_000, clock = { now },
+            sleep = { slept += it; now += it },
+        )
+        polite.get("$base/a", MarketHttp.Kind.HTML)
+        now += 300
+        polite.get("$base/a", MarketHttp.Kind.HTML)
+        assertEquals(listOf(700L), slept) // waits the rest of the second, then asks
+        assertEquals(2, requests.size)
     }
 }

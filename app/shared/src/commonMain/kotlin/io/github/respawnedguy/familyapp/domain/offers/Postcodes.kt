@@ -1,5 +1,12 @@
 package io.github.respawnedguy.familyapp.domain.offers
 
+import kotlin.math.PI
+import kotlin.math.asin
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
+
 /**
  * German postcodes with the centre of their area, from a table shipped with the app
  * (docs/angebote-und-vorschlaege.md "Adresse und Händlersuche"). The typed address never leaves the
@@ -12,7 +19,19 @@ object Postcodes {
         /** "52.52" with a dot and two decimals, as store searches expect it. */
         val latText: String get() = fixed(lat)
         val lonText: String get() = fixed(lon)
+
+        /** Great-circle distance to [lat]/[lon] in km (haversine), for "ca. 3 km" next to a store. */
+        fun distanceKm(lat: Double, lon: Double): Double {
+            val dLat = radians(lat - this.lat)
+            val dLon = radians(lon - this.lon)
+            val a = sin(dLat / 2).pow(2) + cos(radians(this.lat)) * cos(radians(lat)) * sin(dLon / 2).pow(2)
+            return 2 * EARTH_KM * asin(sqrt(a.coerceIn(0.0, 1.0)))
+        }
     }
+
+    private const val EARTH_KM = 6371.0
+    private fun radians(deg: Double) = deg * PI / HALF_TURN
+    private const val HALF_TURN = 180.0
 
     private const val RECORD = 13
     private const val CODE = 5

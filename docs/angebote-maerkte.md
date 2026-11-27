@@ -8,15 +8,16 @@ Auftrag (Nils, 27.11.2026): „weitere filialen und anbieter zeigen: wir haben g
 
 - **50 Märkte geprüft.** Die Liste stammt aus dem Top-30-Ranking des Lebensmittelhandels 2025 (NIQ TradeDimensions, Umsatz 2024), ergänzt um Vertriebslinien, Regional- und Bioketten.
 - **Geprüft wird jede Plattform, nicht jeder Markt einzeln.** Die Edeka-Seite deckt zum Beispiel EDEKA, E center, E neukauf, E aktiv, E xpress, nah & gut, NP-Markt, Frischemarkt und Scheck-in ab.
-- **Drin (9 von 50): die 4 aus Stufe 1 (Aldi Süd, Aldi Nord, Lidl, Kaufland), dazu neu:**
+- **Drin (8 von 50): die 4 aus Stufe 1 (Aldi Süd, Aldi Nord, Lidl, Kaufland), dazu neu:**
   - **Penny je Verkaufsregion**,
-  - **Norma**, **Netto (Stavenhagen)**, **Globus**, **denn's BioMarkt**.
+  - **Norma**, **Netto (Stavenhagen)**, **denn's BioMarkt**.
+  - Globus war im Konzept drin und ist beim Bau rausgefallen, siehe Nr. 19.
 - **Raus (16).** Gründe:
   - **Edeka** mit allen Linien: Technisch wäre Edeka filialgenau und sauber lesbar. Die Nutzungsbedingungen verbieten aber automatisches Auslesen ohne Zustimmung, ausdrücklich auch Preis- und Angebotsinformationen, und behalten Text- und Data-Mining nach § 44b UrhG vor. Damit fällt Edeka nach Punkt 2 unseres Grundsatzes raus.
   - **Botabwehr:** Netto Marken-Discount, Marktkauf, REWE, nahkauf, Rossmann, Müller, Metro und Knuspr.
   - **Sammelportale:** marktguru verbietet automatisches Auslesen, kaufDA und MeinProspekt verbieten das Kopieren der Daten.
 - **Offen (18):** Die Seite antwortet ehrlich, aber die Angebote stehen nur als PDF oder kommen erst nach einer Marktwahl per Browser-Skript. Wir umgehen nichts. Ein sauberer Weg ohne Cookies oder Skript ist dort noch nicht gefunden.
-- **Passt nicht (7):** Großhandel mit Kundenkarte, reine Getränkemärkte, reine Liefer-Apps, Dauerpreis-Drogerie.
+- **Passt nicht (8):** Globus (Angebotsseite ist das ganze Sortiment), Großhandel mit Kundenkarte, reine Getränkemärkte, reine Liefer-Apps, Dauerpreis-Drogerie.
 - **Neu ist „weitere Filialen zeigen“.** Für jeden Markt mit filialgenauen Angeboten (Aldi Süd, Kaufland, Penny) zeigt die App die nächsten Filialen mit Entfernung. Man wählt eine aus, die App rät nicht.
 
 ## Wie geprüft wurde (Rohmaterial statt Zusammenfassungen)
@@ -69,7 +70,7 @@ Legende:
 | 16 | REWE | ❌ | Challenge-Seite mit Captcha (HTTP 403, 252 kB), wie schon in Stufe 1 |
 | 17 | nahkauf (REWE) | ❌ | läuft über die REWE-Plattform, `nahkauf.de/angebote/` gibt 404, Marktangebote auf rewe.de |
 | 18 | Kaufland | ✅ seit Stufe 1 | filialgenau über `klstorebygeo` und `kloffers` |
-| 19 | **Globus** | ✅ **neu** | `produkte.globus.de/angebote-der-woche/` (Shopware, 48 Produkte je Seite, weitere Seiten über `?p=`), Preise der Vorgabe-Filiale, wie bei Aldi Süd. robots.txt sperrt nur Konto, Warenkorb und Vergleich |
+| 19 | Globus | ⚪ beim Bau raus | `produkte.globus.de/angebote-der-woche/` ist lesbar (Shopware, robots.txt sperrt nur Konto, Warenkorb und Vergleich), aber beim Bau am 27.11. zeigte sich: Die Seite listet rund 3.500 Artikel des Sortiments auf 147 Seiten mit je etwa 1,3 MB, keine Wochenangebote im engeren Sinn. Das wären jede Woche rund 190 MB und 147 Anfragen für Preise der Vorgabe-Filiale. Das passt weder zur höflichen Abfrage noch zum Handy-Datenvolumen. Neu prüfen, wenn Globus eine eigene Seite nur mit Wochenangeboten anbietet |
 | 20 | tegut | 🟡 | Marktwahl über ein POST-Formular mit TYPO3-Prüfsumme, die Angebote je Markt hängen an der Sitzung. Ohne Cookie kein Weg gefunden. robots.txt: `Crawl-Delay: 5` |
 | 21 | HIT | 🟡 | `hit.de/angebote` liefert die Seite ohne Angebote, sie kommen erst nach der Marktwahl per Skript |
 | 22 | famila (Nordwest, Bünting) | 🟡 | WordPress, `/angebote/` gibt 404. robots.txt sperrt `/*?` und `/wp-json/`, damit sind Abfragen mit Parametern tabu |
@@ -134,12 +135,12 @@ Geprüft wurden die Nutzungsbedingungen, AGB oder das Impressum, die von der Fu�
 | Penny | Impressum ohne Klausel, keine Website-Nutzungsbedingungen gefunden (`/nutzungsbedingungen` 404), kein `tdmrep.json` | drin |
 | Norma | Impressum nur mit allgemeinem Urheberrechtshinweis („Eine Verwendung von Teilen der Website bedarf einer ausdrücklichen Zustimmung“), kein Vorbehalt gegen automatisches Auslesen, kein `tdmrep.json` | drin, gleiche Lesart wie bei Aldi und Kaufland in Stufe 1: Die App liest Preise für die eigene Familie und veröffentlicht nichts |
 | Netto (Stavenhagen) | Impressum ohne Klausel, kein `tdmrep.json` | drin |
-| Globus | Impressum (`globus.de/impressum.php`) ohne Klausel, kein `tdmrep.json` | drin |
+| Globus | Impressum (`globus.de/impressum.php`) ohne Klausel, kein `tdmrep.json` | erlaubt, aber beim Bau raus (Nr. 19) |
 | denn's BioMarkt | Impressum nur mit allgemeinem Urheberrechtshinweis, kein `tdmrep.json` | drin |
 
 Das ist eine Lesart der veröffentlichten Texte, keine Rechtsberatung. Bei jeder Änderung eines Adapters wird die Prüfung wiederholt, wie in Stufe 1.
 
-**Edeka um Zustimmung fragen?** § 4 der Edeka-Bedingungen erlaubt automatische Zugriffe, die Edeka ausdrücklich gestattet. Eine kurze Anfrage („private Familien-App, liest die Angebote eines Marktes einmal pro Woche für die eigene Einkaufsliste, nichts wird veröffentlicht“) könnte die größte Lücke schließen. Ob er fragt, entscheidet Nils. Der Adapter wäre in einem Tag gebaut, die Technik ist geprüft.
+**Edeka wird nicht angefragt.** Entscheidung Nils, 27.11.2026: „Nein, wir zwingen hier niemanden modern zu werden. Wer nicht automatisch ausgelesen werden möchte, wird nicht ausgelesen und kommt als Händler einfach nicht in Frage.“ Edeka bleibt draußen, ebenso jeder andere Markt, der automatisches Auslesen ablehnt.
 
 ## Weitere Filialen zeigen
 
@@ -154,34 +155,53 @@ Neu:
    - Penny liefert die Koordinaten aller Märkte in einer Liste, nach außen geht nichts.
    - Kaufland nimmt den PLZ-Mittelpunkt, wie bisher.
 3. **Mehrere Filialen desselben Markts** (zum Beispiel zwei Penny-Märkte in verschiedenen Verkaufsregionen) sind möglich, höchstens drei je Markt. Die Angebote werden zusammengeführt, und am Listeneintrag steht die Filiale („bei Penny Musterstraße, 1,99 €“).
-4. **Märkte ohne Filialbezug** (Aldi Nord, Lidl, Norma, Netto, Globus, denn's) zeigen „bundesweit“ beziehungsweise „Vorgabe-Filiale der Website“. Das ist ehrlich, statt eine Filiale vorzutäuschen.
+4. **Märkte ohne Filialbezug** (Aldi Nord, Lidl, Norma, Netto, denn's) zeigen „bundesweit“ beziehungsweise „Vorgabe-Filiale der Website“. Das ist ehrlich, statt eine Filiale vorzutäuschen.
 
 ## Was sich in der App ändert
 
 - **Einstellungen › Einkauf:**
   - Die Märkte sind gruppiert: Discounter, Supermärkte, Bio.
-  - Vorausgewählt sind nur die Märkte, die es in der Nähe gibt: Aldi-Gebiet wie bisher über die PLZ, Penny und Globus, wenn deren Filialliste im Umkreis von 10 km einen Markt hat.
+  - Vorausgewählt sind nur die Märkte, die es in der Nähe gibt: Aldi-Gebiet wie bisher über die PLZ, Penny, wenn seine Filialliste im Umkreis von 10 km einen Markt hat.
   - Alle anderen sind abwählbar.
   - „Offen“ und „raus“ stehen ausgegraut mit dem Grund darunter („REWE lässt sich nicht automatisch lesen“). Damit niemand glaubt, die App habe sie vergessen.
 - **Abruf:** wie bisher beim App-Start, wenn älter als 3 Tage oder neue Woche, nur im WLAN.
-  - Mehr Märkte heißen mehr Anfragen: Penny braucht etwa 25 Kategorie-Abrufe je Woche, Globus 3 bis 5 Seiten.
+  - Mehr Märkte heißen mehr Anfragen: Penny braucht etwa 25 Kategorie-Abrufe je Woche (gebaut: höchstens 20).
   - Deshalb gibt es höchstens eine Anfrage gleichzeitig je Host und eine Sekunde Pause zwischen zwei Anfragen an denselben Host. Bei tegut, falls es später dazukommt: 5 Sekunden, laut `Crawl-Delay`.
 - **Zustandszeile je Markt** wie bisher („Penny Musterstraße: 118 Angebote“).
 - **Bedrohungsmodell:**
   - Neue Hosts kommen in `MarketUrls.ALLOWED_HOSTS`.
   - Je Adapter prüft ein Test die Begrenzungen: Größe, Anzahl der Seiten, Format der Markt-IDs (Penny-Region nur `[0-9A-Z-]`, Penny-Kategorie nur `[a-z0-9-]`).
-  - Die Einträge AN-1 bis AN-7 gelten weiter. AN-8 kommt dazu: Fremde IDs aus einer Antwort gehen nur in die URL, wenn sie dem Muster entsprechen.
+  - Die Einträge AN-1 bis AN-8 gelten weiter. AN-9 kommt dazu: Fremde IDs aus einer Antwort gehen nur in die URL, wenn sie dem Muster entsprechen.
 
 ## Empfehlungen (bitte kommentieren, Unkommentiertes gilt als angenommen)
 
-1. **Stufe 2a: Penny (je Region), Norma, Netto, Globus, denn's** als neue Adapter, jeder mit eigenem Test gegen eine gekürzte, erfundene Antwort im Format der echten.
+1. **Stufe 2a: Penny (je Region), Norma, Netto, denn's** (Globus beim Bau raus, siehe Nr. 19) als neue Adapter, jeder mit eigenem Test gegen eine gekürzte, erfundene Antwort im Format der echten.
 2. **Weitere Filialen zeigen**: die nächsten fünf je Markt mit Entfernung, auswählbar, bis zu drei je Markt. Die Entfernung rechnet das Handy.
 3. **Botabwehr und Verbote in den Nutzungsbedingungen bleiben Ausschluss**: Edeka mit allen Linien, Netto Marken-Discount, Marktkauf, REWE, nahkauf, Rossmann, Müller, Metro und Knuspr kommen nicht in die App. Sie stehen ausgegraut mit Grund in der Liste.
 4. **Keine Sammelportale** (kaufDA, MeinProspekt, marktguru), auch wenn sie bequem alle Märkte liefern würden. Die App liest nur beim Markt selbst.
-5. **Die 18 offenen Märkte bleiben offen**, bis es einen Weg ohne Cookie, Skript und Formular gibt. Zweimal im Jahr prüfen (Sites ändern sich), Ergebnis in dieser Tabelle.
-6. **PDF-Prospekte (Citti, Konsum, Simmel-Handzettel, Feneberg) später als eigene Messung.** Die Texterkennung auf dem Handy ist möglich, ihre Treffergenauigkeit gegen echte Wochen muss aber zuerst gemessen werden. Derselbe Weg wie bei den Lidl-Preisen.
+5. **Die 18 offenen Märkte werden nicht weiter verfolgt** (Entscheidung Nils, 27.11.2026). Wer seine Angebote nur als PDF oder hinter einer Marktwahl per Skript zeigt, kommt nicht in Frage. Bietet ein Markt später eine offen lesbare Angebotsseite an, wird er neu geprüft.
+6. **Keine Texterkennung aus PDF-Prospekten** (Entscheidung Nils, 27.11.2026).
 7. **Höfliche Abrufe**: eine Anfrage gleichzeitig je Host, eine Sekunde Pause, `Crawl-Delay` wird beachtet, wo er gesetzt ist.
-8. **Edeka nur mit Zustimmung.** Fragt Nils bei Edeka an und bekommt ein Ja, kommt Edeka als eigener Schritt dazu. Ohne Zustimmung bleibt Edeka draußen.
+8. **Edeka wird nicht angefragt** (Entscheidung Nils, 27.11.2026).
+
+## Umsetzungsstand Stufe 2a (27.11.2026)
+
+Gebaut:
+- **Penny:** Die App lädt die Filialliste, rechnet auf dem Handy die Entfernung zum PLZ-Mittelpunkt und nimmt die nächste Filiale. Nach außen geht dabei nichts außer der Abfrage der ganzen Liste. Gelesen werden die Lebensmittel-Kategorien der aktuellen Woche für die Verkaufsregion dieser Filiale (ohne Drogerie, Getränke, Pflanzen, höchstens 20 Kategorien).
+- **Weitere Penny-Filialen:** Einstellungen › Einkauf zeigt die gewählte Filiale und die nächsten vier weiteren mit ungefährer Entfernung. „Wählen“ übernimmt eine für die ganze Familie und liest nur Penny sofort neu. Eine neue PLZ setzt die Wahl zurück.
+- **Norma:** Obst und Gemüse plus die Tagesseiten der Woche („ab Montag …“), höchstens 6 Seiten, bundesweit.
+- **Netto (Stavenhagen):** fünf feste Angebotsseiten, bundesweit.
+- **denn's BioMarkt:** eine JSON-Datei, nur sichtbare Angebote für Deutschland.
+- **Höflichkeit:** höchstens eine Anfrage je Sekunde an denselben Host, alles nacheinander (Bedrohungsmodell AN-10).
+- **Penny** ist für neue Orte vorausgewählt. Norma, Netto und denn's schaltet man in Einstellungen › Einkauf zu.
+- Unter der Marktliste steht, wer nicht dabei ist und warum.
+
+Noch nicht gebaut (aus dem Konzept, bewusst verschoben):
+- Mehrere Filialen desselben Markts gleichzeitig (Punkt 3 oben). Heute gilt eine Filiale je Markt.
+- Filialauswahl für Kaufland und Aldi Süd als Liste. Kaufland behält die Suche über eine PLZ.
+- Gruppierung Discounter, Supermärkte, Bio und Vorauswahl nach Filiale im 10-km-Umkreis.
+
+Tor bleibt Prüfung 1 auf dem echten Handy.
 
 ## Prüfung
 

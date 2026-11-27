@@ -9,6 +9,7 @@ import io.github.respawnedguy.familyapp.data.offers.MarketParsers
 import io.github.respawnedguy.familyapp.data.offers.MarketResult
 import io.github.respawnedguy.familyapp.data.offers.MarketSnapshot
 import io.github.respawnedguy.familyapp.data.offers.MarketStatus
+import io.github.respawnedguy.familyapp.data.offers.NearbyStore
 import io.github.respawnedguy.familyapp.data.offers.OfferCache
 import io.github.respawnedguy.familyapp.domain.offers.Chain
 import io.github.respawnedguy.familyapp.domain.offers.Offer
@@ -65,6 +66,9 @@ class OffersModel internal constructor(
     /** "Jetzt abrufen" in the settings: also on mobile data and before the offers are old. Refusals stay. */
     fun refreshNow() = refresh(manual = true)
 
+    /** One market again at once, for example after another store was chosen; the old offers stay until then. */
+    fun refreshOne(chain: Chain) = refresh(manual = true, only = chain)
+
     /** "Nochmal versuchen" for a market that refused or failed: the same honest request once more. */
     fun retry(chain: Chain) {
         update { it.without(chain) }
@@ -83,13 +87,12 @@ class OffersModel internal constructor(
 
     private fun start(place: ShoppingPlace, http: MarketHttp, due: List<Chain>) {
         val point = Postcodes.find(place.kauflandPostcode ?: place.postcode)
-        val known = place.kauflandStoreId?.let { MarketParsers.Store(it, place.kauflandStoreName ?: it) }
         val fetch = MarketFetch(http)
         _busy.value = _busy.value + due
         due.forEach { chain ->
             background.scope.launch {
                 val result = try {
-                    withContext(background.io) { fetch.fetch(chain, point, known) }
+                    withContext(background.io) { fetch.fetch(chain, point, knownStore(place, chain)) }
                 } finally {
                     _busy.value = _busy.value - chain
                 }
@@ -106,18 +109,22 @@ class OffersModel internal constructor(
             val wanted = if (manual) {
                 snapshot?.status != MarketStatus.REFUSED
             } else {
-                OfferCache.due(snapshot, today, now, if (c == Chain.KAUFLAND) place.kauflandStoreId else null)
+                OfferCache.due(snapshot, today, now, knownStore(place, c)?.id)
             }
             (only == null || c == only) && c !in _busy.value && wanted
         }
     }
 
-    /** Keeps the result on this phone; a Kaufland store found by the search becomes the family's. */
+    /** Keeps the result on this phone; a store found by the search becomes the family's (Kaufland, Penny). */
     internal fun record(result: MarketResult) {
         update { it.with(snapshotOf(result, repo.now(), repo.day())) }
-        val found = (result as? MarketResult.Ok)?.store
-        if (found != null && repo.current.place?.kauflandStoreId == null) {
-            repo.placeStore.setKauflandStore(found.id, found.name)
+        val found = (result as? MarketResult.Ok)?.store ?: return
+        val place = repo.current.place ?: return
+        when {
+            result.chain == Chain.KAUFLAND && place.kauflandStoreId == null ->
+                repo.placeStore.setKauflandStore(found.id, found.name)
+            result.chain == Chain.PENNY && place.pennyStoreId == null ->
+                repo.placeStore.setPennyStore(found.id, found.name)
         }
     }
 
@@ -142,9 +149,18 @@ class OffersModel internal constructor(
     }
 
     companion object {
+        /** The store already chosen for [chain], which the adapter uses instead of the nearest. */
+        internal fun knownStore(place: ShoppingPlace, chain: Chain): MarketParsers.Store? = when (chain) {
+            Chain.KAUFLAND -> place.kauflandStoreId?.let { MarketParsers.Store(it, place.kauflandStoreName ?: it) }
+            Chain.PENNY -> place.pennyStoreId?.let { MarketParsers.Store(it, place.pennyStoreName ?: it) }
+            else -> null
+        }
+
         internal fun snapshotOf(result: MarketResult, nowMs: Long, today: LocalDate): MarketSnapshot = when (result) {
             is MarketResult.Ok ->
-                MarketSnapshot(result.chain, nowMs, today, MarketStatus.OK, result.offers, result.store?.id)
+                MarketSnapshot(
+                    result.chain, nowMs, today, MarketStatus.OK, result.offers, result.store?.id, result.nearby,
+                )
             is MarketResult.Refused ->
                 MarketSnapshot(result.chain, nowMs, today, MarketStatus.REFUSED, detail = "HTTP ${result.code}")
             is MarketResult.Failed ->
@@ -208,6 +224,13 @@ class PlaceActions internal constructor(
             if (store != null) places.setKauflandStore(store.id, store.name, postcode)
             show(store?.let { "Kaufland-Filiale: ${it.name}." } ?: NO_STORE, null)
         }
+    }
+
+    /** "Weitere Filialen": another of the nearest Penny stores; its offers are read at once (on WLAN). */
+    fun choosePennyStore(store: NearbyStore) {
+        places.setPennyStore(store.id, store.name)
+        offers.refreshOne(Chain.PENNY)
+        show("Penny-Filiale: ${store.name}.", null)
     }
 
     fun unreject(rejectionKey: String) = places.unreject(rejectionKey)
