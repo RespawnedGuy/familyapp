@@ -30,6 +30,9 @@ object IngredientKey {
         "obers" to "sahne", "hartweizengrieß" to "grieß", "weizenmehl" to "mehl", "dinkelmehl" to "mehl",
         "rohrzucker" to "zucker", "eier" to "ei", "chiliflocken" to "chili", "chilischote" to "chili",
         "nudel" to "nudeln", "pasta" to "nudeln",
+        // Same produce, other word or plural with umlaut (season table, offers; 27.11.2026)
+        "äpfel" to "apfel", "karotte" to "möhre", "mohrrübe" to "möhre", "porree" to "lauch",
+        "zwetschge" to "pflaume", "zwetschke" to "pflaume", "beete" to "bete", "paprikaschote" to "paprika",
     )
 
     /** Shortest stem that still counts as a word of its own ("Ei" stays "ei", "Eier" becomes "ei"). */

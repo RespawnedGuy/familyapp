@@ -82,6 +82,8 @@ data class ShoppingEntry(
     val ask: Boolean = false,
     val checked: Boolean = false,
     val checkedBy: String? = null,
+    /** "bei Aldi Süd, 1,69 €" for entries planned from an offer (Empfehlung 12); older apps skip it. */
+    val offer: String? = null,
     val createdMs: Long,
     val createdBy: String,
     val changedBy: String? = null,

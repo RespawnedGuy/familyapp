@@ -4,6 +4,8 @@ import io.github.respawnedguy.familyapp.data.InstagramPages
 import io.github.respawnedguy.familyapp.data.InstagramVideos
 import io.github.respawnedguy.familyapp.data.RecipeAi
 import io.github.respawnedguy.familyapp.data.RecipePhotos
+import io.github.respawnedguy.familyapp.data.TextStore
+import io.github.respawnedguy.familyapp.data.offers.MarketHttp
 import io.github.respawnedguy.familyapp.domain.DeviceInfo
 import io.github.respawnedguy.familyapp.domain.ResourceUsage
 import io.github.respawnedguy.familyapp.domain.contacts.ContactDraft
@@ -31,7 +33,7 @@ interface SpeechInput {
  * Everything the shared UI needs from the platform. Android implements it in androidApp;
  * iOS gets its own implementation when the iOS app is built.
  */
-interface PlatformServices : DeviceMeasurements, ScreenControl, RecipeSources, ContactActions {
+interface PlatformServices : DeviceMeasurements, ScreenControl, RecipeSources, ContactActions, OfferSources {
     /** Null where no recognizer is available; the capture sheet then offers text instead. */
     val speech: SpeechInput?
 
@@ -125,6 +127,21 @@ interface ContactActions {
 
     /** Hands the contact to the phone's contacts app, where the person saves it (no WRITE_CONTACTS, KT-5). */
     fun addToPhoneBook(draft: ContactDraft): Boolean = false
+}
+
+/**
+ * Weekly offers of the markets (docs/angebote-und-vorschlaege.md). Defaults: nothing, so platforms
+ * without it still show season suggestions.
+ */
+interface OfferSources {
+    /** Plain requests to the markets; null where the platform cannot fetch. */
+    val marketHttp: MarketHttp? get() = null
+
+    /** Where this phone keeps the offers it read (not the family data, not in the backup). */
+    val offerStore: TextStore? get() = null
+
+    /** True on WLAN or another connection without data volume: offers are only read automatically then. */
+    fun unmeteredNetwork(): Boolean = false
 }
 
 /** Display control for the kitchen library. Default: nothing (platforms without it). */

@@ -3,6 +3,8 @@ package io.github.respawnedguy.familyapp
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.os.Debug
@@ -17,7 +19,9 @@ import io.github.respawnedguy.familyapp.data.BackupFolder
 import io.github.respawnedguy.familyapp.data.AiProvider
 import io.github.respawnedguy.familyapp.data.HttpClaudeRecipeAi
 import io.github.respawnedguy.familyapp.data.HttpGeminiRecipeAi
+import io.github.respawnedguy.familyapp.data.AndroidTextStore
 import io.github.respawnedguy.familyapp.data.HttpInstagramPages
+import io.github.respawnedguy.familyapp.data.HttpMarkets
 import io.github.respawnedguy.familyapp.data.HttpInstagramVideos
 import io.github.respawnedguy.familyapp.data.RecipeAi
 import io.github.respawnedguy.familyapp.data.PhotoCleanup
@@ -63,6 +67,19 @@ class AndroidPlatform(private val app: FamilyApplication) : PlatformServices {
 
     /** Reel cover or video frame as the recipe's picture, shrunk, in the private photo folder (TE-13). */
     override val recipePhotos = AndroidRecipePhotos(File(app.filesDir, "photos"))
+
+    /** Weekly offers: plain, honest requests to the markets (docs/angebote-und-vorschlaege.md). */
+    override val marketHttp = HttpMarkets()
+
+    /** Offers read on this phone; a file of its own, not part of the family data or the backup. */
+    override val offerStore = AndroidTextStore(File(app.filesDir, "angebote.json"))
+
+    /** WLAN or another connection the system calls unmetered: only then offers are read by themselves. */
+    override fun unmeteredNetwork(): Boolean {
+        val cm = app.getSystemService(ConnectivityManager::class.java)
+        val caps = cm?.getNetworkCapabilities(cm.activeNetwork)
+        return caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) == true
+    }
 
     /** Optional, only with the API key from the settings; the key's prefix names the provider (ADR 0007, 0008). */
     override fun recipeAi(apiKey: String): RecipeAi? = when (AiProvider.ofKey(apiKey)) {

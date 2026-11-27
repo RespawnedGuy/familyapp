@@ -3,8 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Update check and download from GitHub (ADR 0005), direct sync with paired family devices
-         in the same WLAN or tailnet (ADR 0003). Nothing else goes out. -->
+         in the same WLAN or tailnet (ADR 0003), Instagram recipes on request, weekly offers of the
+         markets the family chose (only the postcode centre goes out). -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Weekly offers are read by themselves only on WLAN (docs/angebote-und-vorschlaege.md). -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Finding the other family devices in the WLAN (DNS-SD). -->
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <!-- Lets the app hand a downloaded update to the system installer; the user confirms each time. -->

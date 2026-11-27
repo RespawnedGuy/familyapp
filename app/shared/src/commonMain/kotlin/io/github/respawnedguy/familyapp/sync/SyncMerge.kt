@@ -10,6 +10,8 @@ import io.github.respawnedguy.familyapp.domain.Tombstone
 import io.github.respawnedguy.familyapp.domain.contacts.Contact
 import io.github.respawnedguy.familyapp.domain.contacts.ContactLink
 import io.github.respawnedguy.familyapp.domain.contacts.PortfolioEntry
+import io.github.respawnedguy.familyapp.domain.offers.ShoppingPlace
+import io.github.respawnedguy.familyapp.domain.recipe.PlannedMeal
 import io.github.respawnedguy.familyapp.domain.recipe.Recipe
 import io.github.respawnedguy.familyapp.domain.recipe.ShoppingEntry
 import kotlinx.serialization.Serializable
@@ -29,10 +31,12 @@ data class SyncRecords(
     val contacts: List<Contact> = emptyList(),
     val contactLinks: List<ContactLink> = emptyList(),
     val portfolio: List<PortfolioEntry> = emptyList(),
+    val meals: List<PlannedMeal> = emptyList(),
+    val places: List<ShoppingPlace> = emptyList(),
 ) {
     val size: Int
         get() = members.size + items.size + tombstones.size + recipes.size + shopping.size +
-            contacts.size + contactLinks.size + portfolio.size
+            contacts.size + contactLinks.size + portfolio.size + meals.size + places.size
 }
 
 /**
@@ -61,6 +65,8 @@ object SyncMerge {
         data.contacts.forEach { put(it.id, it.stamp) }
         data.contactLinks.forEach { put(it.id, it.stamp) }
         data.portfolio.forEach { put(it.id, it.stamp) }
+        data.meals.forEach { put(it.id, it.stamp) }
+        data.places.forEach { put(it.id, it.stamp) }
         return out
     }
 
@@ -80,6 +86,8 @@ object SyncMerge {
             contacts = data.contacts.filter { wanted(it.id, it.stamp) },
             contactLinks = data.contactLinks.filter { wanted(it.id, it.stamp) },
             portfolio = data.portfolio.filter { wanted(it.id, it.stamp) },
+            meals = data.meals.filter { wanted(it.id, it.stamp) },
+            places = data.places.filter { wanted(it.id, it.stamp) },
         )
     }
 
@@ -128,7 +136,28 @@ object SyncMerge {
                 changed++
             }
         }
-        // Deleting a recipe or entry is a newer version with deleted = true, so plain last-writer-wins covers it.
+        val (merged, recordsChanged) = mergeSelfDeleting(data, incoming, photoPath)
+        changed += recordsChanged
+        if (changed == 0) return Applied(data, 0)
+        return Applied(
+            merged.copy(
+                members = members.values.toList(),
+                items = items.values.toList(),
+                tombstones = tombstones.values.toList(),
+            ),
+            changed,
+        )
+    }
+
+    /**
+     * Records that delete themselves (a newer version with deleted = true): recipes, shopping entries,
+     * contacts, facts, planned dishes, the shopping place. Plain last-writer-wins per id covers them.
+     */
+    private fun mergeSelfDeleting(
+        data: FamilyData,
+        incoming: SyncRecords,
+        photoPath: (String) -> String,
+    ): Pair<FamilyData, Int> {
         val incomingRecipes = incoming.recipes.map { it.copy(photoPath = it.photoPath?.let(localPhoto(photoPath))) }
         val (recipes, recipesChanged) = newestWins(data.recipes, incomingRecipes, Recipe::id, Recipe::stamp)
         val (shopping, shoppingChanged) =
@@ -138,21 +167,20 @@ object SyncMerge {
             newestWins(data.contactLinks, incoming.contactLinks, ContactLink::id, ContactLink::stamp)
         val (portfolio, portfolioChanged) =
             newestWins(data.portfolio, incoming.portfolio, PortfolioEntry::id, PortfolioEntry::stamp)
-        changed += recipesChanged + shoppingChanged + contactsChanged + linksChanged + portfolioChanged
-        if (changed == 0) return Applied(data, 0)
-        return Applied(
-            data.copy(
-                members = members.values.toList(),
-                items = items.values.toList(),
-                tombstones = tombstones.values.toList(),
-                recipes = recipes,
-                shopping = shopping,
-                contacts = contacts,
-                contactLinks = links,
-                portfolio = portfolio,
-            ),
-            changed,
+        val (meals, mealsChanged) = newestWins(data.meals, incoming.meals, PlannedMeal::id, PlannedMeal::stamp)
+        val (places, placesChanged) = newestWins(data.places, incoming.places, ShoppingPlace::id, ShoppingPlace::stamp)
+        val changed = recipesChanged + shoppingChanged + contactsChanged + linksChanged + portfolioChanged +
+            mealsChanged + placesChanged
+        val merged = data.copy(
+            recipes = recipes,
+            shopping = shopping,
+            contacts = contacts,
+            contactLinks = links,
+            portfolio = portfolio,
+            meals = meals,
+            places = places,
         )
+        return merged to changed
     }
 
     /** Last writer wins per id for records that delete themselves (recipes, shopping entries, contacts, facts). */
@@ -230,9 +258,10 @@ object SyncMerge {
         val portfolio = local.portfolio.map { e ->
             e.copy(memberId = map(e.memberId) ?: e.memberId, changedBy = map(e.changedBy), stamp = restamp())
         }
+        val meals = adoptMeals(local.meals, ::map, restamp)
         val familyIds = (family.members.map { it.id } + family.items.map { it.id } +
             family.recipes.map { it.id } + family.shopping.map { it.id } + family.contacts.map { it.id } +
-            family.contactLinks.map { it.id } + family.portfolio.map { it.id }).toSet()
+            family.contactLinks.map { it.id } + family.portfolio.map { it.id } + family.meals.map { it.id }).toSet()
         return local.copy(
             selfId = selfMemberId,
             members = family.members + keptMembers.filter { it.id !in familyIds },
@@ -242,9 +271,17 @@ object SyncMerge {
             contacts = family.contacts + contacts.filter { it.id !in familyIds },
             contactLinks = family.contactLinks + links.filter { it.id !in familyIds },
             portfolio = family.portfolio + portfolio.filter { it.id !in familyIds },
+            meals = family.meals + meals.filter { it.id !in familyIds },
+            // The family's place wins; a joining phone keeps its own only if the family has none yet.
+            places = family.places.ifEmpty { local.places.map { it.copy(stamp = restamp()) } },
             tombstones = family.tombstones + local.tombstones.filter { t -> family.tombstones.none { it.id == t.id } },
         )
     }
+
+    private fun adoptMeals(meals: List<PlannedMeal>, map: (String?) -> String?, restamp: () -> Stamp) =
+        meals.map { m ->
+            m.copy(plannedBy = map(m.plannedBy) ?: m.plannedBy, changedBy = map(m.changedBy), stamp = restamp())
+        }
 
     private fun key(name: String) = name.trim().lowercase()
 }

@@ -3,6 +3,8 @@ package io.github.respawnedguy.familyapp.domain
 import io.github.respawnedguy.familyapp.domain.contacts.Contact
 import io.github.respawnedguy.familyapp.domain.contacts.ContactLink
 import io.github.respawnedguy.familyapp.domain.contacts.PortfolioEntry
+import io.github.respawnedguy.familyapp.domain.offers.ShoppingPlace
+import io.github.respawnedguy.familyapp.domain.recipe.PlannedMeal
 import io.github.respawnedguy.familyapp.domain.recipe.Recipe
 import io.github.respawnedguy.familyapp.domain.recipe.ShoppingEntry
 import kotlinx.datetime.LocalDate
@@ -120,6 +122,11 @@ data class Settings(
      * Like [backupCode] only on this phone and in the encrypted backup, never synced.
      */
     val recipeAiKey: String? = null,
+    /**
+     * Servings last used for a recipe on this phone (docs/angebote-und-vorschlaege.md, Empfehlung 10):
+     * the default everywhere a number of people is asked. Per phone, not synced.
+     */
+    val lastServings: Int? = null,
 )
 
 @Serializable
@@ -156,7 +163,12 @@ data class FamilyData(
     val contacts: List<Contact> = emptyList(),
     val contactLinks: List<ContactLink> = emptyList(),
     val portfolio: List<PortfolioEntry> = emptyList(),
+    /** Planned dishes ("Wann soll es das geben?", 27.11.2026), added like recipes: older apps ignore them. */
+    val meals: List<PlannedMeal> = emptyList(),
+    /** Where the family shops (0 or 1 record, [ShoppingPlace.ID]); added like recipes. */
+    val places: List<ShoppingPlace> = emptyList(),
 ) {
+    val place: ShoppingPlace? get() = places.firstOrNull { it.id == ShoppingPlace.ID }
     val self: Member? get() = members.firstOrNull { it.id == selfId }
     fun member(id: String?): Member? = id?.let { i -> members.firstOrNull { it.id == i } }
 }

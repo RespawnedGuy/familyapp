@@ -109,6 +109,8 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         app.sync.start()
+        // Offers are read when the app is opened and they are old, never in the background.
+        app.model.offers.refreshIfDue()
     }
 
     override fun onStop() {

@@ -2,6 +2,8 @@ package io.github.respawnedguy.familyapp.sync
 
 import io.github.respawnedguy.familyapp.data.FamilyRepository
 import io.github.respawnedguy.familyapp.data.InMemoryTextStore
+import io.github.respawnedguy.familyapp.domain.offers.Chain
+import io.github.respawnedguy.familyapp.domain.offers.ShoppingPlace
 import io.github.respawnedguy.familyapp.domain.recipe.RecipeImport
 import io.github.respawnedguy.familyapp.domain.recipe.RecipeStatus
 import io.github.respawnedguy.familyapp.domain.recipe.ShoppingList
@@ -48,6 +50,56 @@ class KitchenSyncTest {
     }
 
     private val text = "Salat\nZutaten:\n1 Gurke\n2 Tomaten\n1 EL Öl\nZubereitung:\nSchneiden und mischen."
+
+    @Test
+    fun plannedDishReachesTheOtherPhoneAndRemovalToo() = runTest {
+        val (a, b, ticks) = pair()
+        val (recipe, _) = a.recipeStore.add(RecipeImport.fromText(text), RecipeStatus.CONFIRMED)
+        a.mealStore.plan(recipe.id, friday, 4)
+        meet(a, b)
+        val meal = b.current.meals.single()
+        assertEquals(friday to 4, meal.day to meal.servings)
+        ticks.second()
+        b.mealStore.remove(meal.id)
+        meet(a, b)
+        assertTrue(a.current.meals.single().deleted)
+        assertEquals(0, SyncMerge.newerThan(a.current, SyncMerge.digest(b.current)).size)
+    }
+
+    @Test
+    fun shoppingPlaceAndPasstNichtReachTheOtherPhone() = runTest {
+        val (a, b, ticks) = pair()
+        a.placeStore.setAddress("10115 Berlin")
+        meet(a, b)
+        assertEquals("10115", b.current.place?.postcode)
+        ticks.second()
+        b.placeStore.reject("grünkohl|grünkohl chips")
+        b.placeStore.setChain(Chain.LIDL, false)
+        meet(a, b)
+        assertEquals(listOf("grünkohl|grünkohl chips"), a.current.place?.rejected)
+        assertEquals(listOf(Chain.ALDI_NORD, Chain.KAUFLAND), a.current.place?.markets)
+        assertEquals(0, SyncMerge.newerThan(a.current, SyncMerge.digest(b.current)).size)
+    }
+
+    @Test
+    fun an6_marketUnknownToThisVersionIsSkippedNotFatal() = runTest {
+        val (a, _) = pair()
+        a.placeStore.setAddress("10115")
+        val wire = syncJson.encodeToString(SyncRecords.serializer(), SyncMerge.newerThan(a.current, emptyMap()))
+            .replace("\"LIDL\"", "\"NETTO\"")
+        val records = syncJson.decodeFromString(SyncRecords.serializer(), wire)
+        assertEquals(listOf(Chain.ALDI_NORD, Chain.KAUFLAND), records.places.single().markets)
+    }
+
+    @Test
+    fun an6_passtNichtListStaysBounded() = runTest {
+        val (a, _) = pair()
+        a.placeStore.setAddress("10115")
+        repeat(ShoppingPlace.MAX_REJECTED + 3) { a.placeStore.reject("k$it|wort") }
+        val rejected = a.current.place!!.rejected
+        assertEquals(ShoppingPlace.MAX_REJECTED, rejected.size)
+        assertEquals("k3|wort", rejected.first()) // the oldest went first
+    }
 
     @Test
     fun recipeEditAndDeletionReachTheOtherPhone() = runTest {

@@ -76,6 +76,7 @@ import io.github.respawnedguy.familyapp.presentation.Tab
 import io.github.respawnedguy.familyapp.sync.SyncUi
 import io.github.respawnedguy.familyapp.presentation.KitchenRoute
 import io.github.respawnedguy.familyapp.ui.CaptureSheet
+import io.github.respawnedguy.familyapp.ui.PlanSheetDialog
 import io.github.respawnedguy.familyapp.ui.CookOverlay
 import io.github.respawnedguy.familyapp.ui.KitchenScreen
 import io.github.respawnedguy.familyapp.ui.FamilyIcons
@@ -229,6 +230,7 @@ private fun Main(
     val restoreCode by model.restoreCode.collectAsState()
     val kitchen by model.kitchen.route.collectAsState()
     val people by model.people.route.collectAsState()
+    val planSheet by model.offers.plan.sheet.collectAsState()
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
@@ -261,6 +263,7 @@ private fun Main(
         (kitchen as? KitchenRoute.Cook)?.let { CookOverlay(it, data, model) }
         CaptureSheet(capture, model, reducedMotion)
         restoreCode?.let { RestoreCodeDialog(it, model) }
+        planSheet?.let { PlanSheetDialog(it, model) }
     }
 }
 

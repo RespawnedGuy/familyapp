@@ -7,6 +7,7 @@ import io.github.respawnedguy.familyapp.data.InstagramImport
 import io.github.respawnedguy.familyapp.data.RecipeAi
 import io.github.respawnedguy.familyapp.data.RecipeEdit
 import io.github.respawnedguy.familyapp.data.Undo
+import io.github.respawnedguy.familyapp.data.plus
 import io.github.respawnedguy.familyapp.domain.recipe.InstagramLink
 import io.github.respawnedguy.familyapp.domain.recipe.InstagramPost
 import io.github.respawnedguy.familyapp.domain.recipe.Recipe
@@ -22,6 +23,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.plus
 
 /** Where in the kitchen library the person is. Null in [KitchenModel.route] means: not in the kitchen. */
 sealed interface KitchenRoute {
@@ -78,7 +82,7 @@ class KitchenModel internal constructor(
 
     fun openRecipe(id: String) {
         val recipe = repo.recipeStore.recipe(id) ?: return
-        _servings.value = RecipeViews.startServings(recipe)
+        _servings.value = RecipeViews.startServings(recipe, repo.current.settings.lastServings)
         go(KitchenRoute.Detail(id))
     }
 
@@ -86,7 +90,11 @@ class KitchenModel internal constructor(
 
     fun editRecipe(id: String) = go(KitchenRoute.Edit(id))
 
-    fun startCooking(id: String) = go(KitchenRoute.Cook(id, _servings.value))
+    fun startCooking(id: String) {
+        repo.recipeStore.recipe(id)?.let { repo.rememberServings(it, _servings.value) }
+        go(KitchenRoute.Cook(id, _servings.value))
+    }
+
 
     fun close() = go(null)
 
@@ -106,6 +114,11 @@ class KitchenModel internal constructor(
     fun setServings(value: Int) {
         _servings.value = value.coerceIn(RecipeViews.MIN_SERVINGS, RecipeViews.MAX_SERVINGS)
     }
+}
+
+/** The number of people just used becomes the default for the next recipe (per phone). */
+internal fun FamilyRepository.rememberServings(recipe: Recipe, servings: Int) {
+    if (RecipeViews.remembers(recipe)) setLastServings(servings)
 }
 
 /** Where slow work runs: [scope] lives as long as the app model, [io] for network and files. */
@@ -258,7 +271,9 @@ class RecipeActions internal constructor(
 
     /** "Gekocht" at the end of the cooking mode. */
     fun cooked(id: String) {
-        val undo = store.markCooked(id)
+        val cooked = store.markCooked(id)
+        // The dish planned for today (or the earliest one still open) counts as cooked too.
+        val undo = repo.mealStore.markCooked(id, repo.day())?.let { cooked + it } ?: cooked
         nav.go(KitchenRoute.Detail(id))
         show(COOKED, undo)
     }
@@ -340,6 +355,7 @@ class ShoppingActions internal constructor(
 
     /** All ingredients at the chosen servings; basics (salt, oil) come as "Hast du noch …?". */
     fun addRecipe(recipe: Recipe) {
+        repo.rememberServings(recipe, nav.servings.value)
         val entries = ShoppingList.fromRecipe(recipe, RecipeViews.factor(recipe, nav.servings.value))
         if (entries.isEmpty()) {
             show(NOTHING_TO_BUY, null)
@@ -353,6 +369,18 @@ class ShoppingActions internal constructor(
             "${entries.size - asks} Zutaten auf der Einkaufsliste, $asks als Frage „Hast du noch …?“."
         }
         show(message, undo)
+    }
+
+    /**
+     * A suggestion tapped, "Wann?" and "Für wie viele?" answered (docs/angebote-und-vorschlaege.md
+     * "Ablauf"): the ingredients go on the list and the dish into the plan, one undo for both.
+     */
+    fun planAndAdd(recipe: Recipe, day: LocalDate?, servings: Int, offers: Map<String, String> = emptyMap()) {
+        val people = servings.coerceIn(RecipeViews.MIN_SERVINGS, RecipeViews.MAX_SERVINGS)
+        repo.rememberServings(recipe, people)
+        val entries = ShoppingList.fromRecipe(recipe, RecipeViews.factor(recipe, people))
+        val undo = repo.mealStore.plan(recipe.id, day, people) + store.addEntries(entries, recipe.id, offers)
+        show(planMessage(recipe.title, day, people, entries.size, repo.day()), undo)
     }
 
     /** "Milch und Klopapier" or "2 l Milch, Eier": every part becomes its own line. */
@@ -376,5 +404,21 @@ class ShoppingActions internal constructor(
     companion object {
         const val NOTHING_TO_BUY = "Dieses Rezept hat keine Zutaten zum Einkaufen."
         const val CLEARED = "Abgehakte Einträge entfernt."
+
+        private val WEEKDAYS = listOf("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So")
+
+        /** "Heute", "Morgen" or the weekday ("Do"); null day: "ohne Tag". */
+        fun dayLabel(day: LocalDate?, today: LocalDate): String = when {
+            day == null -> "ohne Tag"
+            day == today -> "heute"
+            day == today.plus(DatePeriod(days = 1)) -> "morgen"
+            else -> WEEKDAYS[day.dayOfWeek.ordinal]
+        }
+
+        fun planMessage(title: String, day: LocalDate?, servings: Int, count: Int, today: LocalDate): String {
+            val people = if (servings == 1) "1 Person" else "$servings Personen"
+            val list = if (count == 1) "1 Zutat auf der Liste" else "$count Zutaten auf der Liste"
+            return "$title: ${dayLabel(day, today)}, $people, $list."
+        }
     }
 }

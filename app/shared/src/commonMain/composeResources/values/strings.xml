@@ -212,4 +212,40 @@
     <string name="entry_kind_link">Link</string>
     <string name="entry_open_link">Öffnen</string>
     <string name="search_contacts">Kontakte</string>
+
+    <!-- Offers, season and meal plan (docs/angebote-und-vorschlaege.md) -->
+    <string name="offers_meals_title">Essen diese Woche</string>
+    <string name="offers_today_meal">Heute: %1$s (%2$d)</string>
+    <string name="offers_not_matching">Passt nicht</string>
+    <string name="offers_not_matching_label">„%1$s“ zählt nicht als %2$s</string>
+    <string name="offers_plan">Planen</string>
+    <string name="offers_ingredients_title">Saison und im Angebot</string>
+    <string name="offers_add_to_list">Auf die Liste</string>
+    <string name="offers_no_place">Mit den Angeboten deiner Märkte werden die Vorschläge besser.</string>
+    <string name="offers_set_place">Ort eintragen</string>
+    <string name="offers_plan_when">Wann?</string>
+    <string name="offers_plan_how_many">Für wie viele?</string>
+    <string name="offers_plan_no_day">Ohne Tag</string>
+    <string name="offers_plan_no_servings">Rezept ohne Portionsangabe, Mengen wie im Rezept.</string>
+    <string name="offers_plan_confirm">Auf die Einkaufsliste</string>
+    <string name="offers_plan_move">Verschieben</string>
+    <string name="offers_plan_remove">Aus dem Plan nehmen</string>
+    <string name="offers_plan_open_recipe">Rezept ansehen</string>
+    <string name="offers_upcoming_title">Essensplan</string>
+    <string name="offers_settings_title">Einkauf</string>
+    <string name="offers_address_label">Adresse oder PLZ</string>
+    <string name="offers_address_save">Ort speichern</string>
+    <string name="offers_address_note">Benutzt wird nur die Postleitzahl. Die Adresse bleibt auf euren Geräten, nach außen geht höchstens der Mittelpunkt des PLZ-Gebiets (für die Filialsuche von Kaufland).</string>
+    <string name="offers_markets">Märkte, in denen ihr einkauft</string>
+    <string name="offers_kaufland_store">Kaufland-Filiale: %1$s</string>
+    <string name="offers_kaufland_other">PLZ einer anderen Kaufland-Filiale</string>
+    <string name="offers_kaufland_find">Filiale suchen</string>
+    <string name="offers_refresh">Jetzt abrufen</string>
+    <string name="offers_retry">Nochmal versuchen</string>
+    <string name="offers_waiting_wifi">Neue Angebote werden im WLAN abgerufen. „Jetzt abrufen“ nutzt auch mobile Daten.</string>
+    <string name="offers_rules">Die App liest nur Märkte, die automatisches Lesen erlauben, mit einer ehrlich gekennzeichneten Anfrage. Lehnt ein Markt ab, wird er abgeschaltet und nicht ausgetrickst. Die Angebote bleiben auf diesem Handy.</string>
+    <string name="offers_rejected_title">Als „Passt nicht“ markiert</string>
+    <string name="offers_rejected_item">%1$s ist nicht %2$s</string>
+    <string name="offers_rejected_remove">Wieder zählen</string>
+    <string name="offers_attribution">Postleitzahlen: GeoNames (geonames.org), Lizenz CC BY 4.0.</string>
 </resources>
