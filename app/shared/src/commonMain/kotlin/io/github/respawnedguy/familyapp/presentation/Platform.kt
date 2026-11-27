@@ -4,6 +4,7 @@ import io.github.respawnedguy.familyapp.data.InstagramPages
 import io.github.respawnedguy.familyapp.data.RecipeAi
 import io.github.respawnedguy.familyapp.domain.DeviceInfo
 import io.github.respawnedguy.familyapp.domain.ResourceUsage
+import io.github.respawnedguy.familyapp.domain.contacts.ContactDraft
 
 /** Callbacks of on-device speech recognition (Android SpeechRecognizer, later iOS SFSpeechRecognizer). */
 interface SpeechListener {
@@ -28,7 +29,7 @@ interface SpeechInput {
  * Everything the shared UI needs from the platform. Android implements it in androidApp;
  * iOS gets its own implementation when the iOS app is built.
  */
-interface PlatformServices : DeviceMeasurements, ScreenControl, RecipeSources {
+interface PlatformServices : DeviceMeasurements, ScreenControl, RecipeSources, ContactActions {
     /** Null where no recognizer is available; the capture sheet then offers text instead. */
     val speech: SpeechInput?
 
@@ -85,6 +86,34 @@ interface RecipeSources {
 
     /** Cloud AI for recipe texts with this API key. Null where the platform has none. */
     fun recipeAi(apiKey: String): RecipeAi? = null
+}
+
+/**
+ * Contacts without address-book permission (docs/kontakte-und-portfolio.md, E1): the system picker
+ * hands over one contact, everything else opens another app that the person controls (dialler,
+ * mail, maps, contacts). Each call returns false when no app could take it. Defaults: nothing.
+ */
+interface ContactActions {
+    /** True where [pickContact] opens the system's contact picker. */
+    val canPickContacts: Boolean get() = false
+
+    /** Lets the person choose one contact; null when cancelled or unreadable. */
+    fun pickContact(onResult: (ContactDraft?) -> Unit) = onResult(null)
+
+    /** Opens the dialler with the number filled in; never calls by itself (no CALL_PHONE, KT-2). */
+    fun dial(number: String): Boolean = false
+
+    fun sendSms(number: String): Boolean = false
+
+    fun sendMail(address: String): Boolean = false
+
+    fun showAddress(address: String): Boolean = false
+
+    /** Only http(s) links are passed on (TE-8). */
+    fun openWebLink(url: String): Boolean = false
+
+    /** Hands the contact to the phone's contacts app, where the person saves it (no WRITE_CONTACTS, KT-5). */
+    fun addToPhoneBook(draft: ContactDraft): Boolean = false
 }
 
 /** Display control for the kitchen library. Default: nothing (platforms without it). */

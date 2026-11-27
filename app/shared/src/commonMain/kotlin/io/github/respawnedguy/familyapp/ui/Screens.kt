@@ -1,6 +1,8 @@
 package io.github.respawnedguy.familyapp.ui
 
 import io.github.respawnedguy.familyapp.resources.urgent_title
+import io.github.respawnedguy.familyapp.resources.search_contacts
+import io.github.respawnedguy.familyapp.domain.contacts.ContactViews
 import io.github.respawnedguy.familyapp.resources.local_only_later
 import io.github.respawnedguy.familyapp.resources.local_only_setup
 import io.github.respawnedguy.familyapp.resources.local_only_text
@@ -178,6 +180,8 @@ fun FamilyScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reduce
     LazyColumn(Modifier.fillMaxSize(), contentPadding = ListPadding) {
         // Kitchen library lives under "Familie", without a tab of its own (docs/kochbibliothek.md).
         item { KitchenEntryCard(data, model) }
+        // Shared contacts, also without a tab of their own (docs/kontakte-und-portfolio.md).
+        item { ContactsEntryCard(data, model) }
         item(key = "load") {
             Column(
                 Modifier.fillMaxWidth().padding(top = 12.dp).clip(RoundedCornerShape(16.dp)).background(c.card).padding(16.dp),
@@ -215,8 +219,10 @@ fun FamilyScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reduce
         shown.forEach { member ->
             val open = Views.openFor(data, member.id)
             item(key = "m-${member.id}") {
+                // Tapping the person opens their portfolio (what to know to step in); "Ändern" edits name and colour.
                 Row(
-                    Modifier.fillMaxWidth().clickable { editing = member }.padding(top = 16.dp, bottom = 6.dp),
+                    Modifier.fillMaxWidth().clickable { model.people.openPortfolio(member.id) }
+                        .padding(top = 16.dp, bottom = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     PersonDot(member, 32.dp)
@@ -226,7 +232,12 @@ fun FamilyScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reduce
                         val device = if (member.hasDevice) "eigenes Handy" else "ohne eigenes Handy"
                         Text("$kind · $device · ${open.size} offen", color = c.textTertiary, fontSize = 12.sp)
                     }
-                    Text("Ändern", color = c.accent, fontSize = 13.sp)
+                    Text(
+                        "Ändern",
+                        Modifier.heightIn(min = 48.dp).clickable { editing = member }
+                            .padding(horizontal = 8.dp, vertical = 14.dp),
+                        color = c.accent, fontSize = 13.sp,
+                    )
                 }
             }
             items(open, key = { "f-${it.id}" }) { item ->
@@ -413,6 +424,7 @@ fun SearchScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?) {
     var query by remember { mutableStateOf("") }
     var open by remember { mutableStateOf<String?>(null) }
     val results = Views.search(data, query)
+    val contacts = ContactViews.searchContacts(data, query)
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         OutlinedTextField(
             value = query,
@@ -422,7 +434,11 @@ fun SearchScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?) {
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
         )
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 96.dp)) {
-            if (query.isNotBlank() && results.isEmpty()) item { EmptyNote("Nichts gefunden.") }
+            if (contacts.isNotEmpty()) {
+                item { SectionHeader(stringResource(Res.string.search_contacts), contacts.size) }
+                items(contacts, key = { it.id }) { contact -> ContactRow(contact, data, model) }
+            }
+            if (query.isNotBlank() && results.isEmpty() && contacts.isEmpty()) item { EmptyNote("Nichts gefunden.") }
             if (query.isBlank()) item { EmptyNote("${data.items.size} Einträge durchsuchbar.") }
             items(results, key = { it.id }) { item ->
                 Row(

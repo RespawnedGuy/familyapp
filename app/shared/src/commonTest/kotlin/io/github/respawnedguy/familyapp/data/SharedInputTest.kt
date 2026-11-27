@@ -2,6 +2,7 @@ package io.github.respawnedguy.familyapp.data
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -68,5 +69,22 @@ class SharedInputTest {
         val long = SharedInput.text(null, "x".repeat(100_000))
         assertEquals(SharedInput.MAX_TEXT_CHARS, long.length)
         assertTrue(long.endsWith("…"))
+    }
+
+    @Test
+    fun vcardIsRecognisedByItsTypes() {
+        assertTrue(SharedInput.isVCard("text/x-vcard"))
+        assertTrue(SharedInput.isVCard(" Text/VCard; charset=utf-8"))
+        assertTrue(SharedInput.isVCard("text/directory"))
+        assertFalse(SharedInput.isVCard("text/plain"))
+        assertFalse(SharedInput.isVCard(null))
+    }
+
+    @Test
+    fun kt1VCardFileOnlyFromAnotherAppsProvider() {
+        assertTrue(SharedInput.vcardAllowed("content", ownProvider = false))
+        assertFalse(SharedInput.vcardAllowed("content", ownProvider = true), "own files cannot be re-shared in")
+        assertFalse(SharedInput.vcardAllowed("file", ownProvider = false), "no file:// paths into private storage")
+        assertFalse(SharedInput.vcardAllowed(null, ownProvider = false))
     }
 }

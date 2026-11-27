@@ -1,5 +1,8 @@
 package io.github.respawnedguy.familyapp.domain
 
+import io.github.respawnedguy.familyapp.domain.contacts.Contact
+import io.github.respawnedguy.familyapp.domain.contacts.ContactLink
+import io.github.respawnedguy.familyapp.domain.contacts.PortfolioEntry
 import io.github.respawnedguy.familyapp.domain.recipe.Recipe
 import io.github.respawnedguy.familyapp.domain.recipe.ShoppingEntry
 import kotlinx.datetime.LocalDate
@@ -136,7 +139,8 @@ const val CURRENT_SCHEMA = 2
  * Everything stored on this device. Sync (ADR 0003) exchanges members, items, tombstones, recipes
  * and shopping entries by [Stamp]. Recipes and shopping entries came later (kitchen library,
  * 26.11.2026) as additional fields: older app versions ignore them, so the schema stays 2 and
- * devices with different versions keep syncing everything else.
+ * devices with different versions keep syncing everything else. Contacts, their links to people and
+ * portfolio facts (docs/kontakte-und-portfolio.md, 27.11.2026) were added the same way.
  */
 @Serializable
 data class FamilyData(
@@ -149,6 +153,9 @@ data class FamilyData(
     val settings: Settings = Settings(),
     val recipes: List<Recipe> = emptyList(),
     val shopping: List<ShoppingEntry> = emptyList(),
+    val contacts: List<Contact> = emptyList(),
+    val contactLinks: List<ContactLink> = emptyList(),
+    val portfolio: List<PortfolioEntry> = emptyList(),
 ) {
     val self: Member? get() = members.firstOrNull { it.id == selfId }
     fun member(id: String?): Member? = id?.let { i -> members.firstOrNull { it.id == i } }
