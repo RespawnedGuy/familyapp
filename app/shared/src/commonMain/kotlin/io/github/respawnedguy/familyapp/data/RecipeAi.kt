@@ -37,16 +37,19 @@ fun interface RecipeAi {
 }
 
 /** Which cloud AI an API key belongs to. The key's own prefix tells, so the person only pastes it. */
-enum class AiProvider(private val prefix: String) {
-    /** Free tier with a key from aistudio.google.com; reads videos (ADR 0008, default). */
-    GEMINI("AIza"),
+enum class AiProvider(private vararg val prefixes: String) {
+    /**
+     * Free tier with a key from aistudio.google.com; reads videos (ADR 0008, default). AI Studio now
+     * issues "AQ." keys (seen 27.11.2026), older keys start with "AIza"; both go in x-goog-api-key.
+     */
+    GEMINI("AQ.", "AIza"),
 
     /** Paid, text only (ADR 0007). */
     CLAUDE("sk-ant-"),
     ;
 
     companion object {
-        fun ofKey(key: String): AiProvider? = entries.firstOrNull { key.startsWith(it.prefix) }
+        fun ofKey(key: String): AiProvider? = entries.firstOrNull { p -> p.prefixes.any { key.startsWith(it) } }
     }
 }
 
