@@ -21,7 +21,7 @@ pass() { echo "OK    $1"; }
 fail() { echo "FEHLER $1"; FAILED=1; }
 HERE="$(cd "$(dirname "$0")" && pwd)"
 # No single adb call may hang the job: on API 26 one share call once blocked for hours.
-adb() { timeout 90 command adb "$@"; }
+adb() { timeout 90 adb "$@"; }  # timeout runs the adb binary, not this function
 SIZE="$(adb shell wm size | grep -o '[0-9]*x[0-9]*' | tail -1)"; W="${SIZE%x*}"; H="${SIZE#*x}"
 swipe_up() { adb shell input swipe $((W / 2)) $((H * 3 / 4)) $((W / 2)) $((H / 3)) 300; sleep 1; }
 dump() {
