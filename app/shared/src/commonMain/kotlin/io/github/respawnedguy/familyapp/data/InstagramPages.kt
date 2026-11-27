@@ -18,11 +18,19 @@ fun interface InstagramPages {
  * yt-dlp (ADR 0007). Embed page first, the normal post page as a second chance. The result is
  * still only text for the rules; the recipe stays a suggestion until a person confirms it.
  */
-class InstagramImport(private val pages: InstagramPages, private val videos: InstagramVideos? = null) {
+class InstagramImport(
+    private val pages: InstagramPages,
+    private val videos: InstagramVideos? = null,
+    /** Second way to the same pages, e.g. a browser engine, when Instagram refuses the plain fetch. */
+    private val browser: InstagramPages? = null,
+) {
 
     fun fetch(shortcode: String): InstagramPost? =
-        pages.get(InstagramLink.embedPath(shortcode))?.let(InstagramPage::fromEmbed)
-            ?: pages.get(InstagramLink.postPath(shortcode))?.let(InstagramPage::fromPostPage)
+        fetch(pages, shortcode) ?: browser?.let { fetch(it, shortcode) }
+
+    private fun fetch(source: InstagramPages, shortcode: String): InstagramPost? =
+        source.get(InstagramLink.embedPath(shortcode))?.let(InstagramPage::fromEmbed)
+            ?: source.get(InstagramLink.postPath(shortcode))?.let(InstagramPage::fromPostPage)
 
     /** The video address [cloud] gets to see, or null when it reads only the caption (ADR 0008). */
     fun videoFor(post: InstagramPost, cloud: RecipeAi): String? =

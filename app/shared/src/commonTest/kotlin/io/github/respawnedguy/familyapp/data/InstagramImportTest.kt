@@ -36,4 +36,19 @@ class InstagramImportTest {
     fun nothingReachableGivesNull() {
         assertNull(InstagramImport(FakePages(emptyMap())).fetch("C0de"))
     }
+
+    @Test
+    fun browserIsAskedOnlyWhenThePlainFetchGetsNoCaption() {
+        val refused = FakePages(mapOf("/p/C0de/embed/captioned/" to "<html>Login</html>"))
+        val browser = FakePages(mapOf("/p/C0de/embed/captioned/" to embed))
+        assertEquals("Brot\n500 g Mehl", InstagramImport(refused, browser = browser).fetch("C0de")?.caption)
+        assertEquals(listOf("/p/C0de/embed/captioned/", "/p/C0de/"), refused.asked)
+        assertEquals(listOf("/p/C0de/embed/captioned/"), browser.asked)
+
+        val direct = FakePages(mapOf("/p/C0de/embed/captioned/" to embed))
+        val unused = FakePages(emptyMap())
+        InstagramImport(direct, browser = unused).fetch("C0de")
+        assertEquals(emptyList(), unused.asked, "no browser when the plain fetch works")
+        assertNull(InstagramImport(FakePages(emptyMap()), browser = FakePages(emptyMap())).fetch("C0de"))
+    }
 }
