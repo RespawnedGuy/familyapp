@@ -25,7 +25,7 @@ class ShoppingPlaceRepository internal constructor(private val repo: FamilyRepos
 
     /**
      * Address or postcode as typed. Returns false when it holds no German postcode. A new postcode
-     * forgets the Kaufland store (it is looked up again); a first place gets the suggested markets.
+     * forgets the Kaufland and Penny store (they are looked up again); a first place gets the suggested markets.
      */
     fun setAddress(text: String): Boolean {
         val postcode = Postcodes.extract(text) ?: return false
@@ -45,6 +45,8 @@ class ShoppingPlaceRepository internal constructor(private val repo: FamilyRepos
                     kauflandStoreId = null,
                     kauflandStoreName = null,
                     kauflandPostcode = null,
+                    pennyStoreId = null,
+                    pennyStoreName = null,
                 )
             }
         }
@@ -66,6 +68,11 @@ class ShoppingPlaceRepository internal constructor(private val repo: FamilyRepos
                 kauflandPostcode = forPostcode ?: old.kauflandPostcode,
             )
         }
+    }
+
+    /** The Penny store chosen from the nearest ones (or the nearest, taken on the first read). */
+    fun setPennyStore(id: String, name: String) {
+        save { old -> old?.copy(pennyStoreId = id, pennyStoreName = name.take(ShoppingPlace.MAX_LABEL)) }
     }
 
     /** "Passt nicht": this offer title is not this ingredient, for the whole family. */

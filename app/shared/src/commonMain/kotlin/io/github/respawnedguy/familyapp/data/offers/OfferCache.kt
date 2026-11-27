@@ -15,6 +15,10 @@ import kotlinx.serialization.json.Json
 @Serializable
 enum class MarketStatus { OK, REFUSED, FAILED }
 
+/** A store near the family's postcode, offered in Einstellungen › Einkauf ("weitere Filialen"). */
+@Serializable
+data class NearbyStore(val id: String, val name: String, val distanceKm: Double)
+
 /** The last read of one market, kept on this phone only. */
 @Serializable
 data class MarketSnapshot(
@@ -23,8 +27,10 @@ data class MarketSnapshot(
     val fetchedOn: LocalDate,
     val status: MarketStatus,
     val offers: List<Offer> = emptyList(),
-    /** Kaufland: the store the offers belong to. A different store in the place means: read again. */
+    /** Kaufland, Penny: the store the offers belong to. A different store in the place means: read again. */
     val storeId: String? = null,
+    /** Penny: the nearest stores, to choose another one without a new search. */
+    val nearby: List<NearbyStore> = emptyList(),
     /** HTTP code of a refusal, or the reason of a failure, for the diagnosis line. */
     val detail: String? = null,
 )
@@ -55,7 +61,7 @@ data class OfferCache(val markets: List<MarketSnapshot> = emptyList()) {
 
         /**
          * True if [chain] should be read now: never read, older than [MAX_AGE_DAYS], from an earlier
-         * week (offers change on Monday), for another Kaufland store, or failed more than an hour ago.
+         * week (offers change on Monday), for another Kaufland or Penny store, or failed more than an hour ago.
          * A market that refused stays off until the person asks again (Grundsatz, point 4).
          */
         fun due(snapshot: MarketSnapshot?, today: LocalDate, nowMs: Long, storeId: String? = null): Boolean = when {

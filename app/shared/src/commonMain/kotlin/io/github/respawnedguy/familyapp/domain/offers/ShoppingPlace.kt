@@ -21,6 +21,9 @@ data class ShoppingPlace(
     val kauflandStoreName: String? = null,
     /** Postcode the Kaufland store was looked up for, when it differs from [postcode]. */
     val kauflandPostcode: String? = null,
+    /** Penny store chosen from the nearest ones (its "wwIdent"); null: the nearest is taken. */
+    val pennyStoreId: String? = null,
+    val pennyStoreName: String? = null,
     /** "Passt nicht" keys ([OfferMatch.rejectionKey]): this offer word is not this ingredient. */
     val rejected: List<String> = emptyList(),
     val changedBy: String? = null,
@@ -38,7 +41,7 @@ data class ShoppingPlace(
         const val MAX_REJECTED = 500
 
         /**
-         * Markets ticked for a new place. Lidl and Kaufland are everywhere. Aldi is split in two
+         * Markets ticked for a new place. Lidl, Kaufland and Penny are everywhere. Aldi is split in two
          * companies; a rough guess by the first digit (0–3 north, 6–9 south) is only a suggestion the
          * person sees and changes, and 4/5 (NRW, both) stays open.
          */
@@ -49,7 +52,7 @@ data class ShoppingPlace(
                 in 6..9 -> Chain.ALDI_SUED
                 else -> null
             }
-            return listOfNotNull(aldi, Chain.KAUFLAND, Chain.LIDL).map { it.name }
+            return listOfNotNull(aldi, Chain.KAUFLAND, Chain.LIDL, Chain.PENNY).map { it.name }
         }
     }
 }

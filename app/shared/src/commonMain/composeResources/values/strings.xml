@@ -267,6 +267,11 @@
     <string name="offers_kaufland_store">Kaufland-Filiale: %1$s</string>
     <string name="offers_kaufland_other">PLZ einer anderen Kaufland-Filiale</string>
     <string name="offers_kaufland_find">Filiale suchen</string>
+    <string name="offers_penny_store">Penny-Filiale: %1$s</string>
+    <string name="offers_penny_nearby">Weitere Penny-Filialen in der Nähe</string>
+    <string name="offers_store_distance">%1$s · ca. %2$s km</string>
+    <string name="offers_store_choose">Wählen</string>
+    <string name="offers_not_readable">Nicht dabei, weil sie automatisches Lesen nicht erlauben: Edeka mit E center, nah &amp; gut und Marktkauf, REWE, Netto Marken-Discount, Rossmann, Müller.</string>
     <string name="offers_refresh">Jetzt abrufen</string>
     <string name="offers_retry">Nochmal versuchen</string>
     <string name="offers_waiting_wifi">Neue Angebote werden im WLAN abgerufen. „Jetzt abrufen“ nutzt auch mobile Daten.</string>

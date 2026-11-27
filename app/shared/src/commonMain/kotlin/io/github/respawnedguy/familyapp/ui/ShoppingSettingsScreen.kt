@@ -24,6 +24,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.respawnedguy.familyapp.domain.FamilyData
+import io.github.respawnedguy.familyapp.data.offers.NearbyStore
 import io.github.respawnedguy.familyapp.domain.offers.Chain
 import io.github.respawnedguy.familyapp.presentation.AppModel
 import io.github.respawnedguy.familyapp.resources.Res
@@ -35,6 +36,9 @@ import io.github.respawnedguy.familyapp.resources.offers_kaufland_find
 import io.github.respawnedguy.familyapp.resources.offers_kaufland_other
 import io.github.respawnedguy.familyapp.resources.offers_kaufland_store
 import io.github.respawnedguy.familyapp.resources.offers_markets
+import io.github.respawnedguy.familyapp.resources.offers_not_readable
+import io.github.respawnedguy.familyapp.resources.offers_penny_nearby
+import io.github.respawnedguy.familyapp.resources.offers_penny_store
 import io.github.respawnedguy.familyapp.resources.offers_refresh
 import io.github.respawnedguy.familyapp.resources.offers_rejected_item
 import io.github.respawnedguy.familyapp.resources.offers_rejected_remove
@@ -42,6 +46,8 @@ import io.github.respawnedguy.familyapp.resources.offers_rejected_title
 import io.github.respawnedguy.familyapp.resources.offers_retry
 import io.github.respawnedguy.familyapp.resources.offers_rules
 import io.github.respawnedguy.familyapp.resources.offers_settings_title
+import io.github.respawnedguy.familyapp.resources.offers_store_choose
+import io.github.respawnedguy.familyapp.resources.offers_store_distance
 import io.github.respawnedguy.familyapp.resources.offers_waiting_wifi
 import org.jetbrains.compose.resources.stringResource
 
@@ -80,7 +86,11 @@ internal fun ShoppingSettings(data: FamilyData, model: AppModel) {
                 Text(chain.label, Modifier.padding(start = 12.dp), fontSize = 15.sp, color = c.text)
             }
         }
+        Text(stringResource(Res.string.offers_not_readable), fontSize = 12.sp, color = c.textTertiary)
         if (place.has(Chain.KAUFLAND)) KauflandStore(place.kauflandStoreName, model)
+        if (place.has(Chain.PENNY)) {
+            PennyStore(place.pennyStoreId, place.pennyStoreName, cache.of(Chain.PENNY)?.nearby.orEmpty(), model)
+        }
 
         model.offers.marketLines(cache, busy).forEach { line ->
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -123,6 +133,32 @@ private fun KauflandStore(storeName: String?, model: AppModel) {
 }
 
 @Composable
+private fun PennyStore(chosenId: String?, chosenName: String?, nearby: List<NearbyStore>, model: AppModel) {
+    val c = LocalFamilyColors.current
+    chosenName?.let { Text(stringResource(Res.string.offers_penny_store, it), fontSize = 14.sp, color = c.text) }
+    val others = nearby.filter { it.id != chosenId }
+    if (others.isEmpty()) return
+    Text(stringResource(Res.string.offers_penny_nearby), fontSize = 13.sp, color = c.textSecondary)
+    others.forEach { store ->
+        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(Res.string.offers_store_distance, store.name, kilometres(store.distanceKm)),
+                Modifier.weight(1f), fontSize = 13.sp, color = c.text,
+            )
+            TextButton(onClick = { model.offers.place.choosePennyStore(store) }) {
+                Text(stringResource(Res.string.offers_store_choose))
+            }
+        }
+    }
+}
+
+/** "2,4" with a German decimal comma. */
+private fun kilometres(km: Double): String {
+    val tenths = kotlin.math.round(km * TENTHS).toLong()
+    return "${tenths / TENTHS.toLong()},${tenths % TENTHS.toLong()}"
+}
+
+@Composable
 private fun RejectedList(rejected: List<String>, model: AppModel) {
     val c = LocalFamilyColors.current
     Text(stringResource(Res.string.offers_rejected_title), fontSize = 14.sp, color = c.textSecondary)
@@ -151,3 +187,4 @@ internal fun OffersAttribution() {
 private const val ADDRESS_MAX = 120
 private const val POSTCODE_LENGTH = 5
 private const val REJECTION_SEPARATOR = '|'
+private const val TENTHS = 10.0
