@@ -66,6 +66,14 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="image/*" />
             </intent-filter>
+            <!-- "Kontakt teilen" from the contacts app: one contact as vCard (docs/kontakte-und-portfolio.md, KT-1). -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/x-vcard" />
+                <data android:mimeType="text/vcard" />
+                <data android:mimeType="text/directory" />
+            </intent-filter>
         </activity>
 
         <service

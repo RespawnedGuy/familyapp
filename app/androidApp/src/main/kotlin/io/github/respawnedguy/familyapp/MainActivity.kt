@@ -32,6 +32,11 @@ class MainActivity : ComponentActivity() {
     val takePicture = registerForActivityResult(ActivityResultContracts.TakePicture()) { ok -> app.platform.onPhotoResult(ok) }
     val openTree = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri -> app.platform.onFolderPicked(uri) }
     val scanQr = registerForActivityResult(ScanContract()) { result -> app.pairing.onScanned(result.contents) }
+
+    /** System contact picker for one phone number, no READ_CONTACTS (docs/kontakte-und-portfolio.md, E1). */
+    val pickContact = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        app.platform.onContactPicked(result.data?.data?.takeIf { result.resultCode == RESULT_OK })
+    }
     private val micPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         micCallback?.invoke(granted)
         micCallback = null
@@ -134,12 +139,16 @@ class MainActivity : ComponentActivity() {
             }
             Intent.ACTION_SEND -> {
                 app.coldStart = false
+                if (SharedInput.isVCard(intent.type)) {
+                    handleSharedContact(intent)
+                    return
+                }
                 // Any app can send anything here (threat model TE-1 to TE-4): text is cut, images are checked.
                 val text = SharedInput.text(
                     intent.getCharSequenceExtra(Intent.EXTRA_SUBJECT)?.toString(),
                     intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString(),
                 )
-                val stream = streamUri(intent)
+                val stream = intent.streamUri()
                 val type = intent.type
                 lifecycleScope.launch {
                     val image = stream?.let { withContext(Dispatchers.IO) { app.platform.importSharedImage(it, type) } }
@@ -153,13 +162,16 @@ class MainActivity : ComponentActivity() {
         setIntent(Intent(this, MainActivity::class.java))
     }
 
-    @Suppress("DEPRECATION")
-    private fun streamUri(intent: Intent): Uri? =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
-        } else {
-            intent.getParcelableExtra(Intent.EXTRA_STREAM)
+    /** A contact from the contacts app: as a file (usual) or as text; the parser caps it (KT-1). */
+    private fun handleSharedContact(intent: Intent) {
+        val stream = intent.streamUri()
+        val text = intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString()
+        setIntent(Intent(this, MainActivity::class.java))
+        lifecycleScope.launch {
+            val vcard = stream?.let { withContext(Dispatchers.IO) { app.platform.readSharedVCard(it) } } ?: text
+            app.model.captureSharedContact(vcard)
         }
+    }
 
     private fun handleInstallerIntent(intent: Intent?): Boolean {
         val platform = updatePlatform ?: return false
@@ -174,3 +186,11 @@ class MainActivity : ComponentActivity() {
         const val EXTRA_TRIGGER_AT = "triggerAtElapsedMs"
     }
 }
+
+@Suppress("DEPRECATION")
+private fun Intent.streamUri(): Uri? =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+    } else {
+        getParcelableExtra(Intent.EXTRA_STREAM)
+    }

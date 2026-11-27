@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Debug
 import android.os.SystemClock
+import android.provider.ContactsContract
 import android.provider.DocumentsContract
 import android.provider.Settings
 import android.view.WindowManager
@@ -23,10 +24,12 @@ import io.github.respawnedguy.familyapp.data.StoredPhoto
 import io.github.respawnedguy.familyapp.domain.DeviceInfo
 import io.github.respawnedguy.familyapp.domain.FamilyData
 import io.github.respawnedguy.familyapp.domain.ResourceUsage
+import io.github.respawnedguy.familyapp.domain.contacts.ContactDraft
 import io.github.respawnedguy.familyapp.presentation.BackupContent
 import io.github.respawnedguy.familyapp.presentation.PlatformServices
 import io.github.respawnedguy.familyapp.presentation.RestoreRead
 import io.github.respawnedguy.familyapp.presentation.SpeechInput
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.time.Instant
@@ -184,6 +187,97 @@ class AndroidPlatform(private val app: FamilyApplication) : PlatformServices {
         BitmapFactory.decodeFile(file.absolutePath, bounds)
         return SharedInput.postcheck(bounds.outWidth, bounds.outHeight)
     }
+
+    // ---- Contacts without address-book permission (docs/kontakte-und-portfolio.md, E1) ---------
+
+    private var contactCallback: ((ContactDraft?) -> Unit)? = null
+
+    override val canPickContacts: Boolean = true
+
+    /**
+     * Picks one phone number with the system picker. The returned data URI comes with a temporary
+     * read grant for exactly that row, so no READ_CONTACTS is needed (and Android 17 replaces the
+     * picker with its own for apps targeting API 37). Mail and address come with "Kontakt teilen".
+     */
+    override fun pickContact(onResult: (ContactDraft?) -> Unit) {
+        val a = activity ?: return onResult(null)
+        contactCallback = onResult
+        try {
+            val pick = Intent(Intent.ACTION_PICK).setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE)
+            a.pickContact.launch(pick)
+        } catch (e: ActivityNotFoundException) {
+            onContactPicked(null)
+        }
+    }
+
+    fun onContactPicked(uri: Uri?) {
+        val callback = contactCallback.also { contactCallback = null } ?: return
+        if (uri == null) return callback(null)
+        val columns = arrayOf(
+            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+            ContactsContract.CommonDataKinds.Phone.NUMBER,
+        )
+        val draft = runCatching {
+            app.contentResolver.query(uri, columns, null, null, null)?.use { c ->
+                if (c.moveToFirst()) ContactDraft(c.getString(0).orEmpty(), listOfNotNull(c.getString(1))) else null
+            }
+        }.getOrNull()
+        callback(draft)
+    }
+
+    /** A shared .vcf from another app's provider, at most 1 MB (KT-1); null when refused or unreadable. */
+    fun readSharedVCard(uri: Uri): String? {
+        if (!SharedInput.vcardAllowed(uri.scheme, isOwnProvider(uri.authority.orEmpty()))) return null
+        return runCatching {
+            val out = ByteArrayOutputStream()
+            val copied = app.contentResolver.openInputStream(uri)?.use { i ->
+                SharedInput.copyLimited({ i.read(it) }, { b, n -> out.write(b, 0, n) }, SharedInput.MAX_VCARD_BYTES)
+            }
+            if (copied == null) null else out.toByteArray().decodeToString()
+        }.getOrNull()
+    }
+
+    override fun dial(number: String): Boolean = launch(Intent(Intent.ACTION_DIAL, Uri.fromParts("tel", number, null)))
+
+    override fun sendSms(number: String): Boolean =
+        launch(Intent(Intent.ACTION_SENDTO, Uri.fromParts("smsto", number, null)))
+
+    override fun sendMail(address: String): Boolean =
+        launch(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).putExtra(Intent.EXTRA_EMAIL, arrayOf(address)))
+
+    override fun showAddress(address: String): Boolean =
+        launch(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + Uri.encode(address))))
+
+    override fun openWebLink(url: String): Boolean {
+        val web = url.startsWith("https://", ignoreCase = true) || url.startsWith("http://", ignoreCase = true)
+        return web && launch(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE))
+    }
+
+    /** The contacts app opens with the fields filled in; the person saves there (no WRITE_CONTACTS, KT-5). */
+    override fun addToPhoneBook(draft: ContactDraft): Boolean {
+        val intent = Intent(ContactsContract.Intents.Insert.ACTION).setType(ContactsContract.RawContacts.CONTENT_TYPE)
+            .putExtra(ContactsContract.Intents.Insert.NAME, draft.name)
+        val phoneKeys = listOf(
+            ContactsContract.Intents.Insert.PHONE,
+            ContactsContract.Intents.Insert.SECONDARY_PHONE,
+            ContactsContract.Intents.Insert.TERTIARY_PHONE,
+        )
+        draft.phones.zip(phoneKeys).forEach { (phone, key) -> intent.putExtra(key, phone) }
+        val mailKeys = listOf(
+            ContactsContract.Intents.Insert.EMAIL,
+            ContactsContract.Intents.Insert.SECONDARY_EMAIL,
+            ContactsContract.Intents.Insert.TERTIARY_EMAIL,
+        )
+        draft.emails.zip(mailKeys).forEach { (mail, key) -> intent.putExtra(key, mail) }
+        draft.address?.let { intent.putExtra(ContactsContract.Intents.Insert.POSTAL, it) }
+        draft.organization?.let { intent.putExtra(ContactsContract.Intents.Insert.COMPANY, it) }
+        return launch(intent)
+    }
+
+    private fun launch(intent: Intent): Boolean = runCatching {
+        val a = activity
+        if (a != null) a.startActivity(intent) else app.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }.isSuccess
 
     // ---- Measurements on the real phone (quality plan P1-10) -------------------------------------
 

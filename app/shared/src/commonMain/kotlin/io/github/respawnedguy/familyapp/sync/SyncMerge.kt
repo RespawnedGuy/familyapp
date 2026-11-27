@@ -6,6 +6,9 @@ import io.github.respawnedguy.familyapp.domain.Item
 import io.github.respawnedguy.familyapp.domain.Member
 import io.github.respawnedguy.familyapp.domain.Stamp
 import io.github.respawnedguy.familyapp.domain.Tombstone
+import io.github.respawnedguy.familyapp.domain.contacts.Contact
+import io.github.respawnedguy.familyapp.domain.contacts.ContactLink
+import io.github.respawnedguy.familyapp.domain.contacts.PortfolioEntry
 import io.github.respawnedguy.familyapp.domain.recipe.Recipe
 import io.github.respawnedguy.familyapp.domain.recipe.ShoppingEntry
 import kotlinx.serialization.Serializable
@@ -22,8 +25,13 @@ data class SyncRecords(
     val tombstones: List<Tombstone> = emptyList(),
     val recipes: List<Recipe> = emptyList(),
     val shopping: List<ShoppingEntry> = emptyList(),
+    val contacts: List<Contact> = emptyList(),
+    val contactLinks: List<ContactLink> = emptyList(),
+    val portfolio: List<PortfolioEntry> = emptyList(),
 ) {
-    val size: Int get() = members.size + items.size + tombstones.size + recipes.size + shopping.size
+    val size: Int
+        get() = members.size + items.size + tombstones.size + recipes.size + shopping.size +
+            contacts.size + contactLinks.size + portfolio.size
 }
 
 /**
@@ -49,6 +57,9 @@ object SyncMerge {
         data.tombstones.forEach { put(it.id, it.stamp) }
         data.recipes.forEach { put(it.id, it.stamp) }
         data.shopping.forEach { put(it.id, it.stamp) }
+        data.contacts.forEach { put(it.id, it.stamp) }
+        data.contactLinks.forEach { put(it.id, it.stamp) }
+        data.portfolio.forEach { put(it.id, it.stamp) }
         return out
     }
 
@@ -65,6 +76,9 @@ object SyncMerge {
             tombstones = data.tombstones.filter { wanted(it.id, it.stamp) },
             recipes = data.recipes.filter { wanted(it.id, it.stamp) },
             shopping = data.shopping.filter { wanted(it.id, it.stamp) },
+            contacts = data.contacts.filter { wanted(it.id, it.stamp) },
+            contactLinks = data.contactLinks.filter { wanted(it.id, it.stamp) },
+            portfolio = data.portfolio.filter { wanted(it.id, it.stamp) },
         )
     }
 
@@ -117,7 +131,12 @@ object SyncMerge {
         val (recipes, recipesChanged) = newestWins(data.recipes, incoming.recipes, Recipe::id, Recipe::stamp)
         val (shopping, shoppingChanged) =
             newestWins(data.shopping, incoming.shopping, ShoppingEntry::id, ShoppingEntry::stamp)
-        changed += recipesChanged + shoppingChanged
+        val (contacts, contactsChanged) = newestWins(data.contacts, incoming.contacts, Contact::id, Contact::stamp)
+        val (links, linksChanged) =
+            newestWins(data.contactLinks, incoming.contactLinks, ContactLink::id, ContactLink::stamp)
+        val (portfolio, portfolioChanged) =
+            newestWins(data.portfolio, incoming.portfolio, PortfolioEntry::id, PortfolioEntry::stamp)
+        changed += recipesChanged + shoppingChanged + contactsChanged + linksChanged + portfolioChanged
         if (changed == 0) return Applied(data, 0)
         return Applied(
             data.copy(
@@ -126,12 +145,15 @@ object SyncMerge {
                 tombstones = tombstones.values.toList(),
                 recipes = recipes,
                 shopping = shopping,
+                contacts = contacts,
+                contactLinks = links,
+                portfolio = portfolio,
             ),
             changed,
         )
     }
 
-    /** Last writer wins per id for records that delete themselves (recipes, shopping entries). */
+    /** Last writer wins per id for records that delete themselves (recipes, shopping entries, contacts, facts). */
     private fun <T> newestWins(
         local: List<T>,
         incoming: List<T>,
@@ -193,14 +215,28 @@ object SyncMerge {
                 stamp = restamp(),
             )
         }
+        val contacts = local.contacts.map { c ->
+            c.copy(createdBy = map(c.createdBy) ?: c.createdBy, changedBy = map(c.changedBy), stamp = restamp())
+        }
+        // Links and facts point at people: a person matched by name keeps their contacts and facts.
+        val links = local.contactLinks.map { l ->
+            l.copy(memberId = map(l.memberId) ?: l.memberId, changedBy = map(l.changedBy), stamp = restamp())
+        }
+        val portfolio = local.portfolio.map { e ->
+            e.copy(memberId = map(e.memberId) ?: e.memberId, changedBy = map(e.changedBy), stamp = restamp())
+        }
         val familyIds = (family.members.map { it.id } + family.items.map { it.id } +
-            family.recipes.map { it.id } + family.shopping.map { it.id }).toSet()
+            family.recipes.map { it.id } + family.shopping.map { it.id } + family.contacts.map { it.id } +
+            family.contactLinks.map { it.id } + family.portfolio.map { it.id }).toSet()
         return local.copy(
             selfId = selfMemberId,
             members = family.members + keptMembers.filter { it.id !in familyIds },
             items = family.items + carried.filter { it.id !in familyIds },
             recipes = family.recipes + recipes.filter { it.id !in familyIds },
             shopping = family.shopping + shopping.filter { it.id !in familyIds },
+            contacts = family.contacts + contacts.filter { it.id !in familyIds },
+            contactLinks = family.contactLinks + links.filter { it.id !in familyIds },
+            portfolio = family.portfolio + portfolio.filter { it.id !in familyIds },
             tombstones = family.tombstones + local.tombstones.filter { t -> family.tombstones.none { it.id == t.id } },
         )
     }

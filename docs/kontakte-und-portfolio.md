@@ -1,6 +1,6 @@
 # Gemeinsame Kontakte und Familien-Portfolio – Konzept
 
-- Stand: 27.11.2026 · Status: **Vorschlag**, noch kein Code
+- Stand: 27.11.2026 · Status: **Stufe 1 umgesetzt** (Android), Stufe 2 und 3 geplant; siehe [Umsetzungsstand](#umsetzungsstand-stufe-1)
 - Anlass: Brainstorming von Nils (27.11.2026)
 - Bezug: [KONZEPT.md](KONZEPT.md) (Phase 3 „Optionen finden“, Phase 5 „Zuständigkeit übergeben“), [Gestaltung](gestaltung/optik-haptik-klickwege.md), [ADR 0006](entscheidungen/0006-kopplung-und-abgleich-umsetzung.md) (Abgleich), [Bedrohungsmodell](qualitaet/bedrohungsmodell.md) (neue IDs `KT-` und `TR-`)
 
@@ -8,7 +8,9 @@ Was dieses Konzept anders macht als ein Feature-Brainstorm:
 
 - Die Plattformfragen sind gegen die aktuellen Primärquellen geprüft (Stand 27.11.2026): Android 17 bringt eine eigene Kontaktauswahl, Google Play schränkt `READ_CONTACTS` ab 27.01.2027 ein und `WRITE_CONTACTS` schreibt ab API 38 gar nicht mehr. Daraus folgt eine Architektur ohne Adressbuch-Berechtigung, die heute schon zukunftsfest ist.
 - Die Codes (PINs, Spindcodes) bekommen eine echte zweite Schutzstufe mit eigenem Schlüssel und nicht nur einen Sperrbildschirm davor. Der Kniff: Der Abgleich muss Codes nie entschlüsseln, deshalb kann ihr Schlüssel hinter Fingerabdruck oder Gerätesperre liegen, ohne dass der Hintergrundabgleich leidet.
-- Es endet mit einer prüfbaren „Übergabeprobe“ statt mit einer Feature-Liste: Kann der andere Elternteil ohne Rückfrage übernehmen?
+- Es endet mit einer prüfbaren „Übergabeprobe“ statt mit einer Feature-Liste: Kann der andere Elternteil ohne Übergabe einspringen?
+
+**Ziel (Nils, 27.11.2026): Der andere Elternteil kann ohne Übergabe einspringen.** Es gibt kein Übergabegespräch, keine Freigabe und keinen Schritt, den die andere Person vorher erledigen muss. Wer das Portfolio öffnet, sieht alles Nötige und kann jede offene Aufgabe direkt erledigen. „Alles übernehmen“ ist nur nötig, wenn die Zuständigkeit für länger wechseln soll, nicht um handeln zu dürfen.
 
 ## Kurzfassung
 
@@ -62,7 +64,7 @@ Beide Funktionen zielen auf dasselbe Problem: Familienwissen steckt im Kopf eine
 
 - **Speichern ohne Rückfrage** wie beim Erfassen: Der Kontakt ist sofort gespeichert und für alle sichtbar, mit 6 s Rückgängig. Die Verknüpfung mit Personen ist ein Chip am Kontakt, kein Pflichtschritt („schnell rein, komplett später“). Unverknüpfte Kontakte stehen unter „Familie allgemein“ (Handwerker, Hausverwaltung) und sind ausdrücklich erlaubt.
 - **Mehrfachauswahl** (Android 17, iOS) ist erlaubt, aber höchstens 20 Kontakte je Vorgang. Das ganze Adressbuch hineinzukippen, macht die Liste unbrauchbar und widerspricht „nur familienrelevante Kontakte“ aus KONZEPT.md.
-- **Dubletten:** Gleiche Telefonnummer (normalisiert: Ziffern, führende 0 → +49) oder gleiche Mail → Angebot „Mit Dr. Lindner zusammenführen?“ in der Rückmeldung, kein Dialog.
+- **Dubletten:** Gleiche Telefonnummer (normalisiert: Ziffern, führende 0 → +49) oder gleiche Mail → wird zusammengeführt. Neue Nummern und Adressen kommen dazu, nichts Vorhandenes wird überschrieben; die Rückmeldung sagt „Mit vorhandenem Kontakt Dr. Lindner zusammengeführt“, Rückgängig stellt den alten Stand her. (Abweichung vom ersten Entwurf, der ein Angebot zum Zusammenführen vorsah: Mit Rückgängig ist automatisches Zusammenführen genauso sicher und spart einen Tap.)
 
 ### Verknüpfung n:m mit Rolle
 
@@ -105,7 +107,7 @@ Die Reihenfolge folgt dem Notfall: Wer einspringt, braucht zuerst „was ist off
 
 ### Notfall: „Alles übernehmen“
 
-Im Abschnitt *Offen* steht der Knopf **„Alles von Nils übernehmen“**. Ein Tap setzt dich als „kümmert sich“ bei allen offenen Aufgaben dieser Person, zeigt 6 s Rückgängig und für alle sichtbar „Lisa hat 7 Aufgaben von Nils übernommen“. Einzelne Aufgaben kann man danach zurückgeben. Das macht das Portfolio vom Nachschlagewerk zum Notfallplan, denn Wissen allein übergibt keine Zuständigkeit (Phase 5). Kein heimliches Übernehmen, wie bei „Übernehme ich“.
+Zum Einspringen braucht es keinen Knopf: Jede Aufgabe im Portfolio lässt sich direkt erledigen, auch wenn jemand anderes „kümmert sich“ ist, und alle sehen, wer sie erledigt hat. Im Abschnitt *Offen* steht zusätzlich der Knopf **„Alles von Nils übernehmen“** für den Fall, dass die Zuständigkeit für länger wechselt. Ein Tap setzt dich als „kümmert sich“ bei allen offenen Aufgaben dieser Person, zeigt 6 s Rückgängig und für alle sichtbar „Lisa hat 7 Aufgaben von Nils übernommen“. Einzelne Aufgaben kann man danach zurückgeben. Das macht das Portfolio vom Nachschlagewerk zum Notfallplan, denn Wissen allein übergibt keine Zuständigkeit (Phase 5). Kein heimliches Übernehmen, wie bei „Übernehme ich“.
 
 ### Infos: getippt, datiert, mit Ablauf
 
@@ -243,7 +245,23 @@ Nils' Regel: Was nicht kommentiert wird, gilt als angenommen.
 | 2 | Tresor und Codes, „geschützt“ für Infos, Größen-Aktualität, Ablaufdaten als Vorschläge, Erfassen-Vorschlag „Schuhgröße merken?“ | Unit-Tests: Kindergerät öffnet fremde Codes nicht, Ordner und Hausgerät sehen keinen Codewert, Sicherung stellt Codes wieder her, AAD verhindert das Umhängen eines Codes an eine andere Person. Emulator: Codewert erst nach Gerätesperre sichtbar, `FLAG_SECURE` gesetzt |
 | 3 | Notfallblatt drucken je Person (System-Druckdienst, ohne Codes außer ausdrücklich gewählt), echte Verknüpfung Aufgabe ↔ Kontakt, Kontakt aus Foto, iOS-Gegenstücke | Übergabeprobe (unten) besteht |
 
-Stufe 1 braucht für die Datenschicht keine neue Bibliothek. Stufe 2 braucht `androidx.biometric` (Google Maven, in der Cloud-Session nicht ladbar, also nur in der CI prüfbar wie der übrige Compose-Code).
+Stufe 1 braucht für die Datenschicht keine neue Bibliothek.
+
+### Umsetzungsstand Stufe 1
+
+Umgesetzt (27.11.2026):
+
+- **Kontakte:** Systemauswahl (`ACTION_PICK` auf Telefonnummern), „Kontakt teilen“ als vCard (2.1, 3.0, 4.0 mit Quoted-Printable und Umlauten, wie es die Android-Kontakte-App schreibt), Formular. Speichern sofort mit Rückgängig, Dubletten werden zusammengeführt (siehe oben). Kontaktseite mit Anrufen, SMS, Mail, Route, „Ins Telefonbuch“ und „Offene Aufgaben dazu“ (Titel nennt Name oder Organisation, eine Suche, keine gespeicherte Verknüpfung). Kontakte in *Suchen*, auch nach Rolle und Nummer ohne Leerzeichen. Einstieg unter *Familie* als Karte wie die Kochbibliothek.
+- **Verknüpfung:** n:m mit Rolle je Verknüpfung; Rolle wird aus Organisation und Name vorgeschlagen (Regeln, kein KI), Vorlagen als Chips. Aus dem Portfolio angelegte Kontakte sind sofort mit der Person verknüpft.
+- **Portfolio:** Tap auf eine Person unter *Familie* öffnet es („Ändern“ für Name und Farbe ist daneben). Abschnitte *Offen* (kümmert sich oder betrifft, mit Datum zuerst; Eingangskarten darunter), *Kontakte*, *Infos* mit Vorlagen je Personenart und den Typen Größe, Datum, Text, Ablageort, Link. Kindergrößen älter als 120 Tage zeigen „Noch aktuell?“ mit „Stimmt noch“ (aus Stufe 2 vorgezogen, ohne Benachrichtigung). „Alles übernehmen“ mit einem Rückgängig für alle.
+- **Abgleich und Sicherung:** Kontakte, Verknüpfungen und Infos sind eigene Datensätze im Abgleich (neuerer Stand gewinnt je Datensatz); Löschen leert die Felder und behält eine Markierung. Ältere App-Versionen überspringen die neuen Felder. Beim Beitritt zu einer Familie werden eigene Kontakte und Infos auf die Personen der Familie umgehängt. Das Hausgerät baut mit demselben Code.
+- **Prüfung:** Unit-Tests `VCardTest`, `ContactRulesTest`, `ContactRepositoryTest`, `ContactSyncTest`, `PeopleModelTest`, `SharedInputTest` (vCard); `verify-apk.sh` lehnt `READ_CONTACTS`, `WRITE_CONTACTS` und `CALL_PHONE` ab.
+
+Abweichungen und Grenzen:
+
+- **Systemauswahl vor Android 17 liefert nur Name und eine Nummer.** Ohne `READ_CONTACTS` gibt `ACTION_PICK` ein vorübergehendes Leserecht nur auf die gewählte Zeile (eine Telefonnummer). Mail, Adresse und Geburtstag kommen über „Kontakt teilen“ oder das Formular. Die Kontaktauswahl von Android 17 (`ACTION_PICK_CONTACTS`, Mehrfachauswahl) folgt, wenn die App auf API 37 zielt.
+- **Noch offen aus den Abnahmekriterien:** Emulator-Test der Taps (Weg A ≤ 4, Weg C ≤ 3) und Teilen einer vCard im Emulator-Teilen-Test (KT-1). Beides braucht die CI und kommt als eigener Schritt.
+- Kein „Hinweis beim ersten Mal“ für „Ins Telefonbuch“ (KT-5): Der Hinweistext steht dauerhaft unter dem Knopf. Stufe 2 braucht `androidx.biometric` (Google Maven, in der Cloud-Session nicht ladbar, also nur in der CI prüfbar wie der übrige Compose-Code).
 
 ## Prüfung: Übergabeprobe
 
@@ -251,7 +269,7 @@ Was außer uns zeigt, dass es wirkt: eine Probe, die die Lage im Notfall nachste
 
 1. **Vorher** (ohne App, in der Tagebuchstudie Woche 1): Der weniger belastete Elternteil beantwortet ohne Rückfrage fünf Fragen über die andere Person und ein Kind, z. B. Schuhgröße des Kindes, Nummer der Kinderarztpraxis, welche Fristen die andere Person diese Woche hat, Spindcode des Kindes, Adresse des Elternportals. Gemessen: richtige Antworten und Zeit.
 2. **Nachher** (Woche 5, mit App): dieselben Fragen mit neuen Werten.
-3. **Ziel:** 5 von 5 richtig in unter 2 Minuten, ohne die andere Person zu fragen.
+3. **Ziel:** 5 von 5 richtig in unter 2 Minuten, ohne Übergabe und ohne die andere Person zu fragen.
 
 Dazu Telemetrie lokal auf dem Gerät: Anteil der Portfolio-Einträge, die aus Erfassen-Vorschlägen stammen; Änderungen am Portfolio je Person (Ziel: nicht über 70 % bei einer Person, sonst pflegt wieder nur eine); Anzahl „noch aktuell?“-Hinweise, die bestätigt statt ignoriert wurden.
 
