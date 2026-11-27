@@ -11,20 +11,43 @@ import java.net.URL
  * [MarketHttp] over plain HttpURLConnection (JDK only, so the quality gate tests it with a local
  * server). One honest request: the app says who it is, sends no cookies, follows no redirects and
  * reads at most the kind's limit (threat model AN-1, AN-2). A refusal is reported, never worked around
- * (docs/angebote-und-vorschlaege.md, "Grundsatz"). [allowed] is fixed to the markets' hosts; tests
- * pass "localhost" and an http base.
+ * (docs/angebote-und-vorschlaege.md, "Grundsatz"). Polite: one request at a time and at least
+ * [pauseMs] between two requests to the same host (docs/angebote-maerkte.md, Empfehlung 7).
+ * [allowed] is fixed to the markets' hosts; tests pass "localhost" and an http base.
  */
 class HttpMarkets internal constructor(
     private val allowed: (URL) -> Boolean,
     private val timeoutMs: Int = TIMEOUT_MS,
+    private val pauseMs: Long = PAUSE_MS,
+    private val clock: () -> Long = System::currentTimeMillis,
+    private val sleep: (Long) -> Unit = Thread::sleep,
 ) : MarketHttp {
+
+    private val lastRequest = mutableMapOf<String, Long>()
 
     constructor() : this({ it.protocol == "https" && it.host in MarketUrls.ALLOWED_HOSTS })
 
     override fun get(url: String, kind: MarketHttp.Kind): HttpAnswer {
         val target = runCatching { URL(url) }.getOrNull()
         if (target == null || !allowed(target)) return HttpAnswer.Failed("Adresse nicht erlaubt")
-        return try {
+        return synchronized(lastRequest) {
+            waitForTurn(target.host)
+            try {
+                request(target, kind)
+            } finally {
+                lastRequest[target.host] = clock()
+            }
+        }
+    }
+
+    /** Sleeps until [pauseMs] have passed since the last request to [host]. */
+    private fun waitForTurn(host: String) {
+        val since = lastRequest[host]?.let { clock() - it } ?: return
+        if (since < pauseMs) sleep(pauseMs - since)
+    }
+
+    private fun request(target: URL, kind: MarketHttp.Kind): HttpAnswer =
+        try {
             val conn = (target.openConnection() as HttpURLConnection).apply {
                 instanceFollowRedirects = false
                 useCaches = false
@@ -42,7 +65,6 @@ class HttpMarkets internal constructor(
         } catch (e: IOException) {
             HttpAnswer.Failed(e.message?.take(MAX_REASON) ?: "Netzwerkfehler")
         }
-    }
 
     private fun read(conn: HttpURLConnection, kind: MarketHttp.Kind): HttpAnswer {
         val code = conn.responseCode
@@ -59,6 +81,7 @@ class HttpMarkets internal constructor(
 
     companion object {
         private const val TIMEOUT_MS = 15_000
+        private const val PAUSE_MS = 1_000L
         private const val MAX_REASON = 80
 
         /** "Not for you", "log in first", "too many requests": the market says no. */

@@ -43,6 +43,15 @@ private class OfferPlatform(var unmetered: Boolean = true) : PlatformServices {
                     """]}]}}};</script>""",
             )
             "online-prospekte" in url -> HttpAnswer.Ok("/l/prospekte/aktionsprospekt-kw49/ar/0")
+            "/.rest/market" in url -> HttpAnswer.Ok(
+                """[{"wwIdent":"530002","marketName":"Penny Mitte","latitude":52.53,"longitude":13.38,"sellingRegion":"15A-08-26"},""" +
+                    """{"wwIdent":"530009","marketName":"Penny Süd","latitude":48.14,"longitude":11.57,"sellingRegion":"11B-01-01"}]""",
+            )
+            url.endsWith("penny.de/angebote") -> HttpAnswer.Ok(
+                """<div data-current-week="2026-49"></div><div data-week="current">""" +
+                    """<section data-category-type="food" data-category-name="obst-und-gemuese"></section></div>""",
+            )
+            "by-category" in url -> HttpAnswer.Ok("""{"offerTiles":[{"title":"Wirsing","type":"food","price":"0.99"}]}""")
             "leaflets" in host -> HttpAnswer.Ok(
                 """{"flyer":{"pages":[{"links":[{"displayType":"recipe","url":"x?q=Spitzkohl"}]}]}}""",
             )
@@ -96,11 +105,16 @@ class OffersModelTest {
         val place = assertNotNull(m.repo.current.place)
         assertEquals("80331", place.postcode)
         assertEquals("Musterweg 1, 80331 München", place.label)
-        assertEquals(listOf(Chain.ALDI_SUED, Chain.KAUFLAND, Chain.LIDL), place.markets)
+        assertEquals(listOf(Chain.ALDI_SUED, Chain.KAUFLAND, Chain.LIDL, Chain.PENNY), place.markets)
         // The store search found a store; it is shown and kept for the family.
         assertEquals("DE0001", m.repo.current.place?.kauflandStoreId)
         assertEquals(
-            listOf("Aldi Süd: 1 Angebote", "Kaufland: 1 Angebote", "Lidl: 1 Lebensmittel im Angebot (ohne Preise)"),
+            listOf(
+                "Aldi Süd: 1 Angebote",
+                "Kaufland: 1 Angebote",
+                "Lidl: 1 Lebensmittel im Angebot (ohne Preise)",
+                "Penny: 1 Angebote",
+            ),
             m.offers.marketLines().map { it.text },
         )
         // Nothing of the address but the postcode centre went out.
@@ -151,12 +165,35 @@ class OffersModelTest {
         m.offers.place.setAddress("10115")
         runCurrent()
         m.offers.place.setChain(Chain.LIDL, false)
-        assertEquals(listOf(Chain.ALDI_NORD, Chain.KAUFLAND), m.repo.current.place?.markets)
+        assertEquals(listOf(Chain.ALDI_NORD, Chain.KAUFLAND, Chain.PENNY), m.repo.current.place?.markets)
         m.offers.place.findKauflandStore("20095")
         runCurrent()
         assertEquals("20095", m.repo.current.place?.kauflandPostcode)
         assertTrue(platform.asked.any { it.endsWith("lat=53.55&lng=10.01") })
         assertEquals("Kaufland-Filiale: Kaufland Musterstadt.", m.feedback.value?.message)
+    }
+
+    @Test
+    fun pennyStoreIsTakenForTheFamilyAndAnotherCanBeChosen() = runTest {
+        val platform = OfferPlatform()
+        val m = model(platform)
+        m.offers.place.setAddress("10115")
+        runCurrent()
+        assertEquals("530002", m.repo.current.place?.pennyStoreId)
+        val penny = OfferCache.load(platform.offerStore).markets.single { it.chain == Chain.PENNY }
+        assertEquals(listOf("530002", "530009"), penny.nearby.map { it.id })
+        assertTrue(platform.asked.any { "region=15A-08-26" in it })
+        platform.asked.clear()
+        m.offers.place.choosePennyStore(penny.nearby[1])
+        runCurrent()
+        assertEquals("530009", m.repo.current.place?.pennyStoreId)
+        val chosen = OfferCache.load(platform.offerStore).markets.single { it.chain == Chain.PENNY }
+        assertEquals("530009", chosen.storeId)
+        assertTrue(platform.asked.any { "region=11B-01-01" in it })
+        assertTrue(platform.asked.none { "aldi" in it || "kaufland" in it })
+        assertEquals("Penny-Filiale: Penny Süd.", m.feedback.value?.message)
+        m.offers.place.setAddress("80331 München")
+        assertEquals(null, m.repo.current.place?.pennyStoreId)
     }
 
     @Test
@@ -260,7 +297,7 @@ class OffersModelTest {
         val m = model(platform)
         m.offers.place.setAddress("10115")
         runCurrent()
-        assertEquals(3, OfferCache.load(platform.offerStore).markets.size)
+        assertEquals(4, OfferCache.load(platform.offerStore).markets.size)
     }
 }
 

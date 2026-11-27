@@ -5,8 +5,9 @@ import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 
 /**
- * Markets the app may read (docs/angebote-und-vorschlaege.md). Only markets that allow automated
- * reading without getting past bot protection are listed (Nils, 27.11.2026); REWE is not.
+ * Markets the app may read (docs/angebote-und-vorschlaege.md, docs/angebote-maerkte.md). Only markets
+ * that allow automated reading, without getting past bot protection and without terms that forbid it,
+ * are listed (Nils, 27.11.2026); REWE and Edeka are not.
  */
 @Serializable
 enum class Chain(val label: String) {
@@ -14,6 +15,10 @@ enum class Chain(val label: String) {
     ALDI_NORD("Aldi Nord"),
     KAUFLAND("Kaufland"),
     LIDL("Lidl"),
+    PENNY("Penny"),
+    NORMA("Norma"),
+    NETTO("Netto"),
+    DENNS("denn's BioMarkt"),
 }
 
 /**

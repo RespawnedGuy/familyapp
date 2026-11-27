@@ -7,6 +7,7 @@ import io.github.respawnedguy.familyapp.domain.offers.Postcodes
 private const val MB = 1024 * 1024
 private const val HTML_MB = 5
 private const val JSON_MB = 2
+private const val STORE_LIST_MB = 6
 
 /** What one plain request to a market brought back. */
 sealed interface HttpAnswer {
@@ -31,13 +32,17 @@ fun interface MarketHttp {
         /** Kaufland's offer page is about 3.8 MB of HTML (27.11.2026). */
         HTML(HTML_MB * MB, "text/html"),
         JSON(JSON_MB * MB, "application/json"),
+
+        /** Penny's list of all stores is about 4 MB (27.11.2026); read at most once per offer read. */
+        STORE_LIST(STORE_LIST_MB * MB, "application/json"),
     }
 }
 
-/** The fixed addresses the adapters use (docs/angebote-und-vorschlaege.md "Rohmaterial"). */
+/** The fixed addresses the adapters use (docs/angebote-und-vorschlaege.md "Rohmaterial", docs/angebote-maerkte.md). */
 object MarketUrls {
     val ALLOWED_HOSTS = setOf(
         "asl.api.aldi-sued.de", "www.aldi-nord.de", "filiale.kaufland.de", "www.lidl.de", "endpoints.leaflets.schwarz",
+        "www.penny.de", "www.norma-online.de", "netto.de", "www.biomarkt.de",
     )
 
     const val ALDI_SUED_PAGE = 60
@@ -59,6 +64,25 @@ object MarketUrls {
     fun lidlFlyer(id: String) =
         "https://endpoints.leaflets.schwarz/v4/flyer?flyer_identifier=$id&region_id=0&region_code=0"
 
+    const val PENNY_STORES = "https://www.penny.de/.rest/market"
+    const val PENNY_OFFERS = "https://www.penny.de/angebote"
+
+    /** Only called with values checked against [PennyParsers.CATEGORY] and [PennyParsers.REGION]. */
+    fun pennyCategory(week: String, category: String, region: String) =
+        "https://www.penny.de/.rest/offers/by-category/$week/$category?region=$region"
+
+    const val NORMA_OVERVIEW = "https://www.norma-online.de/de/angebote/"
+    const val NORMA_PRODUCE = "https://www.norma-online.de/de/angebote/obst-und-gemuese/"
+
+    /** A day page path as [NormaParsers.dayPages] returns it ("/de/angebote/ab-montag,-23.11.26/"). */
+    fun normaPage(path: String) = "https://www.norma-online.de$path"
+
+    /** Netto's food pages; the others (Nonfood, Weihnachten) are left out. */
+    val NETTO_PAGES = listOf("", "spar-stars/", "hammer-donnerstag/", "hammer-freitag/", "knaller-wochenende/")
+        .map { "https://netto.de/angebote/$it" }
+
+    const val DENNS = "https://www.biomarkt.de/page-data/angebote/page-data.json"
+
     /** Store ids as Kaufland writes them ("DE1234"); anything else never goes into a URL. */
     val STORE_ID = Regex("""^[A-Z]{2}\d{3,6}$""")
 
@@ -71,8 +95,12 @@ object MarketUrls {
 sealed interface MarketResult {
     val chain: Chain
 
-    data class Ok(override val chain: Chain, val offers: List<Offer>, val store: MarketParsers.Store? = null) :
-        MarketResult
+    data class Ok(
+        override val chain: Chain,
+        val offers: List<Offer>,
+        val store: MarketParsers.Store? = null,
+        val nearby: List<NearbyStore> = emptyList(),
+    ) : MarketResult
 
     data class Refused(override val chain: Chain, val code: Int) : MarketResult
 
@@ -80,7 +108,7 @@ sealed interface MarketResult {
 }
 
 /**
- * The four adapters (Empfehlung 4): each reads its market with [http] and returns its own result, so a
+ * One adapter per market (Empfehlung 4): each reads its market with [http] and returns its own result, so a
  * market that fails never stops the others. Blocking, off the main thread.
  */
 class MarketFetch(private val http: MarketHttp) {
@@ -88,7 +116,7 @@ class MarketFetch(private val http: MarketHttp) {
     /** Stops the adapter at the first answer that is not [HttpAnswer.Ok]. */
     private class Stop(val result: MarketResult) : Exception()
 
-    private fun text(chain: Chain, url: String, kind: MarketHttp.Kind): String {
+    internal fun text(chain: Chain, url: String, kind: MarketHttp.Kind): String {
         val answer = if (MarketUrls.host(url) in MarketUrls.ALLOWED_HOSTS) http.get(url, kind) else NOT_ALLOWED
         val stop = when (answer) {
             is HttpAnswer.Ok -> return answer.text
@@ -99,23 +127,28 @@ class MarketFetch(private val http: MarketHttp) {
     }
 
     /**
-     * Reads [chain]. [point] is the centre of the family's postcode (Kaufland's store search);
-     * [kauflandStore] a store already known, which skips that search.
+     * Reads [chain]. [point] is the centre of the family's postcode (store searches); [known] a store
+     * already chosen (Kaufland, Penny), which skips choosing the nearest.
      */
-    fun fetch(chain: Chain, point: Postcodes.Point?, kauflandStore: MarketParsers.Store? = null): MarketResult =
+    fun fetch(chain: Chain, point: Postcodes.Point?, known: MarketParsers.Store? = null): MarketResult =
         try {
-            read(chain, point, kauflandStore)
+            read(chain, point, known)
         } catch (stop: Stop) {
             stop.result
         }
 
-    private fun read(chain: Chain, point: Postcodes.Point?, kauflandStore: MarketParsers.Store?): MarketResult {
+    private fun read(chain: Chain, point: Postcodes.Point?, known: MarketParsers.Store?): MarketResult {
+        val more = MoreAdapters(this)
         val result = when (chain) {
             Chain.ALDI_SUED -> MarketResult.Ok(chain, aldiSued())
             Chain.ALDI_NORD ->
                 MarketResult.Ok(chain, MarketParsers.aldiNord(text(chain, MarketUrls.ALDI_NORD, MarketHttp.Kind.HTML)))
-            Chain.KAUFLAND -> kaufland(point, kauflandStore)
+            Chain.KAUFLAND -> kaufland(point, known)
             Chain.LIDL -> MarketResult.Ok(chain, lidl())
+            Chain.PENNY -> more.penny(point, known?.id)
+            Chain.NORMA -> MarketResult.Ok(chain, more.norma())
+            Chain.NETTO -> MarketResult.Ok(chain, more.netto())
+            Chain.DENNS -> MarketResult.Ok(chain, more.denns())
         }
         val empty = result is MarketResult.Ok && result.offers.isEmpty()
         return if (empty) MarketResult.Failed(chain, NOTHING_FOUND) else result

@@ -77,7 +77,7 @@ class KitchenSyncTest {
         b.placeStore.setChain(Chain.LIDL, false)
         meet(a, b)
         assertEquals(listOf("grünkohl|grünkohl chips"), a.current.place?.rejected)
-        assertEquals(listOf(Chain.ALDI_NORD, Chain.KAUFLAND), a.current.place?.markets)
+        assertEquals(listOf(Chain.ALDI_NORD, Chain.KAUFLAND, Chain.PENNY), a.current.place?.markets)
         assertEquals(0, SyncMerge.newerThan(a.current, SyncMerge.digest(b.current)).size)
     }
 
@@ -86,9 +86,9 @@ class KitchenSyncTest {
         val (a, _) = pair()
         a.placeStore.setAddress("10115")
         val wire = syncJson.encodeToString(SyncRecords.serializer(), SyncMerge.newerThan(a.current, emptyMap()))
-            .replace("\"LIDL\"", "\"NETTO\"")
+            .replace("\"LIDL\"", "\"TEGUT\"")
         val records = syncJson.decodeFromString(SyncRecords.serializer(), wire)
-        assertEquals(listOf(Chain.ALDI_NORD, Chain.KAUFLAND), records.places.single().markets)
+        assertEquals(listOf(Chain.ALDI_NORD, Chain.KAUFLAND, Chain.PENNY), records.places.single().markets)
     }
 
     @Test
