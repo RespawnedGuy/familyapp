@@ -1,6 +1,7 @@
 package io.github.respawnedguy.familyapp.ui
 
 import io.github.respawnedguy.familyapp.resources.urgent_title
+import io.github.respawnedguy.familyapp.resources.family_people_hint
 import io.github.respawnedguy.familyapp.resources.search_contacts
 import io.github.respawnedguy.familyapp.domain.contacts.ContactViews
 import io.github.respawnedguy.familyapp.resources.local_only_later
@@ -26,7 +27,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -46,8 +46,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -83,8 +83,9 @@ fun TodayScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reduced
         if (Views.showLocalOnlyHint(data, paired)) {
             item(key = "local-only") { LocalOnlyCard(model) }
         }
-        // Meal suggestions and today's dish wait here at app start, never as a notification.
-        item { MealsCard(data, model) }
+        // Today's dish and a pointer to the meal suggestions wait here at app start, never as a
+        // notification; the suggestions themselves live above the shopping list (Familie › Einkauf).
+        item { TodayMealsCard(data, model) }
         item(key = "h-inbox") { SectionHeader("Eingang", inbox.size) }
         if (inbox.isEmpty()) {
             item(key = "e-inbox") { EmptyNote("Alles sortiert. Darüber musst du gerade nicht nachdenken.") }
@@ -167,86 +168,46 @@ private fun UrgentCard(urgent: List<Reminder>, data: FamilyData, planner: Remind
     }
 }
 
-/** Transparency has a fixed place: everybody's stack, load chart, take over openly. */
+/**
+ * Tab "Personen" under Familie: everybody in the family, adding and changing people, and the way
+ * into each portfolio (what to know to step in, docs/kontakte-und-portfolio.md).
+ */
 @Composable
-fun FamilyScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reducedMotion: Boolean) {
+internal fun FamilyPeople(data: FamilyData, model: AppModel) {
     val c = LocalFamilyColors.current
-    val today = model.today()
-    var filter by remember { mutableStateOf<String?>(null) }
     var adding by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Member?>(null) }
-    val loads = Views.loads(data, today)
-    val maxOpen = (loads.maxOfOrNull { it.open } ?: 0).coerceAtLeast(1)
-    val shown = data.members.filter { filter == null || it.id == filter }
-
     LazyColumn(Modifier.fillMaxSize(), contentPadding = ListPadding) {
-        // Kitchen library lives under "Familie", without a tab of its own (docs/kochbibliothek.md).
-        item { KitchenEntryCard(data, model) }
-        // Shared contacts, also without a tab of their own (docs/kontakte-und-portfolio.md).
-        item { ContactsEntryCard(data, model) }
-        item(key = "load") {
-            Column(
-                Modifier.fillMaxWidth().padding(top = 12.dp).clip(RoundedCornerShape(16.dp)).background(c.card).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Text("Lastkarte", fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = c.text)
-                Text("Nur feste Fristen und Termine. Antippen filtert die Liste.", fontSize = 12.sp, color = c.textTertiary)
-                loads.forEach { load ->
-                    val selected = filter == load.member.id
-                    LoadRow(load, maxOpen, selected) { filter = if (selected) null else load.member.id }
-                }
-                val unowned = Views.unowned(data)
+        item {
+            Column(Modifier.fillMaxWidth().padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    if (unowned == 0) "Im Eingang ist alles verteilt." else "Im Eingang gehören $unowned Dinge noch niemandem.",
+                    stringResource(Res.string.family_people_hint),
                     fontSize = 13.sp, color = c.textSecondary,
                 )
-            }
-        }
-        item(key = "members") {
-            // With large fonts the button goes on its own line; beside it the heading had 15 dp (P1-4).
-            val large = largeFont()
-            val addPerson = "Person hinzufügen"
-            Column(Modifier.fillMaxWidth().padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("Personen", Modifier.weight(1f), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = c.text)
-                    if (!large) OutlinedButton(onClick = { adding = true }) { Text(addPerson) }
+                OutlinedButton(onClick = { adding = true }, modifier = Modifier.heightIn(min = 48.dp)) {
+                    Text("Person hinzufügen")
                 }
-                if (large) OutlinedButton(onClick = { adding = true }) { Text(addPerson) }
             }
         }
-        shown.forEach { member ->
+        items(data.members, key = { "p-${it.id}" }) { member ->
             val open = Views.openFor(data, member.id)
-            item(key = "m-${member.id}") {
-                // Tapping the person opens their portfolio (what to know to step in); "Ändern" edits name and colour.
-                Row(
-                    Modifier.fillMaxWidth().clickable { model.people.openPortfolio(member.id) }
-                        .padding(top = 16.dp, bottom = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    PersonDot(member, 32.dp)
-                    Column(Modifier.padding(start = 10.dp).weight(1f)) {
-                        Text(if (member.id == data.selfId) "${member.name} (ich)" else member.name, color = c.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-                        val kind = if (member.kind == MemberKind.CHILD) "Kind" else "Erwachsen"
-                        val device = if (member.hasDevice) "eigenes Handy" else "ohne eigenes Handy"
-                        Text("$kind · $device · ${open.size} offen", color = c.textTertiary, fontSize = 12.sp)
-                    }
-                    Text(
-                        "Ändern",
-                        Modifier.heightIn(min = 48.dp).clickable { editing = member }
-                            .padding(horizontal = 8.dp, vertical = 14.dp),
-                        color = c.accent, fontSize = 13.sp,
-                    )
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(12.dp)).background(c.card)
+                    .clickable { model.people.openPortfolio(member.id) }.padding(start = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PersonDot(member, 36.dp)
+                Column(Modifier.padding(start = 12.dp, top = 12.dp, bottom = 12.dp).weight(1f)) {
+                    Text(memberName(member, data), color = c.text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    val kind = if (member.kind == MemberKind.CHILD) "Kind" else "Erwachsen"
+                    val device = if (member.hasDevice) "eigenes Handy" else "ohne eigenes Handy"
+                    Text("$kind · $device · ${open.size} offen", color = c.textTertiary, fontSize = 12.sp)
                 }
-            }
-            items(open, key = { "f-${it.id}" }) { item ->
-                TaskRow(
-                    item, data, model, photos, reducedMotion,
-                    showAssignee = false,
-                    takeOver = member.id != data.selfId,
+                Text(
+                    "Ändern",
+                    Modifier.heightIn(min = 48.dp).clickable { editing = member }
+                        .padding(horizontal = 12.dp, vertical = 14.dp),
+                    color = c.accent, fontSize = 13.sp,
                 )
             }
         }
@@ -380,7 +341,7 @@ fun UpcomingScreen(data: FamilyData, model: AppModel) {
  * side they would push the counts off a narrow screen.
  */
 @Composable
-private fun LoadRow(load: Load, maxOpen: Int, selected: Boolean, onClick: () -> Unit) {
+internal fun LoadRow(load: Load, maxOpen: Int, selected: Boolean, onClick: () -> Unit) {
     val c = LocalFamilyColors.current
     val open = if (load.overdue > 0) "${load.open} · ${load.overdue} überfällig" else "${load.open} offen"
     val counts = if (load.doneThisWeek > 0) "$open · ${load.doneThisWeek} erledigt" else open

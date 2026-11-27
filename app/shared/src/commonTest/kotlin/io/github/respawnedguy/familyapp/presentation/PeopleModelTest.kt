@@ -91,12 +91,21 @@ class PeopleModelTest {
     }
 
     @Test
-    fun tabsAndSettingsCloseContacts() = runTest {
+    fun contactListIsATabAndTabsAndSettingsCloseContacts() = runTest {
         val m = model()
+        val contact = m.repo.contactStore.add(listOf(doctor), ContactSource.MANUAL).added.single()
         m.people.openContacts()
+        assertEquals(Tab.FAMILY, m.tab.value)
+        assertEquals(FamilySection.CONTACTS, m.section.value)
+        assertNull(m.people.route.value, "the list is the tab itself, not a page on top")
+        m.people.openContact(contact.id)
+        assertTrue(m.handleBack())
+        assertNull(m.people.route.value)
+        assertEquals(FamilySection.CONTACTS, m.section.value, "back from a contact shows the tab Kontakte")
+        m.people.openContact(contact.id)
         m.openSettings()
         assertNull(m.people.route.value)
-        m.people.openContacts()
+        m.people.openContact(contact.id)
         assertFalse(m.settingsOpen.value)
         m.select(Tab.TODAY)
         assertNull(m.people.route.value)
@@ -107,6 +116,7 @@ class PeopleModelTest {
         val m = model()
         m.captureSharedContact(vcard)
         assertEquals(Tab.FAMILY, m.tab.value)
+        assertEquals(FamilySection.CONTACTS, m.section.value)
         val contact = ContactViews.contacts(m.repo.current).single()
         assertEquals("Dr. Lindner gespeichert.", message(m))
         assertEquals(PeopleRoute.Contact(contact.id), m.people.route.value)
@@ -131,7 +141,8 @@ class PeopleModelTest {
         val many = (1..21).joinToString("") { "BEGIN:VCARD\r\nFN:Person $it\r\nTEL:0351 $it\r\nEND:VCARD\r\n" }
         m.people.contacts.importVCard(many)
         assertTrue(message(m).orEmpty().startsWith("20 Kontakte gespeichert. 1 nicht übernommen"))
-        assertEquals(PeopleRoute.Contacts, m.people.route.value)
+        assertNull(m.people.route.value)
+        assertEquals(FamilySection.CONTACTS, m.section.value, "many contacts: the tab Kontakte shows them")
     }
 
     @Test
@@ -182,7 +193,8 @@ class PeopleModelTest {
         assertEquals(PeopleRoute.Contact(contact.id), m.people.route.value)
         m.people.contacts.deleteContact(contact.id)
         assertEquals("Dr. Anna Lindner gelöscht.", message(m))
-        assertEquals(PeopleRoute.Contacts, m.people.route.value)
+        assertNull(m.people.route.value)
+        assertEquals(FamilySection.CONTACTS, m.section.value)
         m.people.contacts.deleteContact(contact.id)
         // From a portfolio the new contact is linked and the form goes back to the portfolio.
         m.people.openPortfolio(mia.id)

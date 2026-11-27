@@ -3,7 +3,7 @@
 App.kt 2
 ui/Cards.kt 43
 ui/Components.kt 9
-ui/Screens.kt 46
+ui/Screens.kt 38
 ui/SettingsScreen.kt 35
 ui/SyncScreens.kt 58
 update/UpdateSection.kt 17

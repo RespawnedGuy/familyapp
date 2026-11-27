@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.respawnedguy.familyapp.presentation.CaptureState
+import io.github.respawnedguy.familyapp.presentation.FamilySection
 import io.github.respawnedguy.familyapp.presentation.Tab
 import io.github.respawnedguy.familyapp.preview.PreviewData
 import io.github.respawnedguy.familyapp.preview.rememberPreviewModel
@@ -71,6 +72,10 @@ class LargeFontScreensTest(private val case: Case) {
         TODAY("heute"),
         TODAY_EMPTY("heute-leer"),
         FAMILY("familie"),
+        FAMILY_CONTACTS("familie-kontakte"),
+        FAMILY_PEOPLE("familie-personen"),
+        FAMILY_RECIPES("familie-rezepte"),
+        FAMILY_SHOPPING("familie-einkauf"),
         UPCOMING("demnaechst"),
         SEARCH("suchen"),
         SETTINGS("einstellungen"),
@@ -323,6 +328,10 @@ private fun ScreenUnderTest(screen: LargeFontScreensTest.Screen) {
     val model = rememberPreviewModel(data) {
         when (screen) {
             LargeFontScreensTest.Screen.FAMILY -> select(Tab.FAMILY)
+            LargeFontScreensTest.Screen.FAMILY_CONTACTS -> openSection(FamilySection.CONTACTS)
+            LargeFontScreensTest.Screen.FAMILY_PEOPLE -> openSection(FamilySection.PEOPLE)
+            LargeFontScreensTest.Screen.FAMILY_RECIPES -> openSection(FamilySection.RECIPES)
+            LargeFontScreensTest.Screen.FAMILY_SHOPPING -> openSection(FamilySection.SHOPPING)
             LargeFontScreensTest.Screen.UPCOMING -> select(Tab.UPCOMING)
             LargeFontScreensTest.Screen.SEARCH -> select(Tab.SEARCH)
             LargeFontScreensTest.Screen.SETTINGS -> openSettings()

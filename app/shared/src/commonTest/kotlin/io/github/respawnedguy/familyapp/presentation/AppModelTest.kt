@@ -194,6 +194,41 @@ class AppModelTest {
     }
 
     @Test
+    fun familyTabsStartWithTasksAndBackLeadsThroughThem() = runTest {
+        val m = model()
+        assertEquals(FamilySection.TASKS, m.section.value, "Aufgaben is the default tab")
+        m.select(Tab.FAMILY)
+        m.openSection(FamilySection.SHOPPING)
+        m.select(Tab.TODAY)
+        m.select(Tab.FAMILY)
+        assertEquals(FamilySection.SHOPPING, m.section.value, "coming back to Familie keeps the last tab")
+        m.select(Tab.FAMILY)
+        assertEquals(FamilySection.TASKS, m.section.value, "tapping Familie again shows Aufgaben")
+        m.openSection(FamilySection.PEOPLE)
+        assertTrue(m.handleBack())
+        assertEquals(FamilySection.TASKS, m.section.value)
+        assertEquals(Tab.FAMILY, m.tab.value)
+        assertTrue(m.handleBack())
+        assertEquals(Tab.TODAY, m.tab.value)
+        assertFalse(m.handleBack())
+    }
+
+    @Test
+    fun openingATabFromAnywhereClosesWhatIsOnTop() = runTest {
+        val m = model()
+        m.openSettings()
+        m.openSection(FamilySection.SHOPPING)
+        assertFalse(m.settingsOpen.value)
+        assertEquals(Tab.FAMILY, m.tab.value)
+        assertEquals(FamilySection.SHOPPING, m.section.value)
+        // While a portfolio covers the tabs, "Familie" does not reset the tab underneath.
+        m.people.openPortfolio(m.repo.current.selfId!!)
+        m.select(Tab.FAMILY)
+        assertNull(m.people.route.value)
+        assertEquals(FamilySection.SHOPPING, m.section.value)
+    }
+
+    @Test
     fun choosingPersonOnCardWithSuggestedDateConfirmsWithFeedback() = runTest {
         val m = model()
         m.addMember("Lisa", MemberKind.ADULT)

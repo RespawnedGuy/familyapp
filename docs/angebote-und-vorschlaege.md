@@ -22,8 +22,8 @@ Stand: 27.11.2026 · Status: **angenommen** (PR #50), Stufe 1a und 1b umgesetzt,
   - **Kaufland:** nächste Filiale über `klstorebygeo` mit dem PLZ-Mittelpunkt, Angebote aus der Übersichtsseite, gefiltert auf die Artikelnummern der Filiale (`/.kloffers.storeName=…json`). Damit ist der offene Punkt „filialgenau“ ohne Cookie gelöst. Eine andere Filiale wählt man über eine andere PLZ (die Filialsuche selbst ist in der `robots.txt` gesperrt, deshalb keine Liste).
   - **Aldi Nord:** bundesweit aus `__NEXT_DATA__`. **Lidl:** Schlagwörter der Rezept-Links aus den aktuellen Aktionsprospekten (höchstens 3), ohne Preis.
 - **Wann:** beim Öffnen der App, wenn älter als 3 Tage oder neue Woche, von selbst nur im WLAN (`unmeteredNetwork`, Berechtigung `ACCESS_NETWORK_STATE`); „Jetzt abrufen“ geht auch mobil. Die Angebote liegen in `angebote.json` auf dem Gerät, nicht in den Familiendaten und nicht in der Sicherung.
-- **Oberfläche:** „Essen diese Woche“ unter Heute (heutiges Gericht, bis zu 5 Rezeptkarten mit Begründung und „Passt nicht“, Saison-Zutaten im Angebot solange weniger als 3 Rezeptkarten), Blatt „Wann? / Für wie viele?“, Essensplan unter Demnächst (Tippen: verschieben, entfernen, Rezept ansehen), Markt und Preis an Listeneinträgen aus Angeboten (Empfehlung 12), Diagnose-Zeile je Markt in den Einstellungen.
-- **Bedrohungsmodell:** AN-1 bis AN-7 in [bedrohungsmodell.md](qualitaet/bedrohungsmodell.md).
+- **Oberfläche (seit 27.11.2026):** Vorschläge oben im Tab Familie › Einkauf über der Einkaufsliste, darunter alle Angebote der gewählten Märkte; unter Heute nur das heutige Gericht und ein Verweis (docs/gestaltung/optik-haptik-klickwege.md). **Vorher:** „Essen diese Woche“ unter Heute (heutiges Gericht, bis zu 5 Rezeptkarten mit Begründung und „Passt nicht“, Saison-Zutaten im Angebot solange weniger als 3 Rezeptkarten), Blatt „Wann? / Für wie viele?“, Essensplan unter Demnächst (Tippen: verschieben, entfernen, Rezept ansehen), Markt und Preis an Listeneinträgen aus Angeboten (Empfehlung 12), Diagnose-Zeile je Markt in den Einstellungen.
+- **Bedrohungsmodell:** AN-1 bis AN-8 in [bedrohungsmodell.md](qualitaet/bedrohungsmodell.md).
 
 **Offen:** Prüfung 1 (Abruf auf Nils' Handy) ist das Tor für jeden Markt; Prüfungen 2 bis 4.
 
@@ -126,7 +126,7 @@ Jeden Tag beim ersten Öffnen, rein auf dem Gerät, deterministisch:
 - Jede Karte sagt **warum**, mit Markt und Ersparnis, wo bekannt.
 - Wochenwechsel: Angebote gelten meist Montag bis Samstag. Ab Donnerstag zählen auch die angekündigten Angebote der nächsten Woche, wenn der Plantag dort liegt (Aldi Nord und Kaufland liefern Gültigkeitsdaten mit).
 
-**Wo sie erscheinen:** Ein Abschnitt unter **Heute**, „Essen diese Woche“, und unter Familie › Kochbibliothek oben. Keine Benachrichtigung, auch nicht bei neuen Angeboten (Prämisse vom 26.11.).
+**Wo sie erscheinen:** Oben im Tab **Familie › Einkauf** („Vorgeschlagene Rezepte“, Nils 27.11.2026); unter **Heute** nur das heutige Gericht und eine Zeile, die dorthin führt. (Ursprünglich: ein Abschnitt unter Heute.) Keine Benachrichtigung, auch nicht bei neuen Angeboten (Prämisse vom 26.11.).
 
 **Cloud-KI:** Für Rezepte freigegeben, aber hier nicht nötig. Optional später: „Rezeptidee aus diesen Zutaten“ mit dem schon vorhandenen Schlüssel aus den Einstellungen, standardmäßig aus, Ergebnis landet als Rezeptvorschlag (HITL) in der Bibliothek.
 

@@ -17,6 +17,7 @@ import io.github.respawnedguy.familyapp.App
 import io.github.respawnedguy.familyapp.domain.FamilyData
 import io.github.respawnedguy.familyapp.presentation.AppModel
 import io.github.respawnedguy.familyapp.presentation.CaptureState
+import io.github.respawnedguy.familyapp.presentation.FamilySection
 import io.github.respawnedguy.familyapp.presentation.Tab
 import io.github.respawnedguy.familyapp.ui.CaptureSheet
 import io.github.respawnedguy.familyapp.ui.DecisionChip
@@ -75,6 +76,18 @@ private fun HeuteLeerPreview() = AppPreview(PreviewData.justCreated())
 @PhonePreviews
 @Composable
 private fun FamiliePreview() = AppPreview { select(Tab.FAMILY) }
+
+@PhonePreviews
+@Composable
+private fun FamilieEinkaufPreview() = AppPreview { openSection(FamilySection.SHOPPING) }
+
+@PhonePreviews
+@Composable
+private fun FamilieRezeptePreview() = AppPreview { openSection(FamilySection.RECIPES) }
+
+@PhonePreviews
+@Composable
+private fun FamiliePersonenPreview() = AppPreview { openSection(FamilySection.PEOPLE) }
 
 @PhonePreviews
 @Composable

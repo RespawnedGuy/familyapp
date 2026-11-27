@@ -6,7 +6,7 @@ Stand: 26.11.2026 · Status: **Schritt 1 in der App** (siehe „Umsetzungsstand�
 
 **Schritt 1 (26.11.2026): Rezepte, Kochmodus, Einkaufsliste in der App, ohne Netz.**
 
-- Bibliothek unter **Familie › Kochbibliothek** (kein eigener Tab, wie unten entschieden): Suche über Titel und Zutaten, neueste zuerst, Markierung „Vorschlag“ und „Text fehlt“.
+- Bibliothek unter **Familie › Rezepte** (Tab oben unter Familie seit 27.11.2026, Einkaufsliste unter Familie › Einkauf; kein Tab in der unteren Leiste): Suche über Titel und Zutaten, neueste zuerst, Markierung „Vorschlag“ und „Text fehlt“.
 - **Rezept hinzufügen** über ein einziges Textfeld (Weg 3). Der Regel-Baustein aus dem Spike (`domain/recipe/`, unverändert in der Logik, mit den Spike-Tests) teilt den Text in Titel, Portionen, Zeit, Zutaten und Schritte.
 - **Teilen** (Weg 1 ohne Download): Ein geteilter Text mit Zutatenliste *und* Schritten oder ein Instagram-Beitragslink landet als Rezeptvorschlag in der Bibliothek statt im Eingang, mit Rückgängig. Beim reinen Link fehlt der Text; man fügt die Bildunterschrift im Rezept ein („Text einlesen“). Alles andere bleibt ein normaler Eintrag. Bedrohungsmodell TE-7, TE-8.
 - **Rezept-Ansicht:** Portionen mit Plus/Minus, Mengen neu gerechnet und gerundet (`Amounts`: ⅓ TL, 1,05 kg, 335 g), Quelle als Link (nur http/https), Text der Vorlage, Notizen. Bearbeiten als Text: Zutaten und Schritte je eine Zeile.
