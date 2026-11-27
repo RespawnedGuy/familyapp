@@ -43,6 +43,8 @@ object GeminiRecipeRequest {
             putJsonObject("title") { put("type", "STRING") }
             putJsonObject("servings") { put("type", "NUMBER") }
             putJsonObject("totalMinutes") { put("type", "INTEGER") }
+            // Only filled when a video comes along (RecipeAiPrompt.VIDEO): where to take the picture from.
+            putJsonObject("dishSecond") { put("type", "NUMBER") }
             listOf("ingredients", "steps").forEach { list ->
                 putJsonObject(list) {
                     put("type", "ARRAY")

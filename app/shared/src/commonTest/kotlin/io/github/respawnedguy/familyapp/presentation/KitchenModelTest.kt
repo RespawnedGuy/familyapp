@@ -7,6 +7,8 @@ import io.github.respawnedguy.familyapp.data.InstagramPages
 import io.github.respawnedguy.familyapp.data.InstagramVideos
 import io.github.respawnedguy.familyapp.data.VideoClip
 import io.github.respawnedguy.familyapp.data.RecipeAi
+import io.github.respawnedguy.familyapp.data.RecipeEdit
+import io.github.respawnedguy.familyapp.data.RecipePhotos
 import io.github.respawnedguy.familyapp.domain.MemberKind
 import io.github.respawnedguy.familyapp.domain.contacts.ContactDraft
 import io.github.respawnedguy.familyapp.domain.contacts.ContactSource
@@ -38,6 +40,7 @@ import kotlin.test.assertTrue
 private class KitchenPlatform(
     private val ai: RecipeAi? = null,
     override val instagramVideos: InstagramVideos? = null,
+    override val recipePhotos: RecipePhotos? = null,
     override val instagramPages: InstagramPages? = null,
 ) : PlatformServices {
     val screenOn = mutableListOf<Boolean>()
@@ -223,12 +226,13 @@ class KitchenModelTest {
     }
 
     /** Embed page of a reel: the media JSON with caption and video address, double encoded like Instagram's. */
-    private fun reelPage(text: String, videoUrl: String): String {
+    private fun reelPage(text: String, videoUrl: String, cover: String? = null): String {
         val media = buildJsonObject {
             putJsonObject("gql_data") {
                 putJsonObject("shortcode_media") {
                     put("is_video", true)
                     put("video_url", videoUrl)
+                    cover?.let { put("display_url", it) }
                     putJsonObject("edge_media_to_caption") {
                         putJsonArray("edges") { addJsonObject { putJsonObject("node") { put("text", text) } } }
                     }
@@ -439,5 +443,149 @@ class KitchenModelTest {
         m.kitchen.recipes.delete(r)
         assertEquals(KitchenRoute.Library, m.kitchen.route.value)
         assertIs<String>(m.feedback.value?.message)
+    }
+
+    // ---- Recipe pictures (threat model TE-13) ------------------------------------------------
+
+    /** Records what it was asked; [cover]/[frame] are the stored paths it hands back (null: failed). */
+    private class FakePhotos(private val cover: String? = "/photos/cover.jpg", private val frame: String? = "/photos/frame.jpg") :
+        RecipePhotos {
+        val images = mutableListOf<String>()
+        val frames = mutableListOf<Pair<VideoClip, Double?>>()
+        override fun fromImage(url: String): String? { images += url; return cover }
+        override fun fromVideo(clip: VideoClip, atSecond: Double?): String? { frames += clip to atSecond; return frame }
+    }
+
+    private val cdnCover = "https://scontent-fra5-1.cdninstagram.com/v/t51/cover.jpg?stp=dst-jpg&oh=sig"
+
+    @Test
+    fun theReelsCoverBecomesThePictureOfTheSuggestion() = runTest {
+        val photos = FakePhotos()
+        val m = model(KitchenPlatform(recipePhotos = photos, instagramPages = InstagramPages { reelPage(caption, cdnVideo, cdnCover) }))
+        m.captureShared("https://www.instagram.com/reel/XYZ/", null)
+        runCurrent()
+        assertEquals(listOf(cdnCover), photos.images, "the address comes from Instagram's page")
+        val recipe = m.repo.current.recipes.single()
+        assertEquals("/photos/cover.jpg", recipe.photoPath)
+        assertEquals(3, recipe.ingredients.size, "text and picture in one change")
+        assertTrue(photos.frames.isEmpty(), "no AI, no video, no frame")
+        // Undo of the fetched text also takes the picture back (one change, one undo).
+        m.undo(m.feedback.value!!)
+        assertNull(m.repo.current.recipes.single().photoPath)
+    }
+
+    @Test
+    fun aCoverOutsideInstagramsCdnIsNeverFetched() = runTest {
+        val photos = FakePhotos()
+        val page = reelPage(caption, cdnVideo, "https://tracker.example/cover.jpg")
+        val m = model(KitchenPlatform(recipePhotos = photos, instagramPages = InstagramPages { page }))
+        m.captureShared("https://www.instagram.com/reel/XYZ/", null)
+        runCurrent()
+        assertTrue(photos.images.isEmpty(), "TE-13: only Instagram's CDN")
+        assertNull(m.repo.current.recipes.single().photoPath)
+        assertEquals(RecipeActions.CAPTION_FETCHED, m.feedback.value?.message, "the text does not wait for a picture")
+    }
+
+    @Test
+    fun withoutCoverAFrameOfTheVideoIsTakenWhereTheAiSawTheDish() = runTest {
+        val clip = VideoClip("/cache/instagram-video/v.mp4", 1_000, "video/mp4")
+        val videos = FakeVideos(clip)
+        val photos = FakePhotos()
+        val recipe = AiRecipe("Shakshuka", 2.0, 20, listOf("4 Eier", "1 Dose Tomaten"), listOf("Kochen"), dishSecond = 41.5)
+        val ai = VideoAi(AiOutcome.Ok(recipe)) { assertTrue(videos.discarded.isEmpty()) }
+        val m = model(KitchenPlatform(ai, videos, photos) { reelPage(videoCaption, cdnVideo) })
+        m.setRecipeAiKey("AIzaTest")
+        m.captureShared("https://www.instagram.com/reel/XYZ/", null)
+        runCurrent()
+        runCurrent()
+        assertEquals(listOf<Pair<VideoClip, Double?>>(clip to 41.5), photos.frames, "frame taken from the same file, before it is deleted")
+        assertEquals(listOf(clip), videos.discarded, "TE-12 still holds")
+        val saved = m.repo.current.recipes.single()
+        assertEquals("/photos/frame.jpg", saved.photoPath)
+        assertEquals("Shakshuka", saved.title)
+    }
+
+    @Test
+    fun withCoverNoFrameIsTakenAndAFrameAloneIsKeptWhenTheAiFindsNothing() = runTest {
+        val clip = VideoClip("/cache/instagram-video/v.mp4", 1_000, "video/mp4")
+        val withCover = FakePhotos()
+        val ai = VideoAi(AiOutcome.Ok(AiRecipe("Nichts")))
+        val m = model(KitchenPlatform(ai, FakeVideos(clip), withCover) { reelPage(videoCaption, cdnVideo, cdnCover) })
+        m.setRecipeAiKey("AIzaTest")
+        m.captureShared("https://www.instagram.com/reel/XYZ/", null)
+        runCurrent()
+        runCurrent()
+        assertTrue(withCover.frames.isEmpty())
+        assertEquals("/photos/cover.jpg", m.repo.current.recipes.single().photoPath)
+
+        val noCover = FakePhotos(cover = null)
+        val n = model(KitchenPlatform(ai, FakeVideos(clip), noCover) { reelPage(videoCaption, cdnVideo, cdnCover) })
+        n.setRecipeAiKey("AIzaTest")
+        n.captureShared("https://www.instagram.com/reel/XYZ/", null)
+        runCurrent()
+        runCurrent()
+        assertEquals(listOf<Pair<VideoClip, Double?>>(clip to null), noCover.frames, "no second named: the platform picks one")
+        assertEquals("/photos/frame.jpg", n.repo.current.recipes.single().photoPath)
+        assertEquals(RecipeActions.AI_FOUND_NOTHING_IN_VIDEO, n.feedback.value?.message)
+    }
+
+    @Test
+    fun recipeChangedWhileFetchingStillGetsTheCoverButNotTheText() = runTest {
+        lateinit var m: AppModel
+        val pages = InstagramPages { _ ->
+            // The person edits the suggestion while the page loads.
+            m.kitchen.recipes.fillFromText(m.repo.current.recipes.single().id, "Mein Salat\nZutaten:\n1 Gurke\n2 Tomaten")
+            reelPage(caption, cdnVideo, cdnCover)
+        }
+        m = model(KitchenPlatform(recipePhotos = FakePhotos(), instagramPages = pages))
+        m.captureShared("https://www.instagram.com/reel/XYZ/", null)
+        runCurrent()
+        val recipe = m.repo.current.recipes.single()
+        assertEquals("Mein Salat", recipe.title)
+        assertEquals("/photos/cover.jpg", recipe.photoPath)
+    }
+
+    @Test
+    fun olderInstagramRecipeGetsItsPictureOnATap() = runTest {
+        var cover: String? = null
+        val m = model(KitchenPlatform(recipePhotos = FakePhotos(), instagramPages = InstagramPages { reelPage(caption, cdnVideo, cover) }))
+        m.kitchen.recipes.createFromText("https://www.instagram.com/reel/XYZ/\n$caption")
+        val recipe = m.repo.current.recipes.single()
+        assertTrue(m.kitchen.pictures.canFetch(recipe))
+        m.kitchen.pictures.fetch(recipe)
+        runCurrent()
+        assertEquals(RecipePictureActions.PHOTO_UNAVAILABLE, m.feedback.value?.message, "page without cover")
+        cover = cdnCover
+        m.kitchen.pictures.fetch(recipe)
+        runCurrent()
+        assertEquals(RecipePictureActions.PHOTO_FETCHED, m.feedback.value?.message)
+        val withPhoto = m.repo.recipeStore.recipe(recipe.id)!!
+        assertEquals("/photos/cover.jpg", withPhoto.photoPath)
+        assertFalse(m.kitchen.pictures.canFetch(withPhoto), "the button goes away")
+        m.undo(m.feedback.value!!)
+        assertNull(m.repo.recipeStore.recipe(recipe.id)!!.photoPath)
+    }
+
+    @Test
+    fun noPictureButtonWithoutInstagramSourceOrPlatformSupport() = runTest {
+        val m = model(KitchenPlatform(recipePhotos = FakePhotos(), instagramPages = InstagramPages { null }))
+        m.kitchen.recipes.createFromText(caption)
+        assertFalse(m.kitchen.pictures.canFetch(m.repo.current.recipes.single()), "typed recipe, no source")
+        val n = model(KitchenPlatform(instagramPages = InstagramPages { null }))
+        n.kitchen.recipes.createFromText("https://www.instagram.com/reel/XYZ/\n$caption")
+        assertFalse(n.kitchen.pictures.canFetch(n.repo.current.recipes.single()), "platform makes no pictures")
+    }
+
+    @Test
+    fun pictureCanBeRemovedInTheEditFormAndGoesWithTheRecipe() = runTest {
+        val m = model()
+        m.kitchen.recipes.createFromText(caption)
+        val id = m.repo.current.recipes.single().id
+        m.repo.recipeStore.attachPhoto(id, "/photos/dish.jpg")
+        val keep = RecipeEdit("Ofengemüse", 2.0, null, "500 g Kartoffeln", "Backen", null, "")
+        m.kitchen.recipes.save(id, keep)
+        assertEquals("/photos/dish.jpg", m.repo.recipeStore.recipe(id)!!.photoPath, "saving keeps it")
+        m.kitchen.recipes.save(id, keep.copy(removePhoto = true))
+        assertNull(m.repo.recipeStore.recipe(id)!!.photoPath)
     }
 }

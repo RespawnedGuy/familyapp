@@ -1,6 +1,7 @@
 package io.github.respawnedguy.familyapp.presentation
 
 import io.github.respawnedguy.familyapp.data.FamilyRepository
+import io.github.respawnedguy.familyapp.data.AiAnswer
 import io.github.respawnedguy.familyapp.data.AiOutcome
 import io.github.respawnedguy.familyapp.data.InstagramImport
 import io.github.respawnedguy.familyapp.data.RecipeAi
@@ -44,13 +45,16 @@ class KitchenModel internal constructor(
     background: Background,
     show: (String, Undo?) -> Unit,
 ) {
+    private val instagram = platform.instagramPages?.let {
+        InstagramImport(it, platform.instagramVideos, platform.instagramBrowser, platform.recipePhotos)
+    }
     val recipes = RecipeActions(
-        repo, this, show, background,
-        instagram = platform.instagramPages?.let {
-            InstagramImport(it, platform.instagramVideos, platform.instagramBrowser)
-        },
+        repo, this, show, background, instagram,
         ai = { repo.current.settings.recipeAiKey?.let(platform::recipeAi) },
     )
+
+    /** "Bild von Instagram holen" for recipes without picture. */
+    val pictures = RecipePictureActions(repo, show, background, instagram)
     val shopping = ShoppingActions(repo, this, show)
 
     private val _route = MutableStateFlow<KitchenRoute?>(null)
@@ -145,24 +149,27 @@ class RecipeActions internal constructor(
         // Instagram hands over only the link: fetch the caption on the phone (ADR 0007).
         show(FETCHING_CAPTION, undo)
         background.scope.launch {
-            val post = withContext(background.io) { runCatching { fetcher.fetch(shortcode) }.getOrNull() }
-            fillFromInstagram(recipe, post)
+            val (post, photo) = withContext(background.io) { fetcher.fetchWithPhoto(shortcode) }
+            fillFromInstagram(recipe, post, photo)
         }
     }
 
-    /** Puts the fetched caption into the suggestion, unless somebody touched it in the meantime. */
-    private fun fillFromInstagram(added: Recipe, post: InstagramPost?) {
+    /**
+     * Puts the fetched caption (and cover) into the suggestion, unless somebody touched it in the
+     * meantime; then only the cover goes in, if the recipe still has no picture.
+     */
+    private fun fillFromInstagram(added: Recipe, post: InstagramPost?, photo: String?) {
         val untouched = store.recipe(added.id)?.stamp == added.stamp
         when {
-            !untouched -> Unit
+            !untouched -> photo?.let { store.attachPhoto(added.id, it) }
             post == null -> show(CAPTION_UNAVAILABLE, null)
-            else -> fillCaption(added.id, post)
+            else -> fillCaption(added.id, post, photo)
         }
     }
 
-    private fun fillCaption(id: String, post: InstagramPost) {
+    private fun fillCaption(id: String, post: InstagramPost, photo: String?) {
         val draft = RecipeImport.fromText(post.caption)
-        val undo = store.fillSuggestion(id, draft)
+        val undo = store.fillSuggestion(id, draft, photo)
         val cloud = if (draft.needsText) ai() else null
         val filled = store.recipe(id)
         if (cloud == null || filled == null) {
@@ -179,21 +186,28 @@ class RecipeActions internal constructor(
             val fetcher = instagram ?: return
             val video = fetcher.videoFor(post, cloud)
             show(if (video != null) ASKING_AI_VIDEO else ASKING_AI, undo)
+            val wantFrame = filled.photoPath == null && fetcher.makesPhotos
             background.scope.launch {
-                val (outcome, sawVideo) = withContext(background.io) {
-                    runCatching { fetcher.ask(cloud, post.caption, video) }
-                        .getOrElse { AiOutcome.Failed(AI_NO_ANSWER) to false }
+                val answer = withContext(background.io) {
+                    runCatching { fetcher.ask(cloud, post.caption, video, wantFrame) }
+                        .getOrElse { AiAnswer(AiOutcome.Failed(AI_NO_ANSWER), sawVideo = false) }
                 }
-                fillFromAi(filled, post, outcome, sawVideo)
+                fillFromAi(filled, post, answer)
             }
         }
     }
 
     /** The AI's reading goes into the suggestion like the rules' would; a person still confirms. */
-    private fun fillFromAi(filled: Recipe, post: InstagramPost, outcome: AiOutcome, sawVideo: Boolean) {
+    private fun fillFromAi(filled: Recipe, post: InstagramPost, answer: AiAnswer) {
         val current = store.recipe(filled.id) ?: return
-        if (current.stamp != filled.stamp) return
+        val (outcome, sawVideo, frame) = answer
+        if (current.stamp != filled.stamp) {
+            frame?.let { store.attachPhoto(filled.id, it) }
+            return
+        }
         val draft = (outcome as? AiOutcome.Ok)?.recipe?.toDraft(post.caption)
+        // A frame is worth keeping even when the AI found no recipe in the video.
+        if (frame != null && (draft == null || draft.needsText)) store.attachPhoto(filled.id, frame)
         when {
             outcome is AiOutcome.Failed -> show("$AI_FAILED ${outcome.reason}", null)
             draft == null || draft.needsText -> show(
@@ -204,7 +218,7 @@ class RecipeActions internal constructor(
                 },
                 null,
             )
-            else -> show(AI_FILLED, store.fillSuggestion(filled.id, draft))
+            else -> show(AI_FILLED, store.fillSuggestion(filled.id, draft, frame))
         }
     }
 
@@ -276,6 +290,43 @@ class RecipeActions internal constructor(
         const val CONFIRMED = "Rezept bestätigt."
         const val DELETED = "Rezept gelöscht."
         const val COOKED = "Als gekocht vermerkt."
+    }
+}
+
+/**
+ * Pictures for recipes that have none, e.g. imported before pictures existed: fetched again from
+ * Instagram on a tap ("Bild von Instagram holen"), never by itself. New imports get theirs in [RecipeActions].
+ */
+class RecipePictureActions internal constructor(
+    private val repo: FamilyRepository,
+    private val show: (String, Undo?) -> Unit,
+    private val background: Background,
+    private val instagram: InstagramImport?,
+) {
+    private val store get() = repo.recipeStore
+
+    /** True if [recipe] came from Instagram, has no picture yet and this phone can fetch one. */
+    fun canFetch(recipe: Recipe): Boolean =
+        recipe.photoPath == null && instagram?.makesPhotos == true &&
+            recipe.sourceUrl?.let(InstagramLink::shortcode) != null
+
+    /** Fetches the post's cover again and makes it the recipe's picture. */
+    fun fetch(recipe: Recipe) {
+        val shortcode = recipe.sourceUrl?.let(InstagramLink::shortcode)
+        val fetcher = instagram
+        if (shortcode == null || fetcher == null || !canFetch(recipe)) return
+        show(FETCHING_PHOTO, null)
+        background.scope.launch {
+            val photo = withContext(background.io) { fetcher.fetchWithPhoto(shortcode).second }
+            val undo = photo?.let { store.attachPhoto(recipe.id, it) }
+            show(if (undo != null) PHOTO_FETCHED else PHOTO_UNAVAILABLE, undo)
+        }
+    }
+
+    companion object {
+        const val FETCHING_PHOTO = "Hole das Bild von Instagram …"
+        const val PHOTO_FETCHED = "Bild von Instagram übernommen."
+        const val PHOTO_UNAVAILABLE = "Kein Bild von Instagram abrufbar. Später noch einmal versuchen."
     }
 }
 

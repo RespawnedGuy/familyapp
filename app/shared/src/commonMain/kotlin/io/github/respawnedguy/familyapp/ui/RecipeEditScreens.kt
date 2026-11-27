@@ -40,6 +40,9 @@ import io.github.respawnedguy.familyapp.resources.kitchen_fill_title
 import io.github.respawnedguy.familyapp.resources.kitchen_new_create
 import io.github.respawnedguy.familyapp.resources.kitchen_new_hint
 import io.github.respawnedguy.familyapp.resources.kitchen_paste_label
+import io.github.respawnedguy.familyapp.resources.kitchen_photo_keep
+import io.github.respawnedguy.familyapp.resources.kitchen_photo_remove
+import io.github.respawnedguy.familyapp.resources.kitchen_photo_removed_hint
 import io.github.respawnedguy.familyapp.resources.kitchen_save
 import org.jetbrains.compose.resources.stringResource
 
@@ -70,7 +73,7 @@ internal fun NewRecipeScreen(model: AppModel) {
 
 /** Editing keeps the structure as text: ingredients one per line, steps one per line. */
 @Composable
-internal fun EditRecipeScreen(recipe: Recipe, model: AppModel) {
+internal fun EditRecipeScreen(recipe: Recipe, model: AppModel, photos: PhotoLoader?) {
     val c = LocalFamilyColors.current
     var title by remember(recipe.id) { mutableStateOf(recipe.title) }
     var servings by remember(recipe.id) { mutableStateOf(recipe.servings?.let { Amounts.decimal(it) }.orEmpty()) }
@@ -79,6 +82,7 @@ internal fun EditRecipeScreen(recipe: Recipe, model: AppModel) {
     var steps by remember(recipe.id) { mutableStateOf(recipe.steps.joinToString("\n")) }
     var source by remember(recipe.id) { mutableStateOf(recipe.sourceUrl.orEmpty()) }
     var notes by remember(recipe.id) { mutableStateOf(recipe.notes) }
+    var removePhoto by remember(recipe.id) { mutableStateOf(false) }
     val save = {
         model.kitchen.recipes.save(
             recipe.id,
@@ -90,6 +94,7 @@ internal fun EditRecipeScreen(recipe: Recipe, model: AppModel) {
                 stepLines = steps,
                 sourceUrl = source,
                 notes = notes,
+                removePhoto = removePhoto,
             ),
         )
     }
@@ -97,6 +102,9 @@ internal fun EditRecipeScreen(recipe: Recipe, model: AppModel) {
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(KitchenPadding),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        recipe.photoPath?.let { path ->
+            PhotoField(path, photos, removed = removePhoto) { removePhoto = !removePhoto }
+        }
         Field(title, { title = it }, stringResource(Res.string.kitchen_field_title), single = true)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             val servingsLabel = stringResource(Res.string.kitchen_field_servings)
@@ -115,6 +123,22 @@ internal fun EditRecipeScreen(recipe: Recipe, model: AppModel) {
         PasteTextCard(recipe, model, banner = false)
         TextButton(onClick = { model.kitchen.recipes.delete(recipe) }) {
             Text(stringResource(Res.string.kitchen_delete), color = c.overdue)
+        }
+    }
+}
+
+/** The recipe's picture with "Bild entfernen"; takes effect on "Speichern" like every other field. */
+@Composable
+private fun PhotoField(path: String, photos: PhotoLoader?, removed: Boolean, onToggle: () -> Unit) {
+    val c = LocalFamilyColors.current
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (removed) {
+            Text(stringResource(Res.string.kitchen_photo_removed_hint), color = c.textSecondary, fontSize = 14.sp)
+        } else {
+            PhotoThumb(path, photos, height = 120)
+        }
+        TextButton(onClick = onToggle) {
+            Text(stringResource(if (removed) Res.string.kitchen_photo_keep else Res.string.kitchen_photo_remove))
         }
     }
 }

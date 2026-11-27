@@ -129,4 +129,16 @@ class GeminiRecipeRequestTest {
         assertFalse(ai.readsVideo)
         assertEquals(AiOutcome.Failed("Text"), ai.extract("Text", VideoClip("/v.mp4", 1, "video/mp4")))
     }
+
+    @Test
+    fun withAVideoTheAiNamesTheSecondOfTheFinishedDish() {
+        val body = GeminiRecipeRequest.body("Suppe", GeminiRecipeRequest.Media.Inline("video/mp4", "AAAA"))
+        val schema = Json.parseToJsonElement(body).jsonObject["generation_config"]!!.jsonObject["response_schema"]!!.jsonObject
+        assertEquals("NUMBER", schema["properties"]!!.jsonObject["dishSecond"]!!.jsonObject["type"]!!.jsonPrimitive.content)
+        assertFalse(schema["required"]!!.jsonArray.any { it.jsonPrimitive.content == "dishSecond" }, "optional")
+        assertTrue(system(body).contains("dishSecond"))
+        assertFalse(system(GeminiRecipeRequest.body("Suppe")).contains("dishSecond"), "only asked with a video")
+        val json = """{"title":"Suppe","ingredients":["1 l Brühe"],"steps":["Kochen"],"dishSecond":41.5}"""
+        assertEquals(41.5, assertIs<AiOutcome.Ok>(GeminiRecipeRequest.parse(answer(json))).recipe.dishSecond)
+    }
 }

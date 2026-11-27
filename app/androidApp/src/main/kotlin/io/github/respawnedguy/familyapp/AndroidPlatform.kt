@@ -61,6 +61,9 @@ class AndroidPlatform(private val app: FamilyApplication) : PlatformServices {
     /** Video of a shared reel for Gemini, in the cache only while it is read (ADR 0008). */
     override val instagramVideos = HttpInstagramVideos(File(app.cacheDir, "instagram-video"))
 
+    /** Reel cover or video frame as the recipe's picture, shrunk, in the private photo folder (TE-13). */
+    override val recipePhotos = AndroidRecipePhotos(File(app.filesDir, "photos"))
+
     /** Optional, only with the API key from the settings; the key's prefix names the provider (ADR 0007, 0008). */
     override fun recipeAi(apiKey: String): RecipeAi? = when (AiProvider.ofKey(apiKey)) {
         AiProvider.GEMINI -> HttpGeminiRecipeAi(apiKey)
