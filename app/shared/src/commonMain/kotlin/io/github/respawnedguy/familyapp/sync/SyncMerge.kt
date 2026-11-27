@@ -1,6 +1,7 @@
 package io.github.respawnedguy.familyapp.sync
 
 import io.github.respawnedguy.familyapp.data.FamilyRepository
+import io.github.respawnedguy.familyapp.data.usedPhotoNames
 import io.github.respawnedguy.familyapp.domain.FamilyData
 import io.github.respawnedguy.familyapp.domain.Item
 import io.github.respawnedguy.familyapp.domain.Member
@@ -128,7 +129,8 @@ object SyncMerge {
             }
         }
         // Deleting a recipe or entry is a newer version with deleted = true, so plain last-writer-wins covers it.
-        val (recipes, recipesChanged) = newestWins(data.recipes, incoming.recipes, Recipe::id, Recipe::stamp)
+        val incomingRecipes = incoming.recipes.map { it.copy(photoPath = it.photoPath?.let(localPhoto(photoPath))) }
+        val (recipes, recipesChanged) = newestWins(data.recipes, incomingRecipes, Recipe::id, Recipe::stamp)
         val (shopping, shoppingChanged) =
             newestWins(data.shopping, incoming.shopping, ShoppingEntry::id, ShoppingEntry::stamp)
         val (contacts, contactsChanged) = newestWins(data.contacts, incoming.contacts, Contact::id, Contact::stamp)
@@ -172,9 +174,12 @@ object SyncMerge {
         return byId.values.toList() to changed
     }
 
-    /** Photo file names that items here point to, for asking another device for missing files. */
-    fun photoNames(data: FamilyData): Set<String> =
-        data.items.mapNotNull { it.photoPath?.let(FamilyRepository::photoName) }.toSet()
+    /** Photo file names that items and recipes here point to, for asking another device for missing files. */
+    fun photoNames(data: FamilyData): Set<String> = usedPhotoNames(data)
+
+    /** Another device's path for a photo becomes this device's path for the same file name. */
+    private fun localPhoto(photoPath: (String) -> String): (String) -> String =
+        { path -> photoPath(FamilyRepository.photoName(path)) }
 
     /**
      * A device joins a family (pairing). Its own entries come along: its own person becomes

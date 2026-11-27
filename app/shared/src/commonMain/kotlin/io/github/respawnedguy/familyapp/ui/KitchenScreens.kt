@@ -1,5 +1,6 @@
 package io.github.respawnedguy.familyapp.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,10 +22,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -54,6 +60,8 @@ import io.github.respawnedguy.familyapp.resources.kitchen_search_placeholder
 import io.github.respawnedguy.familyapp.resources.kitchen_shopping_title
 import io.github.respawnedguy.familyapp.resources.kitchen_suggestion
 import io.github.respawnedguy.familyapp.resources.kitchen_title
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.stringResource
 
 internal val KitchenPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp)
@@ -119,28 +127,28 @@ fun kitchenTitle(route: KitchenRoute, data: FamilyData): String {
 
 /** Content area of the kitchen; the cooking mode itself is [CookOverlay] on top of everything. */
 @Composable
-fun KitchenScreen(route: KitchenRoute, data: FamilyData, model: AppModel) {
+fun KitchenScreen(route: KitchenRoute, data: FamilyData, model: AppModel, photos: PhotoLoader?) {
     when (route) {
-        KitchenRoute.Library -> LibraryScreen(data, model)
+        KitchenRoute.Library -> LibraryScreen(data, model, photos)
         KitchenRoute.Shopping -> ShoppingScreen(data, model)
         is KitchenRoute.Edit -> {
             val recipe = route.id?.let { id -> data.recipes.firstOrNull { it.id == id && !it.deleted } }
-            if (recipe == null) NewRecipeScreen(model) else EditRecipeScreen(recipe, model)
+            if (recipe == null) NewRecipeScreen(model) else EditRecipeScreen(recipe, model, photos)
         }
-        is KitchenRoute.Detail -> RecipeOrLibrary(route.id, data, model)
-        is KitchenRoute.Cook -> RecipeOrLibrary(route.id, data, model)
+        is KitchenRoute.Detail -> RecipeOrLibrary(route.id, data, model, photos)
+        is KitchenRoute.Cook -> RecipeOrLibrary(route.id, data, model, photos)
     }
 }
 
 /** A recipe deleted on another phone meanwhile: show the library instead of an empty page. */
 @Composable
-private fun RecipeOrLibrary(id: String, data: FamilyData, model: AppModel) {
+private fun RecipeOrLibrary(id: String, data: FamilyData, model: AppModel, photos: PhotoLoader?) {
     val recipe = data.recipes.firstOrNull { it.id == id && !it.deleted }
-    if (recipe == null) LibraryScreen(data, model) else RecipeScreen(recipe, model)
+    if (recipe == null) LibraryScreen(data, model, photos) else RecipeScreen(recipe, model, photos)
 }
 
 @Composable
-private fun LibraryScreen(data: FamilyData, model: AppModel) {
+private fun LibraryScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?) {
     var query by remember { mutableStateOf("") }
     val all = RecipeViews.library(data.recipes)
     val shown = RecipeViews.library(data.recipes, query)
@@ -168,19 +176,50 @@ private fun LibraryScreen(data: FamilyData, model: AppModel) {
             item { EmptyNote(stringResource(Res.string.kitchen_nothing_found)) }
         }
         items(shown, key = { it.id }) { recipe ->
-            RecipeRow(recipe) { model.kitchen.openRecipe(recipe.id) }
+            RecipeRow(recipe, photos) { model.kitchen.openRecipe(recipe.id) }
         }
     }
 }
 
 @Composable
-private fun RecipeRow(recipe: Recipe, onClick: () -> Unit) {
+private fun RecipeRow(recipe: Recipe, photos: PhotoLoader?, onClick: () -> Unit) {
     val c = LocalFamilyColors.current
-    Column(
+    Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(c.card).clickable(onClick = onClick)
             .padding(12.dp).semantics(mergeDescendants = true) {},
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
+        recipe.photoPath?.let { RecipeThumb(it, photos) }
+        RecipeRowText(recipe)
+    }
+}
+
+/** Square picture of the dish in the library list; nothing (not even a gap) while it loads or without one. */
+@Composable
+private fun RecipeThumb(path: String, photos: PhotoLoader?) {
+    if (photos == null) return
+    val bitmap by produceState<ImageBitmap?>(null, path) {
+        value = withContext(Dispatchers.Default) { photos.load(path, THUMB_PX) }
+    }
+    bitmap?.let {
+        // Decorative: the title next to it says what the recipe is.
+        Image(
+            it,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp).clip(RoundedCornerShape(8.dp)),
+            contentScale = ContentScale.Crop,
+        )
+    }
+}
+
+/** Decoded size of a list picture: 64 dp at up to 4× density. */
+private const val THUMB_PX = 256
+
+@Composable
+private fun RecipeRowText(recipe: Recipe) {
+    val c = LocalFamilyColors.current
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(recipe.title, color = c.text, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 2)
         val details = buildList {
             if (recipe.status == RecipeStatus.SUGGESTED) add(stringResource(Res.string.kitchen_suggestion))

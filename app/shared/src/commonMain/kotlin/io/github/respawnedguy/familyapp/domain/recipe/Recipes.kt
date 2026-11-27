@@ -50,6 +50,12 @@ data class Recipe(
     val sourceText: String? = null,
     /** Family notes such as "doppelt Knoblauch". */
     val notes: String = "",
+    /**
+     * Picture of the dish in this device's private photo folder (the reel's cover or a frame of its
+     * video), shrunk to [RecipePhoto] limits. Synced like a capture's photo: the record carries the
+     * path, the file goes once to every device under the same name (older apps ignore the field).
+     */
+    val photoPath: String? = null,
     val status: RecipeStatus = RecipeStatus.SUGGESTED,
     val createdMs: Long,
     val createdBy: String,

@@ -5,17 +5,19 @@ import io.github.respawnedguy.familyapp.domain.MemberKind
 import io.github.respawnedguy.familyapp.domain.RecordKind
 import io.github.respawnedguy.familyapp.domain.Source
 import io.github.respawnedguy.familyapp.domain.Views
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.LocalDate
+import io.github.respawnedguy.familyapp.domain.recipe.RecipeImport
+import io.github.respawnedguy.familyapp.domain.recipe.RecipeStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
 
 /** A store that fails on demand, like a full disk (M6 of the quality assessment). */
 private class FlakyStore : TextStore {
@@ -201,5 +203,22 @@ class RepositoryRobustnessTest {
         val files = listOf(StoredPhoto("/p/used.jpg", 0), StoredPhoto("/p/old.jpg", 0), StoredPhoto("/p/fresh.jpg", 10 * hour))
         assertEquals(listOf("/p/old.jpg"), PhotoCleanup.orphans(files, r.current, nowMs = 10 * hour + 1))
         assertEquals(ItemStatus.INBOX, r.current.items.single().status)
+    }
+
+    @Test
+    fun recipePicturesAreBackedUpRestoredAndKeptByTheCleanup() = runTest {
+        val r = repo().apply { createFamily("Nils") }
+        val (recipe, _) = r.recipeStore.add(RecipeImport.fromText("Salat"), RecipeStatus.SUGGESTED)
+        r.recipeStore.attachPhoto(recipe.id, "/old/phone/photos/dish.jpg")
+        assertEquals(listOf("/old/phone/photos/dish.jpg"), usedPhotoPaths(r.current), "goes into the backup")
+        val other = repo()
+        other.restoreBackup(r.exportBackup(), mapOf("dish.jpg" to "/new/phone/photos/dish.jpg"))
+        assertEquals("/new/phone/photos/dish.jpg", other.current.recipes.single().photoPath)
+        val hour = PhotoCleanup.MIN_AGE_MS
+        val files = listOf(StoredPhoto("/old/phone/photos/dish.jpg", 0))
+        assertTrue(PhotoCleanup.orphans(files, r.current, nowMs = 10 * hour).isEmpty())
+        // A deleted recipe gives its picture up; the cleanup removes it at a later start.
+        r.recipeStore.delete(recipe.id)
+        assertEquals(listOf("/old/phone/photos/dish.jpg"), PhotoCleanup.orphans(files, r.current, nowMs = 10 * hour))
     }
 }

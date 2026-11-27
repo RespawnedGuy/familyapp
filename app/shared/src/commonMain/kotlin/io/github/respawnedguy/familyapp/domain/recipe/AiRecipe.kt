@@ -10,6 +10,8 @@ data class AiRecipe(
     val totalMinutes: Int? = null,
     val ingredients: List<String> = emptyList(),
     val steps: List<String> = emptyList(),
+    /** Second of the video where the finished dish is best to see; only asked when a video comes along. */
+    val dishSecond: Double? = null,
 ) {
     /**
      * Into the same draft the rules build: every ingredient line goes through [IngredientParser],

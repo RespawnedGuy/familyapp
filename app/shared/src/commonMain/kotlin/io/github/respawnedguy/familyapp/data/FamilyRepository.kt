@@ -496,6 +496,10 @@ class FamilyRepository(
                 items = restored.items.map { item ->
                     item.photoPath?.let { path -> photoPaths[photoName(path)]?.let { item.copy(photoPath = it) } } ?: item
                 },
+                recipes = restored.recipes.map { recipe ->
+                    recipe.photoPath?.let { path -> photoPaths[photoName(path)]?.let { recipe.copy(photoPath = it) } }
+                        ?: recipe
+                },
             ),
         )
         val extra = if (snapshotSaved) null else "Der vorige Stand ließ sich nicht sichern, nur 6 s Rückgängig."
@@ -552,6 +556,7 @@ class FamilyRepository(
         observeAll(records)
         val family = records.copy(
             items = records.items.map { it.copy(photoPath = it.photoPath?.let { path -> photoPath(photoName(path)) }) },
+            recipes = records.recipes.map { r -> r.copy(photoPath = r.photoPath?.let { photoPath(photoName(it)) }) },
         )
         update { SyncMerge.adopt(it, family, selfMemberId, clock::tick) }
     }

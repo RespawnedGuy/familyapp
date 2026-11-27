@@ -120,4 +120,34 @@ class KitchenSyncTest {
         val fromOld = syncJson.decodeFromString(SyncRecords.serializer(), """{"members":[],"items":[],"tombstones":[]}""")
         assertTrue(fromOld.recipes.isEmpty() && fromOld.shopping.isEmpty())
     }
+
+    @Test
+    fun recipePictureTravelsByFileName() = runTest {
+        val (a, b, ticks) = pair()
+        val (recipe, _) = a.recipeStore.add(RecipeImport.fromText(text), RecipeStatus.SUGGESTED)
+        a.recipeStore.attachPhoto(recipe.id, "/phone-a/photos/dish-1.jpg")
+        meet(a, b)
+        assertEquals("/local/dish-1.jpg", b.current.recipes.single().photoPath, "this phone's path for the same file")
+        assertEquals(setOf("dish-1.jpg"), SyncMerge.photoNames(b.current), "b asks a for the file")
+        assertEquals(setOf("dish-1.jpg"), SyncMerge.photoNames(a.current), "a offers it")
+        // A picture is never replaced by attaching: the first one stays on every phone.
+        ticks.second()
+        assertEquals(null, b.recipeStore.attachPhoto(recipe.id, "/local/other.jpg"))
+        ticks.first(); ticks.first()
+        a.recipeStore.delete(recipe.id)
+        meet(a, b)
+        assertEquals(null, b.current.recipes.single().photoPath)
+        assertTrue(SyncMerge.photoNames(b.current).isEmpty(), "a deleted recipe's picture is not fetched any more")
+    }
+
+    @Test
+    fun joiningPhoneGetsItsOwnPathsForRecipePictures() = runTest {
+        val (a, _) = device("a")
+        a.createFamily("Nils")
+        val (recipe, _) = a.recipeStore.add(RecipeImport.fromText(text), RecipeStatus.SUGGESTED)
+        a.recipeStore.attachPhoto(recipe.id, "/phone-a/photos/dish-2.jpg")
+        val (b, _) = device("b")
+        b.joinFamily(SyncMerge.newerThan(a.current, emptyMap()), null, ::path)
+        assertEquals("/local/dish-2.jpg", b.current.recipes.single().photoPath)
+    }
 }

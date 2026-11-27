@@ -3,6 +3,7 @@ package io.github.respawnedguy.familyapp.presentation
 import io.github.respawnedguy.familyapp.data.FamilyRepository
 import io.github.respawnedguy.familyapp.data.ShareRejection
 import io.github.respawnedguy.familyapp.data.Undo
+import io.github.respawnedguy.familyapp.data.usedPhotoPaths
 import io.github.respawnedguy.familyapp.domain.CaptureAction
 import io.github.respawnedguy.familyapp.domain.DateFormat
 import io.github.respawnedguy.familyapp.domain.DeviceInfo
@@ -393,7 +394,7 @@ class AppModel(
 
     private fun backupContent(): BackupContent? {
         val code = repo.current.settings.backupCode ?: return null
-        return BackupContent(repo.exportBackup(), repo.current.items.mapNotNull { it.photoPath }, code)
+        return BackupContent(repo.exportBackup(), usedPhotoPaths(repo.current), code)
     }
 
     fun backupNow() {

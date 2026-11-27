@@ -51,6 +51,7 @@ import io.github.respawnedguy.familyapp.resources.kitchen_no_ingredients
 import io.github.respawnedguy.familyapp.resources.kitchen_no_steps
 import io.github.respawnedguy.familyapp.resources.kitchen_notes
 import io.github.respawnedguy.familyapp.resources.kitchen_paste_label
+import io.github.respawnedguy.familyapp.resources.kitchen_photo_fetch
 import io.github.respawnedguy.familyapp.resources.kitchen_read_text
 import io.github.respawnedguy.familyapp.resources.kitchen_servings_less
 import io.github.respawnedguy.familyapp.resources.kitchen_servings_more
@@ -65,7 +66,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /** One recipe: servings to scale, ingredients, steps, and the ways on (cook, shop, edit). */
 @Composable
-internal fun RecipeScreen(recipe: Recipe, model: AppModel) {
+internal fun RecipeScreen(recipe: Recipe, model: AppModel, photos: PhotoLoader?) {
     val c = LocalFamilyColors.current
     val servings by model.kitchen.servings.collectAsState()
     val factor = RecipeViews.factor(recipe, servings)
@@ -74,6 +75,8 @@ internal fun RecipeScreen(recipe: Recipe, model: AppModel) {
         contentPadding = KitchenPadding,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        // The dish across the full width on top; a tap shows it whole.
+        recipe.photoPath?.let { path -> item { PhotoThumb(path, photos, height = 220) } }
         if (recipe.status == RecipeStatus.SUGGESTED) item { SuggestionBanner(recipe, model) }
         if (recipe.ingredients.isEmpty()) item { PasteTextCard(recipe, model, banner = true) }
         item { RecipeFacts(recipe) }
@@ -225,6 +228,12 @@ private fun RecipeActionsColumn(recipe: Recipe, model: AppModel) {
         ) { Text(stringResource(Res.string.kitchen_to_shopping)) }
         TextButton(onClick = { model.kitchen.editRecipe(recipe.id) }, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(Res.string.kitchen_edit))
+        }
+        // Recipes imported before pictures existed, or when the cover could not be loaded then.
+        if (model.kitchen.pictures.canFetch(recipe)) {
+            TextButton(onClick = { model.kitchen.pictures.fetch(recipe) }, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(Res.string.kitchen_photo_fetch))
+            }
         }
     }
 }

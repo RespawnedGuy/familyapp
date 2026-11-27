@@ -15,6 +15,8 @@ data class InstagramPost(
     val source: Source,
     /** Signed address of the video file on Instagram's CDN, only if [InstagramLink.isVideoUrl] allows it. */
     val videoUrl: String? = null,
+    /** Signed address of the post's preview picture (reel cover) on Instagram's CDN, checked like [videoUrl]. */
+    val imageUrl: String? = null,
 ) {
     /** Which part of Instagram's pages the caption came from (for the threat model and debugging). */
     enum class Source { EMBED_JSON, EMBED_HTML, OPEN_GRAPH }
@@ -44,14 +46,19 @@ object InstagramLink {
      * A video address taken from Instagram's own page (never from the shared link) may only point to
      * Instagram's CDN: https, no user, no port (threat model TE-12). The address is signed and expires.
      */
-    fun isVideoUrl(url: String): Boolean {
-        val host = VIDEO.matchEntire(url)?.groupValues?.get(1)?.lowercase() ?: return false
-        return url.length <= MAX_VIDEO_URL && VIDEO_HOSTS.any { host.endsWith(it) }
+    fun isVideoUrl(url: String): Boolean = isMediaUrl(url)
+
+    /** The same rule for the preview picture (threat model TE-13): only Instagram's CDN, https. */
+    fun isImageUrl(url: String): Boolean = isMediaUrl(url)
+
+    private fun isMediaUrl(url: String): Boolean {
+        val host = MEDIA.matchEntire(url)?.groupValues?.get(1)?.lowercase() ?: return false
+        return url.length <= MAX_MEDIA_URL && MEDIA_HOSTS.any { host.endsWith(it) }
     }
 
-    private val VIDEO = Regex("""^https://([A-Za-z0-9.-]+)/[^\s#\\]*$""")
-    private val VIDEO_HOSTS = listOf(".cdninstagram.com", ".fbcdn.net")
-    private const val MAX_VIDEO_URL = 4_096
+    private val MEDIA = Regex("""^https://([A-Za-z0-9.-]+)/[^\s#\\]*$""")
+    private val MEDIA_HOSTS = listOf(".cdninstagram.com", ".fbcdn.net")
+    private const val MAX_MEDIA_URL = 4_096
 }
 
 /**
@@ -77,7 +84,8 @@ object InstagramPage {
             .trimEnd().removeSuffix(".").trimEnd().removeSuffix("\"")
         val username = content.substring(0, start).substringAfter(" - ", "").substringBefore(' ')
         val video = HtmlText.metaContent(html, "og:video")
-        return post(caption, username, video != null, InstagramPost.Source.OPEN_GRAPH, video)
+        val image = HtmlText.metaContent(html, "og:image")
+        return checked(InstagramPost(caption, username, video != null, InstagramPost.Source.OPEN_GRAPH, video, image))
     }
 
     private fun fromContextJson(html: String): InstagramPost? {
@@ -91,7 +99,10 @@ object InstagramPage {
         val isVideo = (media["is_video"] as? JsonPrimitive)?.booleanOrNull == true
         val username = media.obj("owner")?.string("username")
         val video = media.string("video_url")
-        return caption?.let { post(it, username, isVideo, InstagramPost.Source.EMBED_JSON, video) }
+        // display_url is the full-size cover, thumbnail_src a smaller square; either is enough.
+        val image = media.string("display_url") ?: media.string("thumbnail_src")
+        val raw = caption?.let { InstagramPost(it, username, isVideo, InstagramPost.Source.EMBED_JSON, video, image) }
+        return raw?.let(::checked)
     }
 
     private fun fromCaptionBlock(html: String): InstagramPost? {
@@ -104,22 +115,24 @@ object InstagramPage {
         if (user != null) block = block.removeRange(user.range)
         val text = HtmlText.decodeEntities(block.replace(BR, "\n").replace(TAG, ""))
         val username = user?.groupValues?.get(1)?.let(HtmlText::decodeEntities)?.trim()
-        return post(text, username, html.contains("GraphVideo"), InstagramPost.Source.EMBED_HTML)
+        val image = EMBED_IMAGE.find(html)?.value?.let { tag -> IMG_SRC.find(tag)?.groupValues?.get(1) }
+            ?.let(HtmlText::decodeEntities)
+        val isVideo = html.contains("GraphVideo")
+        return checked(InstagramPost(text, username, isVideo, InstagramPost.Source.EMBED_HTML, imageUrl = image))
     }
 
-    private fun post(
-        caption: String,
-        username: String?,
-        isVideo: Boolean,
-        source: InstagramPost.Source,
-        videoUrl: String? = null,
-    ): InstagramPost? {
-        val text = caption.replace("\r\n", "\n").trim()
+    /** [raw] as read from the page, with every field it may not keep cleared or the whole post refused. */
+    private fun checked(raw: InstagramPost): InstagramPost? {
+        val text = raw.caption.replace("\r\n", "\n").trim()
         return if (text.isEmpty() || text.length > MAX_CAPTION) {
             null
         } else {
-            val video = videoUrl?.takeIf(InstagramLink::isVideoUrl)
-            InstagramPost(text, username?.takeIf { USERNAME.matches(it) }, isVideo, source, video)
+            raw.copy(
+                caption = text,
+                username = raw.username?.takeIf { USERNAME.matches(it) },
+                videoUrl = raw.videoUrl?.takeIf(InstagramLink::isVideoUrl),
+                imageUrl = raw.imageUrl?.takeIf(InstagramLink::isImageUrl),
+            )
         }
     }
 
@@ -131,6 +144,8 @@ object InstagramPage {
     private const val OG_PREFIX_MAX = 200
     private val USERNAME = Regex("""[A-Za-z0-9._]{1,30}""")
     private val USERNAME_LINK = Regex("""<a[^>]*class="CaptionUsername"[^>]*>([^<]*)</a>""")
+    private val EMBED_IMAGE = Regex("""<img\b[^>]*class="[^"]*EmbeddedMediaImage[^"]*"[^>]*>""")
+    private val IMG_SRC = Regex("""\ssrc="([^"]*)"""")
     private val BR = Regex("""<br\s*/?>""", RegexOption.IGNORE_CASE)
     private val TAG = Regex("""<[^>]*>""")
 }
