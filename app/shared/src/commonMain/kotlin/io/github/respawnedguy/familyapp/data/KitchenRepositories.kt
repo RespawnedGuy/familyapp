@@ -16,6 +16,8 @@ data class RecipeEdit(
     val stepLines: String,
     val sourceUrl: String?,
     val notes: String,
+    /** "Bild entfernen" ticked in the form. */
+    val removePhoto: Boolean = false,
 )
 
 /**
@@ -73,6 +75,7 @@ class RecipeRepository internal constructor(private val repo: FamilyRepository) 
             steps = RecipeImport.stepsFrom(edit.stepLines),
             sourceUrl = edit.sourceUrl?.trim()?.takeIf { it.isNotEmpty() },
             notes = edit.notes.trim(),
+            photoPath = if (edit.removePhoto) null else r.photoPath,
             status = RecipeStatus.CONFIRMED,
         )
     }
@@ -80,9 +83,9 @@ class RecipeRepository internal constructor(private val repo: FamilyRepository) 
     /**
      * Text fetched later for a suggestion that came as a link (Instagram caption, ADR 0007). Stays a
      * suggestion: the rules filled it, a person still confirms. The link-only title gives way to the
-     * caption's title; source link and notes stay.
+     * caption's title; source link and notes stay. [photoPath] (the post's cover) only fills a gap.
      */
-    fun fillSuggestion(id: String, draft: RecipeDraft): Undo = changeRecipe(id) { r ->
+    fun fillSuggestion(id: String, draft: RecipeDraft, photoPath: String? = null): Undo = changeRecipe(id) { r ->
         val placeholder = draft.title == RecipeImport.UNTITLED || draft.title == RecipeImport.INSTAGRAM_TITLE
         r.copy(
             title = if (placeholder) r.title else draft.title,
@@ -91,7 +94,17 @@ class RecipeRepository internal constructor(private val repo: FamilyRepository) 
             ingredients = draft.ingredients,
             steps = draft.steps,
             sourceText = draft.sourceText?.take(SharedInput.MAX_TEXT_CHARS),
+            photoPath = r.photoPath ?: photoPath,
         )
+    }
+
+    /**
+     * A picture for a recipe that has none yet (cover fetched later, frame of the video). Never
+     * replaces a picture, so a picture chosen meanwhile on another phone stays. Null: nothing changed.
+     */
+    fun attachPhoto(id: String, photoPath: String): Undo? {
+        if (recipe(id)?.photoPath != null) return null
+        return changeRecipe(id) { it.copy(photoPath = photoPath) }
     }
 
     /** "Passt" on a suggestion. */
@@ -114,7 +127,9 @@ class RecipeRepository internal constructor(private val repo: FamilyRepository) 
 }
 
 private fun Recipe.emptied() =
-    copy(deleted = true, ingredients = emptyList(), steps = emptyList(), sourceText = null, notes = "")
+    copy(
+        deleted = true, ingredients = emptyList(), steps = emptyList(), sourceText = null, notes = "", photoPath = null,
+    )
 
 /**
  * The shared shopping list. Every entry is its own record with its own stamp, ticking is a field

@@ -246,7 +246,7 @@ private fun Main(
                 } else if (peopleRoute != null) {
                     PeopleScreen(peopleRoute, data, model, photos, reducedMotion)
                 } else if (kitchenRoute != null) {
-                    KitchenScreen(kitchenRoute, data, model)
+                    KitchenScreen(kitchenRoute, data, model, photos)
                 } else when (tab) {
                     Tab.TODAY -> TodayScreen(data, model, photos, reducedMotion)
                     Tab.FAMILY -> FamilyScreen(data, model, photos, reducedMotion)

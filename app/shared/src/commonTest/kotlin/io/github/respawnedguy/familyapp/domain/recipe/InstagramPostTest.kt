@@ -171,4 +171,64 @@ class InstagramPostTest {
         assertFalse(InstagramLink.isVideoUrl("https://scontent.cdninstagram.com/" + "a".repeat(4_100)))
         assertFalse(InstagramLink.isVideoUrl("https://scontent.cdninstagram.com"))
     }
+
+    // ---- Preview picture (threat model TE-13) ---------------------------------------------------
+
+    private val cdnCover = "https://scontent-fra5-1.cdninstagram.com/v/t51.2885-15/cover.jpg?stp=dst-jpg_e35&oh=sig&oe=6750"
+
+    private fun embedWithMedia(fields: Map<String, String>): String {
+        val media = buildJsonObject {
+            putJsonObject("gql_data") {
+                putJsonObject("shortcode_media") {
+                    put("is_video", true)
+                    fields.forEach { (k, v) -> put(k, v) }
+                    putJsonObject("edge_media_to_caption") {
+                        putJsonArray("edges") { addJsonObject { putJsonObject("node") { put("text", caption) } } }
+                    }
+                }
+            }
+        }
+        return "<script>{\"contextJSON\":${Json.encodeToString(String.serializer(), media.toString())}}</script>"
+    }
+
+    @Test
+    fun coverComesFromDisplayUrlElseThumbnail() {
+        assertEquals(cdnCover, InstagramPage.fromEmbed(embedWithMedia(mapOf("display_url" to cdnCover)))!!.imageUrl)
+        val thumb = "https://instagram.fmuc1-1.fna.fbcdn.net/v/t51/thumb.jpg"
+        assertEquals(thumb, InstagramPage.fromEmbed(embedWithMedia(mapOf("thumbnail_src" to thumb)))!!.imageUrl)
+        assertNull(InstagramPage.fromEmbed(embedWithJson())!!.imageUrl, "no cover, no picture, caption still there")
+    }
+
+    @Test
+    fun imagePostCoverComesFromTheEmbeddedImage() {
+        val html = embedImage.replace(
+            "<div class=\"Caption\">",
+            "<img class=\"EmbeddedMediaImage\" alt=\"x\" src=\"${cdnCover.replace("&", "&amp;")}\" /><div class=\"Caption\">",
+        )
+        assertEquals(cdnCover, InstagramPage.fromEmbed(html)!!.imageUrl, "entities in the attribute are decoded")
+    }
+
+    @Test
+    fun postPageCoverComesFromOpenGraph() {
+        val html = postPage("1 likes - koch.beispiel am November 17, 2026: &quot;Suppe&quot;.")
+            .replace("</head>", "<meta property=\"og:image\" content=\"${cdnCover.replace("&", "&amp;")}\" /></head>")
+        assertEquals(cdnCover, InstagramPage.fromPostPage(html)!!.imageUrl)
+    }
+
+    @Test
+    fun coverOnlyFromInstagramsCdnOverHttps() {
+        listOf(
+            "http://scontent.cdninstagram.com/cover.jpg",
+            "https://cdninstagram.com.example.org/cover.jpg",
+            "https://tracker.example/cover.jpg",
+            "https://user@scontent.cdninstagram.com/cover.jpg",
+            "https://scontent.cdninstagram.com:8443/cover.jpg",
+            "javascript:alert(1)",
+            "file:///data/data/x",
+        ).forEach { url ->
+            assertFalse(InstagramLink.isImageUrl(url), url)
+            assertNull(InstagramPage.fromEmbed(embedWithMedia(mapOf("display_url" to url)))!!.imageUrl, url)
+        }
+        assertFalse(InstagramLink.isImageUrl("https://scontent.cdninstagram.com/" + "a".repeat(5_000)))
+    }
 }

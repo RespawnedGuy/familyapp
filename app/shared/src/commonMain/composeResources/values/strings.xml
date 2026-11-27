@@ -111,6 +111,10 @@
     <string name="kitchen_field_notes">Notizen (z. B. doppelt Knoblauch)</string>
     <string name="kitchen_save">Speichern</string>
     <string name="kitchen_delete">Rezept löschen</string>
+    <string name="kitchen_photo_fetch">Bild von Instagram holen</string>
+    <string name="kitchen_photo_remove">Bild entfernen</string>
+    <string name="kitchen_photo_removed_hint">Das Bild wird beim Speichern entfernt.</string>
+    <string name="kitchen_photo_keep">Bild behalten</string>
     <string name="kitchen_new_hint">Füge ein Rezept ein oder tippe es: Titel, Zutaten, Zubereitung. Die App teilt es selbst auf, danach kannst du alles ändern.</string>
     <string name="kitchen_new_create">Rezept anlegen</string>
     <string name="kitchen_fill_title">Aus Text neu einlesen</string>
