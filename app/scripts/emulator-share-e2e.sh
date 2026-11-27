@@ -50,7 +50,9 @@ from_adb() { # <uri> <text>: adb plays an app that sends a link (no URI grant po
 }
 from_app() { # <kind> <text>: the test app shares one of its files with a read grant
   # Fresh task each time: a second start must not just resurface the previous share.
-  adb shell am start -W --activity-clear-task -n "$SRC/.ShareSourceActivity" --es kind "$1" --es text "'$2'" >/dev/null 2>&1
+  # No -W: the test app hands over and finishes at once, and on API 26 `am start -W` then waits
+  # for a launch that never reports done (blocked the release for 6 hours). expect() waits instead.
+  adb shell am start --activity-clear-task -n "$SRC/.ShareSourceActivity" --es kind "$1" --es text "'$2'" >/dev/null 2>&1
 }
 expect() { # <label> <regex of the message>
   if wait_text "$2" 20; then pass "$1"; else fail "$1"; fi
