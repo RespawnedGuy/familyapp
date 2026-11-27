@@ -23,13 +23,14 @@ class InstagramPostTest {
         "Zubereitung:\n1. Zwiebel anbraten.\n2. Linsen 15 Minuten kochen.\n\n#suppe \"lecker\" & schnell"
 
     /** The embed page of a reel: the media JSON is a string inside the page's own JSON (double encoded). */
-    private fun embedWithJson(text: String = caption, isVideo: Boolean = true): String {
+    private fun embedWithJson(text: String = caption, isVideo: Boolean = true, videoUrl: String? = null): String {
         val media = buildJsonObject {
             putJsonObject("context") { put("type", "GraphVideo"); put("shortcode", "Abc_123-x") }
             putJsonObject("gql_data") {
                 putJsonObject("shortcode_media") {
                     put("__typename", if (isVideo) "GraphVideo" else "GraphSidecar")
                     put("is_video", isVideo)
+                    videoUrl?.let { put("video_url", it) }
                     putJsonObject("owner") { put("username", "koch.beispiel") }
                     putJsonObject("edge_media_to_caption") {
                         putJsonArray("edges") { addJsonObject { putJsonObject("node") { put("text", text) } } }
@@ -136,5 +137,38 @@ class InstagramPostTest {
     @Test
     fun numericEntitiesOutsideUnicodeStay() {
         assertEquals("😀 &#xD800; &#1114112; ' ", HtmlText.decodeEntities("&#128512; &#xD800; &#1114112; &apos;&nbsp;"))
+    }
+
+    private val cdn = "https://scontent-fra5-2.cdninstagram.com/o1/v/t16/f2/m86/clip.mp4?efg=e30&_nc_ht=x&oh=00_sig"
+
+    @Test
+    fun videoAddressComesFromTheEmbedJsonOnlyIfItIsInstagramsCdn() {
+        assertEquals(cdn, InstagramPage.fromEmbed(embedWithJson(videoUrl = cdn))!!.videoUrl)
+        assertNull(InstagramPage.fromEmbed(embedWithJson(videoUrl = "https://evil.example/clip.mp4"))!!.videoUrl)
+        assertNull(InstagramPage.fromEmbed(embedWithJson())!!.videoUrl)
+        assertNull(InstagramPage.fromEmbed(embedImage)!!.videoUrl)
+    }
+
+    @Test
+    fun openGraphVideoIsDecodedAndChecked() {
+        val page = "<meta property=\"og:video\" content=\"https://video-fra3-1.xx.fbcdn.net/v/clip.mp4?a=1&amp;b=2\" />" +
+            postPage("1 like - koch.beispiel am 1. Dezember 2026: &quot;Suppe&quot;.")
+        val post = InstagramPage.fromPostPage(page)!!
+        assertTrue(post.isVideo)
+        assertEquals("https://video-fra3-1.xx.fbcdn.net/v/clip.mp4?a=1&b=2", post.videoUrl)
+    }
+
+    @Test
+    fun videoUrlsOnlyFromTheCdnHosts() {
+        assertTrue(InstagramLink.isVideoUrl(cdn))
+        assertTrue(InstagramLink.isVideoUrl("https://video.xx.fbcdn.net/v/t42/clip.mp4"))
+        assertFalse(InstagramLink.isVideoUrl("http://scontent.cdninstagram.com/clip.mp4"), "only https")
+        assertFalse(InstagramLink.isVideoUrl("https://cdninstagram.com.example.org/clip.mp4"))
+        assertFalse(InstagramLink.isVideoUrl("https://evilcdninstagram.com/clip.mp4"))
+        assertFalse(InstagramLink.isVideoUrl("https://user@scontent.cdninstagram.com/clip.mp4"))
+        assertFalse(InstagramLink.isVideoUrl("https://scontent.cdninstagram.com:8443/clip.mp4"))
+        assertFalse(InstagramLink.isVideoUrl("https://scontent.cdninstagram.com/a b.mp4"))
+        assertFalse(InstagramLink.isVideoUrl("https://scontent.cdninstagram.com/" + "a".repeat(4_100)))
+        assertFalse(InstagramLink.isVideoUrl("https://scontent.cdninstagram.com"))
     }
 }

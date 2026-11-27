@@ -46,7 +46,7 @@ class KitchenModel internal constructor(
 ) {
     val recipes = RecipeActions(
         repo, this, show, background,
-        instagram = platform.instagramPages?.let(::InstagramImport),
+        instagram = platform.instagramPages?.let { InstagramImport(it, platform.instagramVideos) },
         ai = { repo.current.settings.recipeAiKey?.let(platform::recipeAi) },
     )
     val shopping = ShoppingActions(repo, this, show)
@@ -173,26 +173,35 @@ class RecipeActions internal constructor(
                 undo,
             )
         } else {
-            // The rules found no ingredients; the person switched the cloud AI on (ADR 0007).
-            show(ASKING_AI, undo)
+            // The rules found no ingredients; the person switched the cloud AI on (ADR 0007, 0008).
+            val fetcher = instagram ?: return
+            val video = fetcher.videoFor(post, cloud)
+            show(if (video != null) ASKING_AI_VIDEO else ASKING_AI, undo)
             background.scope.launch {
-                val outcome = withContext(background.io) {
-                    runCatching { cloud.extract(post.caption) }.getOrElse { AiOutcome.Failed(AI_NO_ANSWER) }
+                val (outcome, sawVideo) = withContext(background.io) {
+                    runCatching { fetcher.ask(cloud, post.caption, video) }
+                        .getOrElse { AiOutcome.Failed(AI_NO_ANSWER) to false }
                 }
-                fillFromAi(filled, post, outcome)
+                fillFromAi(filled, post, outcome, sawVideo)
             }
         }
     }
 
     /** The AI's reading goes into the suggestion like the rules' would; a person still confirms. */
-    private fun fillFromAi(filled: Recipe, post: InstagramPost, outcome: AiOutcome) {
+    private fun fillFromAi(filled: Recipe, post: InstagramPost, outcome: AiOutcome, sawVideo: Boolean) {
         val current = store.recipe(filled.id) ?: return
         if (current.stamp != filled.stamp) return
         val draft = (outcome as? AiOutcome.Ok)?.recipe?.toDraft(post.caption)
         when {
             outcome is AiOutcome.Failed -> show("$AI_FAILED ${outcome.reason}", null)
-            draft == null || draft.needsText ->
-                show(if (post.isVideo) AI_FOUND_NOTHING_VIDEO else AI_FOUND_NOTHING, null)
+            draft == null || draft.needsText -> show(
+                when {
+                    sawVideo -> AI_FOUND_NOTHING_IN_VIDEO
+                    post.isVideo -> AI_FOUND_NOTHING_VIDEO
+                    else -> AI_FOUND_NOTHING
+                },
+                null,
+            )
             else -> show(AI_FILLED, store.fillSuggestion(filled.id, draft))
         }
     }
@@ -250,12 +259,16 @@ class RecipeActions internal constructor(
         const val CAPTION_WITHOUT_INGREDIENTS_VIDEO =
             "Text von Instagram geholt, aber keine Zutatenliste darin. Steht das Rezept nur im Video? Bitte ergänzen."
         const val ASKING_AI = "Text von Instagram geholt. Die Regeln finden keine Zutaten, frage die Cloud-KI …"
+        const val ASKING_AI_VIDEO =
+            "Text von Instagram geholt, aber ohne Zutaten. Die Cloud-KI sieht sich das Video an …"
         const val AI_FILLED = "Rezept mit Cloud-KI ausgelesen. Bitte im Vorschlag prüfen."
         const val AI_FAILED = "Cloud-KI hat nicht geholfen."
         const val AI_NO_ANSWER = "Keine Antwort."
         const val AI_FOUND_NOTHING = "Auch die Cloud-KI findet im Text kein Rezept. Bitte im Vorschlag ergänzen."
         const val AI_FOUND_NOTHING_VIDEO =
             "Auch die Cloud-KI findet im Text kein Rezept. Steht es nur im Video? Bitte ergänzen."
+        const val AI_FOUND_NOTHING_IN_VIDEO =
+            "Auch im Video findet die Cloud-KI kein Rezept. Bitte im Vorschlag ergänzen."
         const val CAPTION_UNAVAILABLE =
             "Text von Instagram nicht abrufbar. Beschreibung in Instagram kopieren und im Vorschlag einfügen."
         const val CONFIRMED = "Rezept bestätigt."

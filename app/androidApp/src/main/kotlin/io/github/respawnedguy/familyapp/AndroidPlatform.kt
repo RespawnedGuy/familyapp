@@ -14,8 +14,12 @@ import android.view.WindowManager
 import androidx.core.content.FileProvider
 import io.github.respawnedguy.familyapp.data.BackupCrypto
 import io.github.respawnedguy.familyapp.data.BackupFolder
+import io.github.respawnedguy.familyapp.data.AiProvider
 import io.github.respawnedguy.familyapp.data.HttpClaudeRecipeAi
+import io.github.respawnedguy.familyapp.data.HttpGeminiRecipeAi
 import io.github.respawnedguy.familyapp.data.HttpInstagramPages
+import io.github.respawnedguy.familyapp.data.HttpInstagramVideos
+import io.github.respawnedguy.familyapp.data.RecipeAi
 import io.github.respawnedguy.familyapp.data.PhotoCleanup
 import io.github.respawnedguy.familyapp.data.ShareRejection
 import io.github.respawnedguy.familyapp.data.SharedImage
@@ -51,8 +55,15 @@ class AndroidPlatform(private val app: FamilyApplication) : PlatformServices {
     /** Caption of a shared Instagram post, fetched without login or yt-dlp (ADR 0007). */
     override val instagramPages = HttpInstagramPages()
 
-    /** Optional, only with the API key from the settings (ADR 0007). */
-    override fun recipeAi(apiKey: String) = HttpClaudeRecipeAi(apiKey)
+    /** Video of a shared reel for Gemini, in the cache only while it is read (ADR 0008). */
+    override val instagramVideos = HttpInstagramVideos(File(app.cacheDir, "instagram-video"))
+
+    /** Optional, only with the API key from the settings; the key's prefix names the provider (ADR 0007, 0008). */
+    override fun recipeAi(apiKey: String): RecipeAi? = when (AiProvider.ofKey(apiKey)) {
+        AiProvider.GEMINI -> HttpGeminiRecipeAi(apiKey)
+        AiProvider.CLAUDE -> HttpClaudeRecipeAi(apiKey)
+        null -> null
+    }
 
     override fun elapsedMs(): Long = SystemClock.elapsedRealtime()
 

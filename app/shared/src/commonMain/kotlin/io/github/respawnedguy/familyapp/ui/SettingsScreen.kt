@@ -1,11 +1,15 @@
 package io.github.respawnedguy.familyapp.ui
 
+import io.github.respawnedguy.familyapp.data.AiProvider
 import io.github.respawnedguy.familyapp.resources.recipe_ai_enable
+import io.github.respawnedguy.familyapp.resources.recipe_ai_claude
 import io.github.respawnedguy.familyapp.resources.recipe_ai_explain
+import io.github.respawnedguy.familyapp.resources.recipe_ai_gemini
 import io.github.respawnedguy.familyapp.resources.recipe_ai_key
 import io.github.respawnedguy.familyapp.resources.recipe_ai_off
 import io.github.respawnedguy.familyapp.resources.recipe_ai_on
 import io.github.respawnedguy.familyapp.resources.recipe_ai_title
+import io.github.respawnedguy.familyapp.resources.recipe_ai_unknown
 import io.github.respawnedguy.familyapp.resources.reminders_blocked
 import org.jetbrains.compose.resources.stringResource
 import io.github.respawnedguy.familyapp.resources.Res
@@ -204,8 +208,9 @@ fun SettingsScreen(data: FamilyData, model: AppModel, updates: UpdateController?
 
 
 /**
- * Optional Claude for recipes (ADR 0007). Off without a key. Says plainly what leaves the phone:
- * only the text of a shared recipe, never family data. The key is shown masked once saved.
+ * Optional cloud AI for recipes (ADR 0007, 0008). Off without a key; the key's prefix says whether it
+ * is Gemini (free, reads the video) or Claude. Says plainly what leaves the phone: only the public
+ * text and video of a shared post, never family data. The key is shown masked once saved.
  */
 @Composable
 private fun RecipeAiSettings(savedKey: String?, model: AppModel) {
@@ -216,7 +221,15 @@ private fun RecipeAiSettings(savedKey: String?, model: AppModel) {
         fontSize = 12.sp, color = c.textTertiary,
     )
     if (savedKey != null) {
-        Text(stringResource(Res.string.recipe_ai_on, savedKey.takeLast(KEY_TAIL)), fontSize = 15.sp, color = c.text)
+        val provider = when (AiProvider.ofKey(savedKey)) {
+            AiProvider.GEMINI -> Res.string.recipe_ai_gemini
+            AiProvider.CLAUDE -> Res.string.recipe_ai_claude
+            null -> Res.string.recipe_ai_unknown
+        }
+        Text(
+            stringResource(Res.string.recipe_ai_on, stringResource(provider), savedKey.takeLast(KEY_TAIL)),
+            fontSize = 15.sp, color = c.text,
+        )
         OutlinedButton(onClick = { model.setRecipeAiKey(null) }) { Text(stringResource(Res.string.recipe_ai_off)) }
     } else {
         OutlinedTextField(
@@ -226,8 +239,11 @@ private fun RecipeAiSettings(savedKey: String?, model: AppModel) {
             singleLine = true, visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
         )
-        if (key.isNotEmpty()) {
-            Button(onClick = { model.setRecipeAiKey(key); key = "" }) {
+        when {
+            key.isEmpty() -> Unit
+            AiProvider.ofKey(key) == null ->
+                Text(stringResource(Res.string.recipe_ai_unknown), fontSize = 12.sp, color = c.textTertiary)
+            else -> Button(onClick = { model.setRecipeAiKey(key); key = "" }) {
                 Text(stringResource(Res.string.recipe_ai_enable))
             }
         }

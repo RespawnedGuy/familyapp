@@ -13,6 +13,8 @@ data class InstagramPost(
     val username: String?,
     val isVideo: Boolean,
     val source: Source,
+    /** Signed address of the video file on Instagram's CDN, only if [InstagramLink.isVideoUrl] allows it. */
+    val videoUrl: String? = null,
 ) {
     /** Which part of Instagram's pages the caption came from (for the threat model and debugging). */
     enum class Source { EMBED_JSON, EMBED_HTML, OPEN_GRAPH }
@@ -37,6 +39,19 @@ object InstagramLink {
     fun embedPath(shortcode: String) = "/p/$shortcode/embed/captioned/"
 
     fun postPath(shortcode: String) = "/p/$shortcode/"
+
+    /**
+     * A video address taken from Instagram's own page (never from the shared link) may only point to
+     * Instagram's CDN: https, no user, no port (threat model TE-12). The address is signed and expires.
+     */
+    fun isVideoUrl(url: String): Boolean {
+        val host = VIDEO.matchEntire(url)?.groupValues?.get(1)?.lowercase() ?: return false
+        return url.length <= MAX_VIDEO_URL && VIDEO_HOSTS.any { host.endsWith(it) }
+    }
+
+    private val VIDEO = Regex("""^https://([A-Za-z0-9.-]+)/[^\s#\\]*$""")
+    private val VIDEO_HOSTS = listOf(".cdninstagram.com", ".fbcdn.net")
+    private const val MAX_VIDEO_URL = 4_096
 }
 
 /**
@@ -61,8 +76,8 @@ object InstagramPage {
         val caption = content.substring(start + OG_QUOTE.length)
             .trimEnd().removeSuffix(".").trimEnd().removeSuffix("\"")
         val username = content.substring(0, start).substringAfter(" - ", "").substringBefore(' ')
-        val isVideo = HtmlText.metaContent(html, "og:video") != null
-        return post(caption, username, isVideo, InstagramPost.Source.OPEN_GRAPH)
+        val video = HtmlText.metaContent(html, "og:video")
+        return post(caption, username, video != null, InstagramPost.Source.OPEN_GRAPH, video)
     }
 
     private fun fromContextJson(html: String): InstagramPost? {
@@ -75,7 +90,8 @@ object InstagramPage {
             ?.obj("node")?.string("text")
         val isVideo = (media["is_video"] as? JsonPrimitive)?.booleanOrNull == true
         val username = media.obj("owner")?.string("username")
-        return caption?.let { post(it, username, isVideo, InstagramPost.Source.EMBED_JSON) }
+        val video = media.string("video_url")
+        return caption?.let { post(it, username, isVideo, InstagramPost.Source.EMBED_JSON, video) }
     }
 
     private fun fromCaptionBlock(html: String): InstagramPost? {
@@ -96,12 +112,14 @@ object InstagramPage {
         username: String?,
         isVideo: Boolean,
         source: InstagramPost.Source,
+        videoUrl: String? = null,
     ): InstagramPost? {
         val text = caption.replace("\r\n", "\n").trim()
         return if (text.isEmpty() || text.length > MAX_CAPTION) {
             null
         } else {
-            InstagramPost(text, username?.takeIf { USERNAME.matches(it) }, isVideo, source)
+            val video = videoUrl?.takeIf(InstagramLink::isVideoUrl)
+            InstagramPost(text, username?.takeIf { USERNAME.matches(it) }, isVideo, source, video)
         }
     }
 
