@@ -106,8 +106,9 @@ LINK_SAVED="(Link als Rezeptvorschlag gespeichert|Text von Instagram nicht abruf
 wait_text "$LINK_SAVED" 60 && pass "Instagram-Link als Rezeptvorschlag gespeichert" || fail "Instagram-Link als Rezeptvorschlag gespeichert"
 wait_gone "$LINK_SAVED" 20 || true
 tap "Familie"
-if wait_text "Kochbibliothek" 10 && tap "Rezepte" && wait_text "Rezept von Instagram" 10; then
-  pass "Vorschlag steht in der Kochbibliothek unter Familie"
+# The library is the tab "Rezepte" at the top of Familie (since 27.11.2026).
+if wait_text "Rezepte" 10 && tap "Rezepte" && wait_text "Rezept von Instagram" 10; then
+  pass "Vorschlag steht unter Familie › Rezepte"
 else
   fail "Vorschlag fehlt in der Kochbibliothek"
 fi

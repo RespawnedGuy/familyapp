@@ -32,6 +32,12 @@ import kotlinx.datetime.LocalDate
 
 enum class Tab { TODAY, FAMILY, UPCOMING, SEARCH }
 
+/**
+ * The tabs at the top of "Familie" (Nils, 27.11.2026). [TASKS] is the default with the load card;
+ * contacts, people (portfolios), recipes and shopping no longer hide behind entry cards.
+ */
+enum class FamilySection { TASKS, CONTACTS, PEOPLE, RECIPES, SHOPPING }
+
 /** A restore waits for the recovery code; [wrong] means the last code did not open the backup. */
 data class RestoreCodeRequest(val folder: String, val wrong: Boolean)
 
@@ -63,6 +69,9 @@ class AppModel(
     private val _tab = MutableStateFlow(Tab.TODAY)
     val tab: StateFlow<Tab> = _tab.asStateFlow()
 
+    private val _section = MutableStateFlow(FamilySection.TASKS)
+    val section: StateFlow<FamilySection> = _section.asStateFlow()
+
     private val _settingsOpen = MutableStateFlow(false)
     val settingsOpen: StateFlow<Boolean> = _settingsOpen.asStateFlow()
 
@@ -73,13 +82,15 @@ class AppModel(
     val capture: StateFlow<CaptureState> = _capture.asStateFlow()
 
     /** Kitchen library: recipes, cooking mode, shopping list (docs/kochbibliothek.md). */
-    val kitchen = KitchenModel(repo, platform, Background(scope, io)) { message, undo -> show(message, undo) }
+    val kitchen = KitchenModel(repo, platform, Background(scope, io), { openSection(it) }) { message, undo ->
+        show(message, undo)
+    }
 
     /** Offers, season and meal suggestions (docs/angebote-und-vorschlaege.md). */
     val offers = OffersModel(repo, platform, Background(scope, io), kitchen) { message, undo -> show(message, undo) }
 
     /** Shared contacts and the portfolio per person (docs/kontakte-und-portfolio.md). */
-    val people = PeopleModel(repo, platform, { message, undo -> show(message, undo) }) {
+    val people = PeopleModel(repo, platform, { message, undo -> show(message, undo) }, { openSection(it) }) {
         _settingsOpen.value = false
         kitchen.close()
     }
@@ -99,10 +110,23 @@ class AppModel(
     // ---- Navigation --------------------------------------------------------------------------
 
     fun select(tab: Tab) {
+        // "Familie" tapped again while its list is showing: back to the default tab "Aufgaben".
+        val again = tab == Tab.FAMILY && _tab.value == Tab.FAMILY && !_settingsOpen.value &&
+            kitchen.route.value == null && people.route.value == null
+        if (again) _section.value = FamilySection.TASKS
         _settingsOpen.value = false
         kitchen.close()
         people.close()
         _tab.value = tab
+    }
+
+    /** One of the tabs under "Familie", from anywhere (a card under Heute, a saved contact list …). */
+    fun openSection(section: FamilySection) {
+        _settingsOpen.value = false
+        kitchen.close()
+        people.close()
+        _tab.value = Tab.FAMILY
+        _section.value = section
     }
 
     fun openSettings() {
@@ -111,13 +135,20 @@ class AppModel(
         _settingsOpen.value = true
     }
 
-    /** System back: sheet, settings, contacts and portfolios, the kitchen, then "Heute". False means: leave the app. */
+    /**
+     * System back: sheet, settings, contacts and portfolios, the kitchen, then the default tab of
+     * "Familie", then "Heute". False means: leave the app.
+     */
     fun handleBack(): Boolean = when {
         _capture.value != CaptureState.Closed -> { dismissCapture(); true }
         offers.plan.sheet.value != null -> { offers.plan.close(); true }
         _settingsOpen.value -> { _settingsOpen.value = false; true }
         people.back() -> true
         kitchen.back() -> true
+        _tab.value == Tab.FAMILY && _section.value != FamilySection.TASKS -> {
+            _section.value = FamilySection.TASKS
+            true
+        }
         _tab.value != Tab.TODAY -> { _tab.value = Tab.TODAY; true }
         else -> false
     }
@@ -343,7 +374,7 @@ class AppModel(
      */
     fun captureSharedContact(vcard: String?) {
         if (repo.current.selfId == null) return
-        _tab.value = Tab.FAMILY
+        openSection(FamilySection.CONTACTS)
         if (vcard == null) show("Kontakt nicht übernommen: Die Datei ließ sich nicht lesen oder ist größer als 1 MB.")
         else people.contacts.importVCard(vcard)
     }

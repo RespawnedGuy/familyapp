@@ -12,9 +12,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/** Where in contacts and portfolios the person is. Empty stack in [PeopleModel.route]: not there. */
+/**
+ * Where in contacts and portfolios the person is. Empty stack in [PeopleModel.route]: not there.
+ * The contact list itself is the tab "Kontakte" under Familie ([FamilySection.CONTACTS]).
+ */
 sealed interface PeopleRoute {
-    data object Contacts : PeopleRoute
     data class Contact(val id: String) : PeopleRoute
 
     /** [id] null: a new contact, linked to [memberId] when it comes from a portfolio. */
@@ -32,6 +34,8 @@ class PeopleModel internal constructor(
     private val repo: FamilyRepository,
     private val platform: ContactActions,
     show: (String, Undo?) -> Unit,
+    /** The contact list and the people are tabs under "Familie", not pages here. */
+    private val sections: (FamilySection) -> Unit = {},
     /** Called whenever a people screen opens, so the kitchen and settings close. */
     private val onOpen: () -> Unit = {},
 ) {
@@ -61,7 +65,8 @@ class PeopleModel internal constructor(
         push(route)
     }
 
-    fun openContacts() = push(PeopleRoute.Contacts)
+    /** The tab "Kontakte" under Familie; open contact pages close. */
+    fun openContacts() = sections(FamilySection.CONTACTS)
 
     fun openContact(id: String) {
         if (repo.contactStore.contact(id) != null) push(PeopleRoute.Contact(id))

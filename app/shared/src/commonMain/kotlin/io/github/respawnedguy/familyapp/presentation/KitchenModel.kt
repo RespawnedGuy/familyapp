@@ -8,12 +8,16 @@ import io.github.respawnedguy.familyapp.data.RecipeAi
 import io.github.respawnedguy.familyapp.data.RecipeEdit
 import io.github.respawnedguy.familyapp.data.Undo
 import io.github.respawnedguy.familyapp.data.plus
+import io.github.respawnedguy.familyapp.domain.offers.Offer
+import io.github.respawnedguy.familyapp.domain.recipe.IngredientKey
 import io.github.respawnedguy.familyapp.domain.recipe.InstagramLink
+import io.github.respawnedguy.familyapp.domain.recipe.NewEntry
 import io.github.respawnedguy.familyapp.domain.recipe.InstagramPost
 import io.github.respawnedguy.familyapp.domain.recipe.Recipe
 import io.github.respawnedguy.familyapp.domain.recipe.RecipeImport
 import io.github.respawnedguy.familyapp.domain.recipe.RecipeStatus
 import io.github.respawnedguy.familyapp.domain.recipe.RecipeViews
+import io.github.respawnedguy.familyapp.domain.recipe.ShoppingEntry
 import io.github.respawnedguy.familyapp.domain.recipe.ShoppingLine
 import io.github.respawnedguy.familyapp.domain.recipe.ShoppingList
 import kotlinx.coroutines.CoroutineDispatcher
@@ -29,8 +33,6 @@ import kotlinx.datetime.plus
 
 /** Where in the kitchen library the person is. Null in [KitchenModel.route] means: not in the kitchen. */
 sealed interface KitchenRoute {
-    data object Library : KitchenRoute
-    data object Shopping : KitchenRoute
     data class Detail(val id: String) : KitchenRoute
 
     /** [id] null: a new recipe from pasted or typed text. */
@@ -47,6 +49,8 @@ class KitchenModel internal constructor(
     private val repo: FamilyRepository,
     private val platform: PlatformServices,
     background: Background,
+    /** Recipes and the shopping list are tabs under "Familie" ([FamilySection]), not pages here. */
+    private val sections: (FamilySection) -> Unit,
     show: (String, Undo?) -> Unit,
 ) {
     private val instagram = platform.instagramPages?.let {
@@ -76,9 +80,11 @@ class KitchenModel internal constructor(
         if (cooking != wasCooking) platform.keepScreenOn(cooking)
     }
 
-    fun openLibrary() = go(KitchenRoute.Library)
+    /** The library is the tab "Rezepte" under Familie; any open recipe page closes. */
+    fun openLibrary() = sections(FamilySection.RECIPES)
 
-    fun openShopping() = go(KitchenRoute.Shopping)
+    /** The shopping list is the tab "Einkauf" under Familie. */
+    fun openShopping() = sections(FamilySection.SHOPPING)
 
     fun openRecipe(id: String) {
         val recipe = repo.recipeStore.recipe(id) ?: return
@@ -98,13 +104,12 @@ class KitchenModel internal constructor(
 
     fun close() = go(null)
 
-    /** System back inside the kitchen. False when the kitchen is not open. */
+    /** System back inside the kitchen; null shows the tab it was opened from. False when no recipe page is open. */
     fun back(): Boolean {
         val next = when (val r = _route.value) {
             null -> return false
-            KitchenRoute.Library, KitchenRoute.Shopping -> null
-            is KitchenRoute.Detail -> KitchenRoute.Library
-            is KitchenRoute.Edit -> r.id?.let { KitchenRoute.Detail(it) } ?: KitchenRoute.Library
+            is KitchenRoute.Detail -> null
+            is KitchenRoute.Edit -> r.id?.let { KitchenRoute.Detail(it) }
             is KitchenRoute.Cook -> KitchenRoute.Detail(r.id)
         }
         go(next)
@@ -265,7 +270,7 @@ class RecipeActions internal constructor(
 
     fun delete(recipe: Recipe) {
         val undo = store.delete(recipe.id)
-        nav.go(KitchenRoute.Library)
+        nav.openLibrary()
         show(DELETED, undo)
     }
 
@@ -389,6 +394,25 @@ class ShoppingActions internal constructor(
         if (entries.isNotEmpty()) store.addEntries(entries)
     }
 
+    /**
+     * "Auf die Liste" on an offer under Familie › Einkauf: the product as it is called in the leaflet,
+     * with market and price beside it (Empfehlung 12), undo on the feedback bar. Market text enters
+     * the synced family data only on a tap and never longer than [MAX_OFFER_NAME] (threat model AN-8).
+     */
+    fun addOffer(offer: Offer) {
+        val name = offer.title.trim().take(MAX_OFFER_NAME).trim()
+        if (name.isEmpty()) return
+        val undo = store.addEntries(
+            listOf(NewEntry(name, null, null, ask = false)),
+            offers = mapOf(IngredientKey.of(name) to OffersModel.offerNote(offer)),
+        )
+        show("„$name“ steht auf der Einkaufsliste.", undo)
+    }
+
+    /** Names of the lines still to buy, lower case, so an offer already on the list says so. */
+    fun openNames(entries: List<ShoppingEntry> = repo.current.shopping): Set<String> =
+        entries.filter { !it.deleted && !it.checked && !it.ask }.map { it.name.trim().lowercase() }.toSet()
+
     fun toggle(line: ShoppingLine) {
         store.setChecked(line.entryIds, !line.checked)
     }
@@ -404,6 +428,9 @@ class ShoppingActions internal constructor(
     companion object {
         const val NOTHING_TO_BUY = "Dieses Rezept hat keine Zutaten zum Einkaufen."
         const val CLEARED = "Abgehakte Einträge entfernt."
+
+        /** Same limit as the market parsers (AN-2), checked again where the text enters the family data. */
+        const val MAX_OFFER_NAME = 160
 
         private val WEEKDAYS = listOf("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So")
 
