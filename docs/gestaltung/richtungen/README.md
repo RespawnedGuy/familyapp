@@ -1,8 +1,8 @@
 # Optik-Richtungen: weg vom generischen Look
 
-- Status: Vorschlag, wartet auf Nils' Wahl
+- Status: **Gewählt: A, organisch** (Nils, 28.11.2026: „A ist besser, aber sehr kantig, mach es organischer“). Dazu entschieden: keine Wischgesten, nur Knöpfe; „Irrelevant“ heißt „Löschen“.
 - Datum: 2026-11-28
-- Ansicht mit Mockups: [optik-richtungen.html](optik-richtungen.html) (im Browser öffnen), Bilder: [ist.png](ist.png), [dir-a.png](dir-a.png), [dir-b.png](dir-b.png), [dir-c.png](dir-c.png)
+- Ansicht mit Mockups: [optik-richtungen.html](optik-richtungen.html) (im Browser öffnen), Bilder: [ist.png](ist.png), [dir-a.png](dir-a.png), [dir-b.png](dir-b.png), [dir-c.png](dir-c.png), gewählt: [dir-a-organisch.png](dir-a-organisch.png)
 - Grundlage: [optik-haptik-klickwege.md](../optik-haptik-klickwege.md), `app/shared/.../ui/Theme.kt`, [Penpot-Tokens](../penpot/familyapp-tokens.json)
 
 Nils (28.11.2026): „Die Optik ist sehr generisch und wenig intuitiv.“ Dieses Dokument hält Befund, Grundsätze und drei Richtungen fest. Es ändert noch keinen Code.
@@ -51,6 +51,21 @@ Fest bleiben: Navigation A mit Erfassen in der Mitte, keine Vibration, feste Far
 Alle Kontraste nach der WCAG-Formel für relative Leuchtdichte nachgerechnet, alle Paare ≥ 4,5 : 1 (weiß auf Personenfarben 5,3–6,9, Tinte auf Gelb 12,8, Rot auf Grund ≥ 5,6). Alle Schriften stehen unter der SIL Open Font License.
 
 **Empfehlung:** B als Grundlage, für Familie › Aufgaben das Wochenraster aus A, die Zeitachse aus C später für Demnächst. Unabhängig davon sofort sinnvoll: Datum und KW auf Heute, Erklärtexte streichen, Regelbegründung erst beim Antippen, ein lauter Knopf pro Karte, eigene Schrift.
+
+## Gewählt: A, organisch
+
+Gleiche Ordnung wie A (Spalte je Person), aber weich:
+
+| | A (kantig) | A organisch |
+| --- | --- | --- |
+| Schrift | Archivo, schmal, Großbuchstaben | Rubik, normale Schreibweise |
+| Spalten | Rasterlinien | durchgehende helle Farbspuren je Person, runde Köpfe |
+| Formen | eckig | Radien 10–20 px, Erfassen als abgerundetes Quadrat |
+| Personen | farbiges Rechteck mit Initiale | Kreis mit Initiale, Offenes als gestrichelter Kreis „?“ |
+| Überfällig | roter Rahmen | weiches rotes Etikett mit Text |
+| Farben | Tinte #14213D auf Weiß | Tinte #1E2333 auf #FBFAF8, Spuren #E3EAF6 · #F5E6DB · #EEE3F4 · #E0EFE5, Rot #A3241C auf #FBE4E1 |
+
+Kontrast nachgerechnet: Text auf allen Spuren ≥ 12,6 : 1, Sekundärtext #545A6B ≥ 5,5 : 1, Rot ≥ 6,0 : 1, Weiß auf Tinte 15,6 : 1.
 
 ## Prüfung
 
