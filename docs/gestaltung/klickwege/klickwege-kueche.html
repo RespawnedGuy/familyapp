@@ -1,0 +1,289 @@
+<title>FamilyApp Klickwege Küche</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;800&family=Rubik:wght@400;500;600;700&display=swap">
+<style>
+
+/* Layout: one reading column for the argument, phone frames in pairs per direction; phones keep their own fixed light palettes. */
+:root{
+  --bg:#F3F4F6; --fg:#16181D; --muted:#555B66; --line:#D5D8DE; --panel:#FFFFFF; --mark:#2B50C8;
+  --font-page:"Public Sans", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121418;--fg:#ECEDEF;--muted:#A6ABB5;--line:#30343C;--panel:#1B1E24;--mark:#8EA6FF;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121418;--fg:#ECEDEF;--muted:#A6ABB5;--line:#30343C;--panel:#1B1E24;--mark:#8EA6FF;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--font-page);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
+.prose{max-width:68ch}
+h1{font-size:clamp(30px,5vw,46px);line-height:1.08;font-weight:800;letter-spacing:-.02em;margin:0 0 12px;text-wrap:balance}
+h2{font-size:26px;line-height:1.2;font-weight:800;margin:0 0 10px;text-wrap:balance}
+h3{font-size:18px;margin:0 0 6px}
+p{margin:0 0 12px}
+.lede{font-size:18px;color:var(--muted)}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:6px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:24px;align-items:start}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font-weight:600;color:var(--muted);font-size:13px}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+ul{margin:0;padding-left:20px}
+li{margin-bottom:6px}
+a{color:var(--mark)}
+.dir{display:flex;flex-direction:column;gap:20px;border-top:2px solid var(--fg);padding-top:20px}
+.dirhead{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:24px}
+.phones{display:flex;flex-wrap:wrap;gap:28px;justify-content:flex-start}
+.cap{font-size:13px;color:var(--muted);margin-top:8px;max-width:320px}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.reco{border-left:0;background:var(--panel);border:2px solid var(--fg);border-radius:10px;padding:18px 20px}
+
+/* ---------- phone frame (fixed palettes, independent of page theme) ---------- */
+.phone{width:320px;max-width:100%;height:668px;border-radius:34px;padding:10px;background:#0E0F12;flex:none;box-shadow:0 1px 0 #0000}
+.screen{width:100%;height:100%;border-radius:26px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.status{height:28px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 20px;font:600 12px/1 system-ui,sans-serif}
+.body{flex:1;overflow:hidden;position:relative}
+.nav{flex:none;display:grid;grid-template-columns:repeat(5,1fr);align-items:end;padding:6px 4px 12px}
+.nav .it{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px}
+.nav svg{width:22px;height:22px}
+.ic{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+
+/* ---------- A2: Familienplaner, organisch ---------- */
+.A2{background:#FBFAF8;color:#1E2333;font-family:"Rubik",system-ui,sans-serif}
+.A2 .day{padding:6px 18px 12px;display:flex;align-items:flex-end;justify-content:space-between}
+.A2 .dname{font-size:32px;font-weight:700;line-height:1;letter-spacing:-.015em}
+.A2 .dmeta{font-size:12.5px;color:#545A6B;text-align:right;line-height:1.35}
+.A2 .ppl{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 12px}
+.A2 .pp{border-radius:18px 18px 14px 14px;padding:9px 6px 8px;display:flex;flex-direction:column;gap:1px}
+.A2 .pp .nm{font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px}
+.A2 .pp .num{font-size:26px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+.A2 .pp .rd{white-space:nowrap;font-size:10px;font-weight:600;color:#A3241C}
+.A2 .pp .mm2{font-size:10.5px;color:#545A6B}
+.A2 .lab{font-size:13px;font-weight:600;color:#545A6B;padding:16px 18px 6px;display:flex;justify-content:space-between}
+.A2 .row{display:flex;gap:10px;align-items:flex-start;margin:0 12px 6px;padding:10px 12px;border-radius:16px;background:#F0F1F5}
+.A2 .row.open{background:#fff;box-shadow:inset 0 0 0 1.5px #D9DCE4}
+.A2 .q{width:26px;height:26px;border-radius:50%;border:2px dashed #7A8090;display:grid;place-items:center;font-weight:700;font-size:12px;color:#545A6B;flex:none}
+.A2 .tt{font-size:14.5px;font-weight:600;line-height:1.25}
+.A2 .mm{font-size:11.5px;color:#545A6B;margin-top:1px}
+.A2 .od{display:inline-block;background:#FBE4E1;color:#A3241C;font-weight:600;border-radius:8px;padding:1px 6px;margin-right:4px}
+.A2 .ask{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.A2 .ask span{font-size:12px;font-weight:600;border-radius:12px;padding:6px 11px;background:#E6E8EE}
+.A2 .ask .y{background:#1E2333;color:#fff}
+.A2 .ask .del{background:transparent;color:#545A6B;padding-left:4px}
+.A2 .nav{background:#FBFAF8;color:#545A6B;padding-top:8px}
+.A2 .nav .on{color:#1E2333;font-weight:600}
+.A2 .nav .on svg{background:#E6E8EE;border-radius:12px;padding:2px 12px;box-sizing:content-box}
+.A2 .capq{width:58px;height:52px;border-radius:20px;background:#1E2333;color:#fff;display:grid;place-items:center;margin-top:-18px}
+.A2 .tabs{display:flex;gap:2px;padding:0 10px 10px;flex-wrap:wrap}
+.A2 .tabs span{font-size:11px;padding:7px 5px;border-radius:12px;color:#545A6B}
+.A2 .tabs .on{background:#1E2333;color:#fff;font-weight:600}
+.A2 .lanes{display:grid;grid-template-columns:36px repeat(4,1fr);gap:0 4px;padding:0 10px}
+.A2 .lh{font-size:11px;font-weight:600;padding:7px 4px 6px;border-radius:14px 14px 0 0;display:flex;align-items:center;gap:4px}
+.A2 .dl{font-size:11px;color:#545A6B;padding:6px 2px;line-height:1.15;min-height:42px}
+.A2 .dl.today{color:#1E2333;font-weight:700}
+.A2 .dl.today span{background:#1E2333;color:#fff;border-radius:10px;padding:1px 5px}
+.A2 .cl{min-height:42px;padding:3px 3px}
+.A2 .blk{font-size:10.5px;line-height:1.15;padding:4px 6px;font-weight:500;border-radius:10px;background:#fff;hyphens:auto;-webkit-hyphens:auto;margin-bottom:3px}
+.A2 .blk.odb{background:#FBE4E1;color:#A3241C;font-weight:600}
+.A2 .ft{font-size:11px;font-weight:600;padding:7px 4px 9px;border-radius:0 0 14px 14px}
+.A2 .ft b{color:#A3241C}
+
+
+/* ---------- Küche/Einkauf screens (A organisch) ---------- */
+.A2 .week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:0 12px}
+.A2 .wd{border-radius:14px;padding:6px 2px 7px;text-align:center;background:#F0F1F5;display:flex;flex-direction:column;gap:2px;align-items:center;min-height:62px}
+.A2 .wd .d{font-size:10.5px;color:#545A6B;font-weight:600}
+.A2 .wd .m{font-size:9.5px;line-height:1.1;font-weight:600;hyphens:auto;-webkit-hyphens:auto;padding:0 2px}
+.A2 .wd.plan{background:#E0EFE5}
+.A2 .wd.today{box-shadow:inset 0 0 0 2px #1E2333}
+.A2 .wd.free{background:#fff;box-shadow:inset 0 0 0 1.5px #D9DCE4}
+.A2 .wd.free .m{color:#545A6B;font-size:16px;font-weight:400;line-height:1}
+.A2 .wd.cur{background:#1E2333}.A2 .wd.cur .d,.A2 .wd.cur .m{color:#fff}
+.A2 .sec{font-size:13px;font-weight:600;color:#545A6B;padding:14px 18px 6px;display:flex;justify-content:space-between;align-items:baseline}
+.A2 .sec a{color:#1E2333;text-decoration:underline;text-underline-offset:3px;font-weight:600}
+.A2 .shoprow{display:flex;align-items:center;gap:10px;margin:0 12px;padding:12px;border-radius:16px;background:#fff;box-shadow:inset 0 0 0 1.5px #D9DCE4}
+.A2 .shoprow .big{font-size:15px;font-weight:600}
+.A2 .shoprow .small{font-size:12px;color:#545A6B}
+.A2 .chev{margin-left:auto;font-size:20px;color:#545A6B}
+.A2 .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -8px 30px -10px #1E233340;padding:10px 14px 14px}
+.A2 .grab{width:36px;height:4px;border-radius:2px;background:#D9DCE4;margin:0 auto 10px}
+.A2 .sh-t{font-size:19px;font-weight:700;line-height:1.2}
+.A2 .sh-s{font-size:12px;color:#545A6B;margin:2px 0 10px}
+.A2 .steps{display:flex;gap:4px;margin-bottom:10px}
+.A2 .steps span{flex:1;height:5px;border-radius:3px;background:#E6E8EE}
+.A2 .steps .ok{background:#2C7A4B}.A2 .steps .now{background:#1E2333}
+.A2 .opt{display:flex;gap:10px;align-items:center;padding:9px 10px;border-radius:14px;background:#F0F1F5;margin-bottom:6px}
+.A2 .opt .ph{width:40px;height:40px;border-radius:12px;flex:none}
+.A2 .opt .ot{font-size:14px;font-weight:600;line-height:1.2}
+.A2 .opt .why{font-size:11.5px;color:#545A6B}
+.A2 .opt .why b{color:#2C7A4B;font-weight:600}
+.A2 .srch{display:flex;align-items:center;gap:8px;border-radius:14px;box-shadow:inset 0 0 0 1.5px #D9DCE4;padding:9px 10px;font-size:13px;color:#545A6B;margin-bottom:10px}
+.A2 .foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.A2 .serv{display:flex;align-items:center;gap:8px;font-size:13px}
+.A2 .serv span.b{width:30px;height:30px;border-radius:10px;background:#E6E8EE;display:grid;place-items:center;font-weight:700}
+.A2 .skip{font-size:13px;color:#545A6B;font-weight:600}
+.A2 .dim{position:absolute;inset:0;background:#1E233355}
+.A2 .rec{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#A3241C;font-weight:600;margin-bottom:6px}
+.A2 .rec i{width:10px;height:10px;border-radius:50%;background:#A3241C}
+.A2 .said{font-size:20px;font-weight:600;line-height:1.3;margin-bottom:12px}
+.A2 .det{font-size:12px;color:#545A6B;margin-bottom:6px}
+.A2 .tgt{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.A2 .tg{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;background:#F0F1F5;font-size:14px}
+.A2 .mk{margin-left:auto;font-size:11.5px;font-weight:600;border-radius:9px;padding:3px 8px;white-space:nowrap}
+.A2 .act2{display:flex;justify-content:space-between;align-items:center}
+.A2 .act2 .no{font-size:13px;color:#545A6B;font-weight:600}
+.A2 .act2 .yes{background:#1E2333;color:#fff;border-radius:14px;padding:10px 16px;font-weight:600;font-size:14px}
+.A2 .mhead{display:flex;align-items:center;gap:8px;margin:14px 12px 6px;padding:8px 12px;border-radius:14px}
+.A2 .mhead b{font-size:14.5px}
+.A2 .mhead .sum{margin-left:auto;font-size:12px;font-weight:600;color:#1E2333}
+.A2 .it2{display:flex;align-items:center;gap:10px;padding:8px 14px 8px 18px}
+.A2 .cb{width:20px;height:20px;border-radius:7px;box-shadow:inset 0 0 0 2px #1E2333;flex:none}
+.A2 .it2 .n{font-size:14.5px}
+.A2 .it2 .p{margin-left:auto;font-size:12px;color:#545A6B;text-align:right;white-space:nowrap}
+.A2 .it2 .p b{color:#1E2333}
+.A2 .tabs span{padding:7px 4px}
+.A2 .instore{margin:2px 12px 0;border-radius:14px;background:#1E2333;color:#fff;padding:11px 14px;font-weight:600;font-size:14px;display:flex;justify-content:space-between}
+
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-today" viewBox="0 0 24 24"><path class="ic" d="M4 11.5 12 5l8 6.5V20H4z"/><path class="ic" d="M10 20v-5h4v5"/></symbol>
+  <symbol id="i-fam" viewBox="0 0 24 24"><circle class="ic" cx="8" cy="8" r="3"/><circle class="ic" cx="16.5" cy="9" r="2.5"/><path class="ic" d="M3 19c.6-3.3 2.6-5 5-5s4.4 1.7 5 5M13.5 19c.4-2.4 1.5-3.8 3-3.8s2.6 1.4 3 3.8"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect class="ic" x="9" y="3.5" width="6" height="11" rx="3"/><path class="ic" d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect class="ic" x="3.5" y="5" width="17" height="15" rx="2"/><path class="ic" d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle class="ic" cx="10.5" cy="10.5" r="6"/><path class="ic" d="m15 15 5 5"/></symbol>
+</svg>
+<div class="wrap" lang="de">
+<header class="prose">
+  <div class="eyebrow">FamilyApp · Klickwege · Vorschlag vom 28.11.2026</div>
+  <h1>Essen planen und einkaufen in wenigen Taps</h1>
+  <p class="lede">Heute braucht ein geplantes Essen vier bis fünf Taps, ein eigenes Rezept lässt sich gar nicht planen, Erfassen landet immer im Eingang, und die Liste weiß nicht, wo man etwas kauft. Hier stehen die gezählten Wege von heute und ein Vorschlag, der sie auf ein bis zwei Taps bringt.</p>
+  <div class="box" style="font-size:14.5px"><b>Was dieser Vorschlag anders macht:</b> Jeder Weg ist im heutigen Code nachgezählt (OffersScreens.kt, ShoppingScreen.kt, RecipeScreens.kt, AppModel.save), nicht geschätzt. Die Marktzuordnung nutzt die vorhandenen Angebote und den Abgleich aus den Essensvorschlägen, keine neue Datenquelle. Was die Regeln nicht sicher erkennen, bleibt eine Rückfrage mit einem Tap, so wie im Eingang.</div>
+</header>
+
+<section class="prose">
+  <h2>Gezählt: heute und vorgeschlagen</h2>
+  <p>Taps ab geöffneter App auf Heute, Sprechen und Tippen von Text zählen nicht.</p>
+  <div class="tbl"><table>
+    <tr><th>Aufgabe</th><th>Heute im Code</th><th class="n">Taps heute</th><th>Vorschlag</th><th class="n">Taps neu</th></tr>
+    <tr><td>Vorgeschlagenes Essen planen</td><td>„3 Essensvorschläge ansehen“, Vorschlag, Tag, Übernehmen</td><td class="n">4</td><td>freien Tag in der Wochenleiste, Gericht</td><td class="n">2</td></tr>
+    <tr><td>Eigenes Rezept planen</td><td>geht nicht, nur „auf die Einkaufsliste“ ohne Tag (Familie, Rezepte, Rezept, Knopf)</td><td class="n">–</td><td>freier Tag, „Anderes Rezept suchen“, Treffer</td><td class="n">3</td></tr>
+    <tr><td>Fünf Abende planen</td><td>fünfmal der Weg oben</td><td class="n">≈ 20</td><td>geführt: Blatt springt zum nächsten freien Tag</td><td class="n">6</td></tr>
+    <tr><td>Zutaten auf die Liste</td><td>passiert beim Planen schon automatisch</td><td class="n">0</td><td>bleibt so, jetzt mit Markt</td><td class="n">0</td></tr>
+    <tr><td>Eine Sache auf die Liste</td><td>Familie, Einkauf, nach unten scrollen, Feld, Hinzufügen</td><td class="n">4</td><td>Erfassen, „Milch“ sagen</td><td class="n">1</td></tr>
+    <tr><td>Drei Sachen auf die Liste</td><td>dreimal Feld und Hinzufügen</td><td class="n">8</td><td>Erfassen, „Milch, Eier und Backpapier“</td><td class="n">1</td></tr>
+    <tr><td>Festlegen, wo es gekauft wird</td><td>geht nicht; nur Einträge aus einem Angebot tragen einen Hinweis</td><td class="n">–</td><td>automatisch nach Angebot, sonst Stammmarkt; ändern mit Tap auf den Markt</td><td class="n">0 (2)</td></tr>
+    <tr><td>Im Laden die Liste öffnen</td><td>Familie, Einkauf, an den Vorschlägen vorbei scrollen</td><td class="n">2+</td><td>Zeile „8 Dinge auf der Liste“ auf Heute</td><td class="n">1</td></tr>
+  </table></div>
+</section>
+
+<section class="dir">
+  <div class="dirhead">
+    <div><div class="eyebrow">Geführte Bewegung</div><h2>Ein Weg, der sich selbst weiterbewegt</h2>
+      <p>Die Wochenleiste zeigt sieben Tage. Ein Tap auf einen freien Tag öffnet das Blatt mit Vorschlägen nach Angebot und Saison. Wer ein Gericht antippt, plant es, und die Zutaten landen mit Markt auf der Liste. Danach springt das Blatt von selbst zum nächsten freien Tag. „Überspringen“ lässt einen Tag frei, Wischen nach unten beendet.</p></div>
+    <div style="font-size:14.5px"><h3>Erfassen versteht Einkauf</h3><p>Eine feste Regel erkennt Einkäufe: Signalwörter („kaufen“, „besorgen“, „Einkauf“, „auf die Liste“) oder alle Wörter stehen in der Zutaten- und Saisonliste der App. Dann teilt sie bei Komma und „und“ und zeigt das Ergebnis 1 s lang. Ohne Tap landet es auf der Liste, „Ist eine Aufgabe“ schickt es in den Eingang. Ist die Regel unsicher, bleibt es wie heute im Eingang, mit dem Knopf „Auf die Einkaufsliste“.</p></div>
+  </div>
+  <div class="phones">
+    <div><div class="phone"><div class="screen A2"><div class="status"><span>9:41</span><span>●●● ▮</span></div><div class="day"><span class="dname">Samstag</span><span class="dmeta">28. November<br>KW 48</span></div>
+<div class="body">
+  <div class="sec"><span>Essen diese Woche</span><span>3 von 7 geplant</span></div>
+  <div class="week"><div class="wd plan today"><span class="d">Sa</span><span class="m">Kürbis&shy;suppe</span></div><div class="wd free"><span class="d">So</span><span class="m">+</span></div><div class="wd free"><span class="d">Mo</span><span class="m">+</span></div><div class="wd plan"><span class="d">Di</span><span class="m">Pesto&shy;nudeln</span></div><div class="wd free"><span class="d">Mi</span><span class="m">+</span></div><div class="wd free"><span class="d">Do</span><span class="m">+</span></div><div class="wd plan"><span class="d">Fr</span><span class="m">Pizza</span></div></div>
+  <div class="sec"><span>Einkauf</span></div>
+  <div class="shoprow"><div><div class="big">8 Dinge auf der Liste</div><div class="small">3 bei Lidl · 2 bei Aldi Süd · 3 Kaufland</div></div><span class="chev">›</span></div>
+  <div class="sec"><span>Gehört noch niemandem</span><span>3</span></div>
+  <div class="row open"><span class="q">?</span><div><div class="tt">Elternabend Klasse 2b, Di 19:30</div><div class="mm">Geteilt · betrifft Mia · bis Di 1.12.</div></div></div>
+</div>
+        <div class="nav">
+          <div class="it on"><svg><use href="#i-today"/></svg>Heute</div>
+          <div class="it"><svg><use href="#i-fam"/></svg>Familie</div>
+          <div class="it"><div class="capq"><svg><use href="#i-mic"/></svg></div>Erfassen</div>
+          <div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div>
+          <div class="it"><svg><use href="#i-search"/></svg>Suchen</div>
+        </div></div></div><p class="cap"><b>Heute.</b> Wochenleiste mit freien Tagen und eine Zeile für die Liste, gruppiert nach Markt.</p></div>
+    <div><div class="phone"><div class="screen A2"><div class="status"><span>9:41</span><span>●●● ▮</span></div><div class="day"><span class="dname">Samstag</span><span class="dmeta">28. November<br>KW 48</span></div>
+<div class="body">
+  <div class="sec"><span>Essen diese Woche</span><span>3 von 7 geplant</span></div>
+  <div class="week"><div class="wd plan today"><span class="d">Sa</span><span class="m">Kürbis&shy;suppe</span></div><div class="wd cur"><span class="d">So</span><span class="m">?</span></div><div class="wd free"><span class="d">Mo</span><span class="m">+</span></div><div class="wd plan"><span class="d">Di</span><span class="m">Pesto&shy;nudeln</span></div><div class="wd free"><span class="d">Mi</span><span class="m">+</span></div><div class="wd free"><span class="d">Do</span><span class="m">+</span></div><div class="wd plan"><span class="d">Fr</span><span class="m">Pizza</span></div></div>
+  <div class="dim"></div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="steps"><span class="ok"></span><span class="now"></span><span></span><span class="ok"></span><span></span><span></span><span class="ok"></span></div>
+    <div class="sh-t">Sonntag, 29.11. · Was gibt's?</div>
+    <div class="sh-s">Antippen plant das Essen und setzt die Zutaten auf die Liste.</div>
+    <div class="opt"><span class="ph" style="background:#F5E6DB"></span><div><div class="ot">Ofengemüse mit Feta</div><div class="why"><b>Paprika bei Lidl 1,29 €</b> · Kürbis hat Saison</div></div></div>
+    <div class="opt"><span class="ph" style="background:#E0EFE5"></span><div><div class="ot">Linsen-Dal</div><div class="why"><b>Linsen bei Aldi Süd 0,89 €</b></div></div></div>
+    <div class="opt"><span class="ph" style="background:#E3EAF6"></span><div><div class="ot">Pfannkuchen</div><div class="why">zuletzt vor 3 Wochen</div></div></div>
+    <div class="srch"><svg style="width:16px;height:16px"><use href="#i-search"/></svg>Anderes Rezept suchen</div>
+    <div class="foot"><div class="serv"><span class="b">−</span>4 Portionen<span class="b">+</span></div><span class="skip">Überspringen ›</span></div>
+  </div>
+</div></div></div><p class="cap"><b>Tag planen.</b> Der Balken oben zeigt die Woche. Antippen plant, dann geht es zu Montag.</p></div>
+    <div><div class="phone"><div class="screen A2"><div class="status"><span>9:41</span><span>●●● ▮</span></div><div class="day"><span class="dname">Samstag</span><span class="dmeta">28. November<br>KW 48</span></div>
+<div class="body">
+  <div class="dim"></div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="rec"><i></i>Fertig gesprochen · speichert in 1 s</div>
+    <div class="said">„Milch, Eier und Backpapier“</div>
+    <div class="det">Erkannt als Einkauf (3 Dinge), Markt nach Angebot:</div>
+    <div class="tgt">
+      <div class="tg">Milch<span class="mk" style="background:#E3EAF6">Lidl 0,99 €</span></div>
+      <div class="tg">Eier<span class="mk" style="background:#F5E6DB">Aldi Süd 1,79 €</span></div>
+      <div class="tg">Backpapier<span class="mk" style="background:#E6E8EE">Kaufland</span></div>
+    </div>
+    <div class="act2"><span class="no">Ist eine Aufgabe</span><span class="yes">Auf die Liste</span></div>
+  </div>
+</div>
+        <div class="nav">
+          <div class="it"><svg><use href="#i-today"/></svg>Heute</div>
+          <div class="it"><svg><use href="#i-fam"/></svg>Familie</div>
+          <div class="it"><div class="capq"><svg><use href="#i-mic"/></svg></div>Erfassen</div>
+          <div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div>
+          <div class="it"><svg><use href="#i-search"/></svg>Suchen</div>
+        </div></div></div><p class="cap"><b>Erfassen.</b> „Milch, Eier und Backpapier“ wird zu drei Einträgen mit Markt.</p></div>
+    <div><div class="phone"><div class="screen A2"><div class="status"><span>9:41</span><span>●●● ▮</span></div><div class="day"><span class="dname">Familie</span><span class="dmeta">Einkauf<br>8 offen</span></div>
+<div class="tabs"><span>Aufgaben</span><span>Kontakte</span><span>Personen</span><span>Rezepte</span><span class="on">Einkauf</span></div>
+<div class="body">
+  <div class="instore"><span>Ich bin bei Lidl</span><span>›</span></div>
+  <div class="mhead" style="background:#E3EAF6"><b>Lidl</b><span style="font-size:12px;color:#545A6B">Angebote bis Sa</span><span class="sum">≈ 4,07 €</span></div>
+  <div class="it2"><span class="cb"></span><span class="n">Milch</span><span class="p"><b>0,99 €</b> statt 1,19</span></div>
+  <div class="it2"><span class="cb"></span><span class="n">Paprika, 3 Stück</span><span class="p"><b>1,29 €</b></span></div>
+  <div class="it2"><span class="cb"></span><span class="n">Butter</span><span class="p"><b>1,79 €</b></span></div>
+  <div class="mhead" style="background:#F5E6DB"><b>Aldi Süd</b><span class="sum">≈ 2,68 €</span></div>
+  <div class="it2"><span class="cb"></span><span class="n">Eier, 10 Stück</span><span class="p"><b>1,79 €</b></span></div>
+  <div class="it2"><span class="cb"></span><span class="n">Linsen</span><span class="p"><b>0,89 €</b></span></div>
+  <div class="mhead" style="background:#E6E8EE"><b>Kaufland</b><span style="font-size:12px;color:#545A6B">Stammmarkt</span></div>
+  <div class="it2"><span class="cb"></span><span class="n">Backpapier</span><span class="p"></span></div>
+  <div class="it2"><span class="cb"></span><span class="n">Feta</span><span class="p">für Ofengemüse</span></div>
+</div>
+        <div class="nav">
+          <div class="it"><svg><use href="#i-today"/></svg>Heute</div>
+          <div class="it on"><svg><use href="#i-fam"/></svg>Familie</div>
+          <div class="it"><div class="capq"><svg><use href="#i-mic"/></svg></div>Erfassen</div>
+          <div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div>
+          <div class="it"><svg><use href="#i-search"/></svg>Suchen</div>
+        </div></div></div><p class="cap"><b>Einkauf.</b> Liste nach Markt, Preise aus dem Angebot. „Ich bin bei Lidl“ oben zeigt nur diesen Teil.</p></div>
+  </div>
+</section>
+
+<section class="prose">
+  <h2>Wie der Markt zustande kommt</h2>
+  <ul>
+    <li><b>Angebot passt:</b> Der Eintrag wird mit den Angeboten der gewählten Märkte abgeglichen, so wie heute schon die Essensvorschläge. Mehrere passen, dann gewinnt der günstigste. Läuft das Angebot ab, rutscht der Eintrag zurück zum Stammmarkt.</li>
+    <li><b>Kein Angebot:</b> Der Eintrag geht zum Stammmarkt (Einstellungen › Einkauf, Vorgabe: der erste gewählte Markt) oder zu dem Markt, den die Familie für diese Sache zuletzt gewählt hat.</li>
+    <li><b>Ändern:</b> Ein Tap auf den Markt öffnet die Auswahl mit Preisen. In der Rückmeldung steht „Künftig immer bei Lidl?“, so wie bei den Regeln im Eingang. Wer es ignoriert, hat nichts falsch gemacht.</li>
+  </ul>
+</section>
+
+<section class="reco prose">
+  <div class="eyebrow">Entscheidungen</div>
+  <h2>Vier Punkte, die ich so vorschlage</h2>
+  <div class="tbl"><table>
+    <tr><th>#</th><th>Frage</th><th>Vorschlag</th></tr>
+    <tr><td>K1</td><td>Wie erkennt Erfassen einen Einkauf?</td><td>Feste Regel (Signalwörter oder alles bekannte Lebensmittel), 1 s Vorschau, unsicher bleibt Eingang</td></tr>
+    <tr><td>K2</td><td>Wohin, wenn kein Angebot passt?</td><td>Stammmarkt, sonst der zuletzt gewählte Markt für diese Sache</td></tr>
+    <tr><td>K3</td><td>Reihenfolge im Tab Einkauf</td><td>Liste nach Markt oben, darunter Wochenleiste, darunter alle Angebote (ändert die Reihenfolge vom 27.11.)</td></tr>
+    <tr><td>K4</td><td>Planen</td><td>Wochenleiste auf Heute und im Tab Einkauf, Blatt springt weiter; „Planen“ auch auf jeder Rezeptseite</td></tr>
+  </table></div>
+  <p style="margin-top:10px">Reihenfolge der Umsetzung: (1) Erfassen auf die Liste und Markt nach Angebot, weil das täglich Taps spart; (2) Wochenleiste und geführtes Planen; (3) die neue Optik A organisch.</p>
+</section>
+</div>
