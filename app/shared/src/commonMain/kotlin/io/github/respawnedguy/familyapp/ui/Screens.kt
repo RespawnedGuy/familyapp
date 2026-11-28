@@ -92,7 +92,7 @@ fun TodayScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reduced
         }
         items(inbox, key = { it.id }) { item ->
             Box(if (reducedMotion) Modifier else Modifier.animateItem()) {
-                InboxCard(item, data, model, photos, reducedMotion)
+                InboxCard(item, data, model, photos)
             }
         }
         item(key = "h-mine") { SectionHeader("Meins", mine.size) }
@@ -101,7 +101,7 @@ fun TodayScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reduced
         }
         items(mine, key = { it.id }) { item ->
             Box(if (reducedMotion) Modifier else Modifier.animateItem()) {
-                TaskRow(item, data, model, photos, reducedMotion, showAssignee = false, takeOver = false)
+                TaskRow(item, data, model, photos, showAssignee = false, takeOver = false)
             }
         }
         item(key = "done") {

@@ -136,8 +136,8 @@ private fun EingangKartenPreview() {
     val model = rememberPreviewModel()
     val data = model.repo.current
     ComponentSurface {
-        InboxCard(PreviewData.inboxSuggested, data, model, photos = null, reducedMotion = true)
-        InboxCard(PreviewData.inboxEmpty, data, model, photos = null, reducedMotion = true)
+        InboxCard(PreviewData.inboxSuggested, data, model, photos = null)
+        InboxCard(PreviewData.inboxEmpty, data, model, photos = null)
     }
 }
 
@@ -147,9 +147,9 @@ private fun AufgabenZeilenPreview() {
     val model = rememberPreviewModel()
     val data = model.repo.current
     ComponentSurface {
-        TaskRow(PreviewData.overdue, data, model, photos = null, reducedMotion = true, showAssignee = false, takeOver = false)
-        TaskRow(PreviewData.soon, data, model, photos = null, reducedMotion = true, showAssignee = true, takeOver = false)
-        TaskRow(PreviewData.noDate, data, model, photos = null, reducedMotion = true, showAssignee = true, takeOver = true)
+        TaskRow(PreviewData.overdue, data, model, photos = null, showAssignee = false, takeOver = false)
+        TaskRow(PreviewData.soon, data, model, photos = null, showAssignee = true, takeOver = false)
+        TaskRow(PreviewData.noDate, data, model, photos = null, showAssignee = true, takeOver = true)
     }
 }
 

@@ -1,0 +1,736 @@
+<title>FamilyApp Optik-Richtungen</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Atkinson+Hyperlegible:wght@400;700&family=Instrument+Sans:wdth,wght@75..100,400..700&family=Public+Sans:wght@400;600;800&family=Rubik:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;800&display=swap">
+<style>
+/* Layout: one reading column for the argument, phone frames in pairs per direction; phones keep their own fixed light palettes. */
+:root{
+  --bg:#F3F4F6; --fg:#16181D; --muted:#555B66; --line:#D5D8DE; --panel:#FFFFFF; --mark:#2B50C8;
+  --font-page:"Public Sans", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121418;--fg:#ECEDEF;--muted:#A6ABB5;--line:#30343C;--panel:#1B1E24;--mark:#8EA6FF;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121418;--fg:#ECEDEF;--muted:#A6ABB5;--line:#30343C;--panel:#1B1E24;--mark:#8EA6FF;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--font-page);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
+.prose{max-width:68ch}
+h1{font-size:clamp(30px,5vw,46px);line-height:1.08;font-weight:800;letter-spacing:-.02em;margin:0 0 12px;text-wrap:balance}
+h2{font-size:26px;line-height:1.2;font-weight:800;margin:0 0 10px;text-wrap:balance}
+h3{font-size:18px;margin:0 0 6px}
+p{margin:0 0 12px}
+.lede{font-size:18px;color:var(--muted)}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:6px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:24px;align-items:start}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font-weight:600;color:var(--muted);font-size:13px}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+ul{margin:0;padding-left:20px}
+li{margin-bottom:6px}
+a{color:var(--mark)}
+.dir{display:flex;flex-direction:column;gap:20px;border-top:2px solid var(--fg);padding-top:20px}
+.dirhead{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:24px}
+.phones{display:flex;flex-wrap:wrap;gap:28px;justify-content:flex-start}
+.cap{font-size:13px;color:var(--muted);margin-top:8px;max-width:320px}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.reco{border-left:0;background:var(--panel);border:2px solid var(--fg);border-radius:10px;padding:18px 20px}
+
+/* ---------- phone frame (fixed palettes, independent of page theme) ---------- */
+.phone{width:320px;max-width:100%;height:668px;border-radius:34px;padding:10px;background:#0E0F12;flex:none;box-shadow:0 1px 0 #0000}
+.screen{width:100%;height:100%;border-radius:26px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.status{height:28px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 20px;font:600 12px/1 system-ui,sans-serif}
+.body{flex:1;overflow:hidden;position:relative}
+.nav{flex:none;display:grid;grid-template-columns:repeat(5,1fr);align-items:end;padding:6px 4px 12px}
+.nav .it{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px}
+.nav svg{width:22px;height:22px}
+.ic{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- IST ---------- */
+.ist{background:#F6F5F2;color:#1D1C1A;font-family:Roboto,system-ui,sans-serif}
+.ist .top{display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px}
+.ist .t{font-size:22px;font-weight:700}
+.dot{display:inline-grid;place-items:center;border-radius:50%;color:#fff;font-weight:700;flex:none}
+.ist .card{background:#fff;border-radius:16px;padding:12px 14px;margin:8px 12px}
+.ist .h{font-size:15px;font-weight:600}
+.ist .s{font-size:12px;color:#6E6B65}
+.ist .sec{display:flex;align-items:center;gap:6px;font-size:16px;font-weight:600;margin:14px 14px 4px}
+.ist .badge{background:#0E6B66;color:#fff;border-radius:99px;font-size:11px;padding:0 7px;font-weight:700}
+.ist .chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.ist .chip{font-size:12px;border:1.5px dashed #5C5A55;border-radius:14px;padding:5px 9px;color:#5C5A55}
+.ist .chip.s1{border-color:#0E6B66;color:#1D1C1A}
+.ist .btns{display:flex;justify-content:flex-end;gap:10px;align-items:center;font-size:13px}
+.ist .bp{background:#0E6B66;color:#fff;border-radius:18px;padding:7px 16px;font-weight:600}
+.ist .nav{background:#fff;color:#5C5A55}
+.ist .nav .on{color:#1D1C1A;font-weight:600}
+.ist .nav .on svg{color:#0E6B66}
+.ist .fab{width:50px;height:50px;border-radius:50%;background:#0E6B66;color:#fff;display:grid;place-items:center;margin-top:-22px;box-shadow:0 3px 8px #0003}
+
+/* ---------- A: Familienplaner ---------- */
+.A{background:#FFFFFF;color:#14213D;font-family:"Archivo",system-ui,sans-serif;font-stretch:100%}
+.A .day{padding:4px 16px 10px;border-bottom:2px solid #14213D;display:flex;align-items:baseline;justify-content:space-between}
+.A .dname{font-size:34px;font-weight:800;font-stretch:72%;letter-spacing:-.01em;text-transform:uppercase;line-height:1}
+.A .dmeta{font-size:12px;font-weight:600;font-stretch:85%;text-align:right;color:#4B5568}
+.A .cols{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid #C9D0DC}
+.A .col{padding:8px 6px 7px;border-right:1px solid #C9D0DC;display:flex;flex-direction:column;gap:2px}
+.A .col:last-child{border-right:0}
+.A .col .nm{font-size:11px;font-weight:700;font-stretch:80%;text-transform:uppercase;letter-spacing:.04em;display:flex;align-items:center;gap:4px}
+.A .col .sw{width:10px;height:10px;flex:none}
+.A .col .num{font-size:26px;font-weight:800;font-stretch:75%;line-height:1;font-variant-numeric:tabular-nums}
+.A .col .rd{font-size:10.5px;color:#B3261E;font-weight:700;font-stretch:85%}
+.A .lab{font-size:11px;font-weight:800;font-stretch:80%;text-transform:uppercase;letter-spacing:.06em;padding:12px 16px 5px;display:flex;justify-content:space-between;color:#14213D}
+.A .row{display:grid;grid-template-columns:34px 1fr;border-top:1px solid #DDE2EA;min-height:52px}
+.A .row:last-of-type{border-bottom:1px solid #DDE2EA}
+.A .tab{display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff}
+.A .tab.q{background:repeating-linear-gradient(135deg,#F3F5F9 0 5px,#E3E7EE 5px 10px);color:#14213D}
+.A .cell{padding:7px 12px 7px 10px;display:flex;flex-direction:column;justify-content:center;gap:2px}
+.A .tt{font-size:14.5px;font-weight:600;line-height:1.25}
+.A .mm{font-size:11.5px;color:#4B5568;font-stretch:90%}
+.A .mm b{color:#B3261E}
+.A .ask{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
+.A .ask span{font-size:11.5px;font-weight:700;font-stretch:85%;border:1.5px solid #14213D;padding:3px 7px}
+.A .ask span.y{background:#14213D;color:#fff}
+.A .nav{border-top:2px solid #14213D;color:#4B5568;background:#fff}
+.A .nav .it{font-stretch:80%;text-transform:uppercase;font-weight:700;letter-spacing:.03em;font-size:10px}
+.A .nav .on{color:#14213D}
+.A .nav .on::after{content:"";width:22px;height:3px;background:#14213D;margin-top:1px}
+.A .cap-btn{width:54px;height:50px;background:#14213D;color:#fff;display:grid;place-items:center;margin-top:-20px}
+.A .reg{display:flex;gap:0;padding:0 8px;border-bottom:2px solid #14213D;margin-top:2px}
+.A .reg span{font-size:10.5px;font-weight:700;font-stretch:66%;text-transform:uppercase;letter-spacing:.02em;padding:8px 5px 6px;border:1.5px solid #C9D0DC;border-bottom:0;margin-right:-1.5px;color:#4B5568;background:#F3F5F9}
+.A .reg span.on{background:#14213D;color:#fff;border-color:#14213D}
+.A .wk{display:grid;grid-template-columns:38px repeat(4,1fr);font-size:11px}
+.A .wk > div{border-right:1px solid #DDE2EA;border-bottom:1px solid #DDE2EA;min-height:40px;padding:3px}
+.A .wk .hd{min-height:0;font-weight:800;font-stretch:78%;text-transform:uppercase;padding:6px 4px;display:flex;align-items:center;gap:4px;border-bottom:2px solid #14213D}
+.A .wk .dl{font-weight:700;font-stretch:80%;color:#4B5568;padding:4px 3px;line-height:1.1}
+.A .wk .dl.today{background:#14213D;color:#fff}
+.A .blk{hyphens:auto;-webkit-hyphens:auto;font-size:10.5px;line-height:1.15;padding:3px 4px;font-weight:600;font-stretch:88%;margin-bottom:2px}
+.A .blk.od{outline:2px solid #B3261E;outline-offset:-2px}
+.A .sum{display:grid;grid-template-columns:38px repeat(4,1fr);font-size:11px;font-weight:700;font-stretch:82%;border-top:2px solid #14213D}
+.A .sum div{padding:6px 4px;border-right:1px solid #DDE2EA}
+
+/* ---------- B: Fokus ---------- */
+.B{background:#E9EDF2;color:#101828;font-family:"Atkinson Hyperlegible Next","Atkinson Hyperlegible",system-ui,sans-serif}
+.B .hdr{padding:6px 20px 0}
+.B .date{font-size:13px;color:#4A5565}
+.B .big{font-size:27px;line-height:1.12;font-weight:800;margin:4px 0 14px;letter-spacing:-.01em}
+.B .stack{position:relative;margin:0 14px 0}
+.B .stack::before,.B .stack::after{content:"";position:absolute;left:10px;right:10px;height:14px;bottom:-7px;background:#F7F8FA;border-radius:14px;z-index:0;box-shadow:0 1px 2px #10182822}
+.B .stack::after{left:20px;right:20px;bottom:-14px;background:#EFF1F5;z-index:-1}
+.B .dc{position:relative;z-index:1;background:#fff;border-radius:16px;padding:16px;box-shadow:0 1px 2px #10182824,0 8px 24px -12px #10182840}
+.B .src{font-size:12px;color:#4A5565}
+.B .ttl{font-size:19px;font-weight:700;line-height:1.25;margin:6px 0 12px}
+.B .facts{display:flex;flex-direction:column;gap:7px;font-size:14.5px}
+.B .facts div{display:flex;align-items:center;gap:8px}
+.B .facts .k{width:76px;color:#4A5565;font-size:12.5px}
+.B mark{background:#FFD84D;color:#101828;padding:1px 5px;border-radius:3px;font-weight:700}
+.B .act{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+.B .act .no{font-size:14px;color:#4A5565;padding:8px 0}
+.B .act .yes{background:#101828;color:#fff;border-radius:12px;padding:10px 20px;font-weight:700;font-size:15px}
+.B .more{font-size:12.5px;color:#4A5565;text-align:center;margin:22px 0 0}
+.B .sh{font-size:13px;font-weight:700;color:#4A5565;padding:18px 20px 4px;display:flex;justify-content:space-between}
+.B .li{display:flex;gap:12px;align-items:flex-start;padding:10px 20px;border-top:1px solid #D3D9E1}
+.B .ck{width:20px;height:20px;border:2px solid #101828;border-radius:50%;flex:none;margin-top:1px}
+.B .lt{font-size:15.5px;line-height:1.3}
+.B .lm{font-size:12.5px;color:#4A5565}
+.B .lm.r{color:#B3261E;font-weight:700}
+.B .nav{background:#E9EDF2;color:#4A5565;border-top:1px solid #D3D9E1}
+.B .nav .on{color:#101828;font-weight:700}
+.B .capb{width:56px;height:56px;border-radius:50%;background:#101828;color:#FFD84D;display:grid;place-items:center;margin-top:-26px;border:4px solid #E9EDF2}
+.B .seg{display:flex;gap:16px;padding:4px 20px 0;border-bottom:1px solid #D3D9E1;font-size:13.5px;color:#4A5565}
+.B .seg span{padding:8px 0 9px}
+.B .seg .on{color:#101828;font-weight:700;box-shadow:inset 0 -3px 0 #101828}
+.B .lsent{font-size:20px;font-weight:700;line-height:1.25;padding:16px 20px 10px}
+.B .bar{display:flex;height:30px;margin:0 20px;border-radius:8px;overflow:hidden;gap:2px}
+.B .bar div{display:flex;align-items:center;padding-left:8px;color:#fff;font-weight:700;font-size:12.5px}
+.B .legend{display:flex;gap:14px;flex-wrap:wrap;padding:8px 20px 0;font-size:12.5px;color:#4A5565}
+.B .legend b{color:#B3261E}
+.B .ph{display:flex;align-items:center;gap:10px;padding:18px 20px 6px}
+.B .ph .n{font-weight:700;font-size:15.5px}
+.B .ph .cnt{margin-left:auto;font-size:12.5px;color:#4A5565}
+.B .take{font-size:13px;font-weight:700;color:#101828;text-decoration:underline;text-underline-offset:3px;white-space:nowrap;margin-left:auto;padding-top:2px}
+
+/* ---------- C: Tageslauf ---------- */
+.C{background:#F2F4F0;color:#1B2420;font-family:"Instrument Sans",system-ui,sans-serif}
+.C .hd{display:flex;align-items:baseline;justify-content:space-between;padding:4px 18px 8px}
+.C .dd{font-size:24px;font-weight:700;letter-spacing:-.01em}
+.C .dd small{font-size:14px;font-weight:500;color:#55605A;margin-left:6px}
+.C .float{margin:0 14px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.C .float .lbl{font-size:11.5px;color:#55605A;width:100%;margin-bottom:1px}
+.C .fl{font-size:12.5px;background:#fff;border:1.5px dashed #55605A;border-radius:8px;padding:5px 8px}
+.C .tl{position:relative;margin:12px 0 0;padding-left:58px;padding-right:14px}
+.C .tl::before{content:"";position:absolute;left:46px;top:0;bottom:0;width:2px;background:#C7CEC8}
+.C .ev{position:relative;padding:7px 0 9px}
+.C .ev .tm{position:absolute;left:-58px;width:33px;text-align:right;font-size:12px;font-weight:600;color:#55605A;font-variant-numeric:tabular-nums;top:8px}
+.C .ev .pin{position:absolute;left:-22px;top:9px;width:16px;height:16px;border-radius:50%;font-size:9px;display:grid;place-items:center;color:#fff;font-weight:700;border:2px solid #F2F4F0;box-sizing:content-box}
+.C .ev .et{font-size:15px;font-weight:600;line-height:1.25}
+.C .ev .em{font-size:12px;color:#55605A}
+.C .od{background:#FBEAE8;margin-left:-58px;padding-left:58px;margin-right:-14px;padding-right:14px;border-top:1px solid #F0C9C5;border-bottom:1px solid #F0C9C5}
+.C .od .tm{left:0}.C .od .pin{left:36px}
+.C .od .em{color:#9F1F18;font-weight:600}
+.C .now{position:relative;height:0;border-top:2px solid #1F4FD1;margin:6px 0 6px -12px}
+.C .now span{position:absolute;left:-46px;top:-9px;background:#1F4FD1;color:#fff;font-size:10.5px;font-weight:700;padding:2px 5px;border-radius:4px;font-variant-numeric:tabular-nums}
+.C .gap{font-size:11.5px;color:#55605A;padding:4px 0;font-style:italic}
+.C .nav{background:#F2F4F0;color:#55605A;border-top:1px solid #D5DBD6}
+.C .nav .on{color:#1B2420;font-weight:700}
+.C .capc{height:40px;padding:0 14px;border-radius:20px;background:#1F4FD1;color:#fff;display:flex;align-items:center;gap:6px;font-weight:700;font-size:12.5px;margin-top:-14px;white-space:nowrap}
+.C .tabs{display:flex;gap:1px;padding:0 12px 10px;flex-wrap:wrap}
+.C .tabs span{font-size:11px;padding:6px 4px;border-radius:8px;color:#55605A}
+.C .tabs .on{background:#1B2420;color:#fff;font-weight:600}
+.C .lanes{padding:0 14px}
+.C .axis{display:grid;grid-template-columns:52px 1fr;font-size:10.5px;color:#55605A;font-variant-numeric:tabular-nums;margin-bottom:4px}
+.C .axis .days{display:flex;justify-content:space-between;position:relative}
+.C .lane{display:grid;grid-template-columns:52px 1fr;align-items:center;min-height:50px;border-top:1px solid #D5DBD6}
+.C .lane .who{font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:5px}
+.C .track{position:relative;height:50px}
+.C .track .today{position:absolute;top:0;bottom:0;left:21%;width:2px;background:#1F4FD1}
+.C .mk{position:absolute;top:50%;transform:translate(-50%,-50%);width:13px;height:13px;border-radius:50%}
+.C .mk.o{box-shadow:0 0 0 2px #F2F4F0,0 0 0 4px #9F1F18}
+.C .lsum{font-size:11.5px;color:#55605A;padding:2px 0 0 52px;margin-top:-8px;margin-bottom:6px}
+.C .lsum b{color:#9F1F18}
+.C .next{margin:10px 14px 0;border-top:2px solid #1B2420;padding-top:8px}
+.C .next .r{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid #D5DBD6;font-size:14px;align-items:center}
+.C .next .d{width:44px;font-size:12px;font-weight:600;color:#55605A;font-variant-numeric:tabular-nums}
+.C .next .take{margin-left:auto;font-size:12px;font-weight:700;color:#1F4FD1;white-space:nowrap}
+
+/* ---------- A2: Familienplaner, organisch ---------- */
+.A2{background:#FBFAF8;color:#1E2333;font-family:"Rubik",system-ui,sans-serif}
+.A2 .day{padding:6px 18px 12px;display:flex;align-items:flex-end;justify-content:space-between}
+.A2 .dname{font-size:32px;font-weight:700;line-height:1;letter-spacing:-.015em}
+.A2 .dmeta{font-size:12.5px;color:#545A6B;text-align:right;line-height:1.35}
+.A2 .ppl{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 12px}
+.A2 .pp{border-radius:18px 18px 14px 14px;padding:9px 6px 8px;display:flex;flex-direction:column;gap:1px}
+.A2 .pp .nm{font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px}
+.A2 .pp .num{font-size:26px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+.A2 .pp .rd{white-space:nowrap;font-size:10px;font-weight:600;color:#A3241C}
+.A2 .pp .mm2{font-size:10.5px;color:#545A6B}
+.A2 .lab{font-size:13px;font-weight:600;color:#545A6B;padding:16px 18px 6px;display:flex;justify-content:space-between}
+.A2 .row{display:flex;gap:10px;align-items:flex-start;margin:0 12px 6px;padding:10px 12px;border-radius:16px;background:#F0F1F5}
+.A2 .row.open{background:#fff;box-shadow:inset 0 0 0 1.5px #D9DCE4}
+.A2 .q{width:26px;height:26px;border-radius:50%;border:2px dashed #7A8090;display:grid;place-items:center;font-weight:700;font-size:12px;color:#545A6B;flex:none}
+.A2 .tt{font-size:14.5px;font-weight:600;line-height:1.25}
+.A2 .mm{font-size:11.5px;color:#545A6B;margin-top:1px}
+.A2 .od{display:inline-block;background:#FBE4E1;color:#A3241C;font-weight:600;border-radius:8px;padding:1px 6px;margin-right:4px}
+.A2 .ask{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.A2 .ask span{font-size:12px;font-weight:600;border-radius:12px;padding:6px 11px;background:#E6E8EE}
+.A2 .ask .y{background:#1E2333;color:#fff}
+.A2 .ask .del{background:transparent;color:#545A6B;padding-left:4px}
+.A2 .nav{background:#FBFAF8;color:#545A6B;padding-top:8px}
+.A2 .nav .on{color:#1E2333;font-weight:600}
+.A2 .nav .on svg{background:#E6E8EE;border-radius:12px;padding:2px 12px;box-sizing:content-box}
+.A2 .capq{width:58px;height:52px;border-radius:20px;background:#1E2333;color:#fff;display:grid;place-items:center;margin-top:-18px}
+.A2 .tabs{display:flex;gap:2px;padding:0 10px 10px;flex-wrap:wrap}
+.A2 .tabs span{font-size:11px;padding:7px 5px;border-radius:12px;color:#545A6B}
+.A2 .tabs .on{background:#1E2333;color:#fff;font-weight:600}
+.A2 .lanes{display:grid;grid-template-columns:36px repeat(4,1fr);gap:0 4px;padding:0 10px}
+.A2 .lh{font-size:11px;font-weight:600;padding:7px 4px 6px;border-radius:14px 14px 0 0;display:flex;align-items:center;gap:4px}
+.A2 .dl{font-size:11px;color:#545A6B;padding:6px 2px;line-height:1.15;min-height:42px}
+.A2 .dl.today{color:#1E2333;font-weight:700}
+.A2 .dl.today span{background:#1E2333;color:#fff;border-radius:10px;padding:1px 5px}
+.A2 .cl{min-height:42px;padding:3px 3px}
+.A2 .blk{font-size:10.5px;line-height:1.15;padding:4px 6px;font-weight:500;border-radius:10px;background:#fff;hyphens:auto;-webkit-hyphens:auto;margin-bottom:3px}
+.A2 .blk.odb{background:#FBE4E1;color:#A3241C;font-weight:600}
+.A2 .ft{font-size:11px;font-weight:600;padding:7px 4px 9px;border-radius:0 0 14px 14px}
+.A2 .ft b{color:#A3241C}
+
+/* ---------- A2 weitere Ansichten ---------- */
+.A2 .tabs span{padding:7px 4px;font-size:10.5px}
+.A2 .wkh{font-size:13px;font-weight:600;color:#545A6B;padding:12px 18px 6px}
+.A2 .ur{display:flex;align-items:center;gap:10px;margin:0 12px 6px;padding:8px 10px;border-radius:16px;background:#F0F1F5}
+.A2 .dt{width:40px;border-radius:12px;background:#fff;text-align:center;padding:4px 0;flex:none;line-height:1.1}
+.A2 .dt small{display:block;font-size:10px;color:#545A6B;font-weight:600}
+.A2 .dt b{font-size:16px}
+.A2 .ur .tt{font-size:14px}
+.A2 .ur .dot,.A2 .ur .q{margin-left:auto}
+.A2 .tag{display:inline-block;border-radius:8px;padding:1px 6px;font-size:11px;font-weight:600;background:#E6E8EE;color:#1E2333}
+.A2 .fld{margin:0 12px 10px;border-radius:14px;box-shadow:inset 0 0 0 1.5px #D9DCE4;background:#fff;padding:10px 12px;font-size:14px;color:#545A6B;display:flex;gap:8px;align-items:center}
+.A2 .fld.val{color:#1E2333}
+.A2 .chips{display:flex;gap:6px;padding:0 12px 10px;flex-wrap:wrap}
+.A2 .chips span{font-size:12px;font-weight:600;border-radius:12px;padding:6px 10px;background:#E6E8EE}
+.A2 .chips .on{background:#1E2333;color:#fff}
+.A2 .rgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 12px}
+.A2 .rc{border-radius:18px;background:#fff;box-shadow:inset 0 0 0 1.5px #E3E5EB;overflow:hidden}
+.A2 .rc .img{height:78px}
+.A2 .rc .t{font-size:13.5px;font-weight:600;padding:7px 9px 2px;line-height:1.2}
+.A2 .rc .w{font-size:11px;color:#545A6B;padding:0 9px 9px}
+.A2 .rc .w b{color:#2C7A4B;font-weight:600}
+.A2 .pt{display:flex;align-items:center;gap:12px;margin:0 12px 8px;padding:12px;border-radius:20px}
+.A2 .pt .n{font-size:16px;font-weight:600}
+.A2 .pt .s{font-size:12px;color:#545A6B}
+.A2 .pt .cnt{margin-left:auto;text-align:right;font-size:12px;color:#545A6B}
+.A2 .pt .cnt b{display:block;font-size:20px;color:#1E2333}
+.A2 .pt.add{background:transparent;box-shadow:inset 0 0 0 2px #D9DCE4;border-style:dashed;justify-content:center;font-weight:600;color:#545A6B;font-size:14px;outline:2px dashed #C3C7D1;outline-offset:-2px;box-shadow:none}
+.A2 .cg{font-size:13px;font-weight:600;color:#545A6B;padding:10px 18px 6px}
+.A2 .ct{display:flex;align-items:center;gap:10px;margin:0 12px 6px;padding:9px 10px;border-radius:16px;background:#F0F1F5}
+.A2 .ct .ini{width:34px;height:34px;border-radius:50%;background:#fff;display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+.A2 .ct .n{font-size:14px;font-weight:600}
+.A2 .ct .r{font-size:11.5px;color:#545A6B}
+.A2 .ct .call{margin-left:auto;font-size:12px;font-weight:600;background:#1E2333;color:#fff;border-radius:12px;padding:7px 10px}
+.A2 .res{margin:0 12px 6px;padding:10px 12px;border-radius:16px;background:#F0F1F5}
+.A2 .res .tt{font-size:14px}
+.A2 .res .mm{display:flex;gap:6px;align-items:center;margin-top:3px}
+.A2 .cap-sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:26px 26px 0 0;padding:12px 16px 16px;box-shadow:0 -8px 30px -10px #1E233340;display:flex;flex-direction:column;align-items:center;gap:10px}
+.A2 .live{font-size:19px;font-weight:600;line-height:1.3;text-align:center;min-height:52px}
+.A2 .live span{color:#9AA0AE}
+.A2 .pulse{width:78px;height:78px;border-radius:50%;background:#FBE4E1;display:grid;place-items:center}
+.A2 .pulse div{width:54px;height:54px;border-radius:50%;background:#A3241C;color:#fff;display:grid;place-items:center}
+.A2 .cap-opts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;width:100%}
+.A2 .cap-opts span{border-radius:16px;background:#F0F1F5;text-align:center;padding:10px 4px;font-size:12.5px;font-weight:600}
+.A2 .cap-opts .mid{background:#1E2333;color:#fff}
+/* Dunkel */
+.A2.dk{background:#16181F;color:#ECEDF2}
+.A2.dk .dmeta,.A2.dk .lab,.A2.dk .mm,.A2.dk .pp .mm2,.A2.dk .sec{color:#A9AEBC}
+.A2.dk .row{background:#22252E}
+.A2.dk .row.open{background:#16181F;box-shadow:inset 0 0 0 1.5px #3A3E4A}
+.A2.dk .q{border-color:#A9AEBC;color:#A9AEBC}
+.A2.dk .pp .rd,.A2.dk .od{color:#FF9C8F}
+.A2.dk .od{background:#3D2220}
+.A2.dk .ask span{background:#2C3039;color:#ECEDF2}
+.A2.dk .ask .y{background:#ECEDF2;color:#16181F}
+.A2.dk .ask .del{background:transparent;color:#A9AEBC}
+.A2.dk .nav{background:#16181F;color:#A9AEBC}
+.A2.dk .nav .on{color:#ECEDF2}
+.A2.dk .nav .on svg{background:#2C3039}
+.A2.dk .capq{background:#ECEDF2;color:#16181F}
+.A2.dk .dot{color:#16181F!important}
+/* 200 % Schrift */
+.A2.x2 .dname{font-size:46px}
+.A2.x2 .dmeta{font-size:20px}
+.A2.x2 .ppl{grid-template-columns:1fr 1fr}
+.A2.x2 .pp .nm{font-size:20px}
+.A2.x2 .pp .num{font-size:40px}
+.A2.x2 .pp .rd,.A2.x2 .pp .mm2{font-size:17px;white-space:normal}
+.A2.x2 .lab{font-size:22px}
+.A2.x2 .tt{font-size:24px}
+.A2.x2 .mm{font-size:18px}
+.A2.x2 .nav .it{font-size:11px;letter-spacing:-.02em}
+.A2.x2 .day{flex-direction:column;align-items:flex-start;gap:4px}
+.A2.x2 .dmeta{text-align:left}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-today" viewBox="0 0 24 24"><path class="ic" d="M4 11.5 12 5l8 6.5V20H4z"/><path class="ic" d="M10 20v-5h4v5"/></symbol>
+  <symbol id="i-fam" viewBox="0 0 24 24"><circle class="ic" cx="8" cy="8" r="3"/><circle class="ic" cx="16.5" cy="9" r="2.5"/><path class="ic" d="M3 19c.6-3.3 2.6-5 5-5s4.4 1.7 5 5M13.5 19c.4-2.4 1.5-3.8 3-3.8s2.6 1.4 3 3.8"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect class="ic" x="9" y="3.5" width="6" height="11" rx="3"/><path class="ic" d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect class="ic" x="3.5" y="5" width="17" height="15" rx="2"/><path class="ic" d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle class="ic" cx="10.5" cy="10.5" r="6"/><path class="ic" d="m15 15 5 5"/></symbol>
+</svg>
+
+<div class="wrap" lang="de">
+
+<header class="prose">
+  <div class="eyebrow">FamilyApp · Gestaltung · Vorschlag vom 28.11.2026</div>
+  <h1>Drei Richtungen für eine eigene Optik</h1>
+  <p class="lede">Die App wirkt heute wie ein sauberes Material-Beispiel: alles ist dieselbe weiße Karte auf hellem Grund. Hier steht, woran man das festmacht, welche Grundsätze daraus folgen, und drei Richtungen, die sich nicht nur in der Farbe unterscheiden, sondern darin, wonach sie den Familienalltag ordnen.</p>
+  <div class="box" style="font-size:14.5px">
+    <b>Was dieser Vorschlag anders macht:</b> Der Ist-Stand ist am Compose-Code gemessen (Theme.kt, Screens.kt, Cards.kt, FamilyScreen.kt), nicht nach Gefühl, und gegen einen veröffentlichten Katalog generischer KI-Muster gezählt. Jede Richtung leitet sich aus einer Phase des Mental Load ab (Daminger 2019) statt aus einer Stilvorlage. Alle Farben sind nach WCAG 2.2 nachgerechnet, und am Ende steht, wie wir mit fünf Personen prüfen, welche Richtung wirklich besser funktioniert.
+  </div>
+</header>
+
+<section class="dir" id="a-organisch">
+  <div class="dirhead">
+    <div>
+      <div class="eyebrow">Gewählt am 28.11.2026 · Richtung A, organisch</div>
+      <h2>Familienplaner, weich</h2>
+      <p>Gleiche Ordnung wie A: jede Person hat ihre Spalte, man sieht sofort, wer was trägt. Statt Linien und Ecken tragen jetzt weiche Farbflächen die Spalten, Karten und Knöpfe sind gerundet, die Schrift ist die runde, kräftige Rubik in normaler Schreibweise statt schmaler Großbuchstaben.</p>
+      <p><span class="pill">Rubik</span><span class="pill">Personenfarben als helle Spuren</span><span class="pill">Radien 10 bis 20 px</span></p>
+    </div>
+    <div style="font-size:14.5px">
+      <h3>Was sich gegenüber A ändert</h3><ul><li>Spalten sind durchgehende, helle Farbspuren mit runden Köpfen statt Rasterlinien.</li><li>Personen erscheinen als Kreis mit Initiale, Offenes als gestrichelter Kreis mit „?“.</li><li>Überfällig ist ein weiches rotes Etikett mit Text statt eines Rahmens.</li><li>Kein Wischen mehr, nur Knöpfe; „Irrelevant“ heißt „Löschen“ und ist der leiseste Knopf.</li></ul>
+    </div>
+  </div>
+  <div class="phones">
+    <div><div class="phone"><div class="screen A2">
+        <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="day"><span class="dname">Samstag</span><span class="dmeta">28. November<br>KW 48</span></div>
+        <div class="body">
+          <div class="ppl"><div class="pp" style="background:#E3EAF6"><span class="nm"><span class="dot" style="width:16px;height:16px;background:#2F5DA8;font-size:7px">N</span>Nils</span><span class="num">3</span><span class="rd">1 überfällig</span></div><div class="pp" style="background:#F5E6DB"><span class="nm"><span class="dot" style="width:16px;height:16px;background:#A84B0C;font-size:7px">L</span>Lisa</span><span class="num">5</span><span class="rd">1 überfällig</span></div><div class="pp" style="background:#EEE3F4"><span class="nm"><span class="dot" style="width:16px;height:16px;background:#7B3FA0;font-size:7px">M</span>Mia</span><span class="num">2</span><span class="mm2">betrifft</span></div><div class="pp" style="background:#E0EFE5"><span class="nm"><span class="dot" style="width:16px;height:16px;background:#2C7A4B;font-size:7px">B</span>Ben</span><span class="num">1</span><span class="mm2">betrifft</span></div></div>
+          <div class="lab"><span>Gehört noch niemandem</span><span>3</span></div>
+          <div class="row open"><span class="q">?</span><div><div class="tt">Elternabend Klasse 2b, Di 19:30</div><div class="mm">Geteilt · betrifft Mia · bis Di 1.12.</div><div class="ask"><span class="y">Mach ich</span><span>Lisa</span><span class="del">Löschen</span></div></div></div>
+          <div class="row open"><span class="q">?</span><div><div class="tt">Zahnarzt für Ben vereinbaren</div><div class="mm">Gesprochen · Vorschlag Lisa · Datum offen</div></div></div>
+          <div class="lab"><span>Meins heute</span><span>3</span></div>
+          <div class="row"><span class="dot" style="width:26px;height:26px;background:#2F5DA8;font-size:12px">N</span><div><div class="tt">Hausschuhe für Mia kaufen</div><div class="mm"><span class="od">überfällig seit Do</span>betrifft Mia</div></div></div>
+          <div class="row"><span class="dot" style="width:26px;height:26px;background:#2F5DA8;font-size:12px">N</span><div><div class="tt">Reifenwechsel, Termin 14:00</div><div class="mm">heute</div></div></div>
+        </div>
+        <div class="nav">
+          <div class="it on"><svg><use href="#i-today"/></svg>Heute</div>
+          <div class="it"><svg><use href="#i-fam"/></svg>Familie</div>
+          <div class="it"><div class="capq"><svg><use href="#i-mic"/></svg></div>Erfassen</div>
+          <div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div>
+          <div class="it"><svg><use href="#i-search"/></svg>Suchen</div>
+        </div>
+      </div></div>
+      <p class="cap"><b>Heute.</b> Oben die vier Personen als weiche Farbkacheln. Ungeklärtes ist weiß mit Rand, Eigenes liegt auf ruhigem Grau.</p>
+    </div>
+    <div><div class="phone"><div class="screen A2">
+        <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="day"><span class="dname">Familie</span><span class="dmeta">Woche 48<br>23.–29.11.</span></div>
+        <div class="tabs"><span class="on">Aufgaben</span><span>Kontakte</span><span>Personen</span><span>Rezepte</span><span>Einkauf</span></div>
+        <div class="body"><div class="lanes"><div></div><div class="lh" style="background:#E3EAF6"><span class="dot" style="width:14px;height:14px;background:#2F5DA8;font-size:6px">N</span>Nils</div><div class="lh" style="background:#F5E6DB"><span class="dot" style="width:14px;height:14px;background:#A84B0C;font-size:6px">L</span>Lisa</div><div class="lh" style="background:#EEE3F4"><span class="dot" style="width:14px;height:14px;background:#7B3FA0;font-size:6px">M</span>Mia</div><div class="lh" style="background:#E0EFE5"><span class="dot" style="width:14px;height:14px;background:#2C7A4B;font-size:6px">B</span>Ben</div><div class="dl">Do<br>26.</div><div class="cl" style="background:#E3EAF6"><div class="blk odb">Hausschuhe Mia</div></div><div class="cl" style="background:#F5E6DB"><div class="blk odb">Kita-Beitrag</div></div><div class="cl" style="background:#EEE3F4"></div><div class="cl" style="background:#E0EFE5"></div><div class="dl">Fr<br>27.</div><div class="cl" style="background:#E3EAF6"></div><div class="cl" style="background:#F5E6DB"><div class="blk">Rezept Oma</div></div><div class="cl" style="background:#EEE3F4"><div class="blk">Turnbeutel</div></div><div class="cl" style="background:#E0EFE5"></div><div class="dl today"><span>Sa</span><br>28.</div><div class="cl" style="background:#E3EAF6"><div class="blk">Reifen 14:00</div></div><div class="cl" style="background:#F5E6DB"></div><div class="cl" style="background:#EEE3F4"></div><div class="cl" style="background:#E0EFE5"></div><div class="dl">So<br>29.</div><div class="cl" style="background:#E3EAF6"></div><div class="cl" style="background:#F5E6DB"><div class="blk">Adventskranz</div></div><div class="cl" style="background:#EEE3F4"></div><div class="cl" style="background:#E0EFE5"></div><div class="dl">Mo<br>30.</div><div class="cl" style="background:#E3EAF6"></div><div class="cl" style="background:#F5E6DB"><div class="blk">Elterngeld</div></div><div class="cl" style="background:#EEE3F4"></div><div class="cl" style="background:#E0EFE5"><div class="blk">Zahnarzt?</div></div><div class="dl">Di<br>1.</div><div class="cl" style="background:#E3EAF6"><div class="blk">Geschenk Oma</div></div><div class="cl" style="background:#F5E6DB"><div class="blk">Elternabend</div></div><div class="cl" style="background:#EEE3F4"><div class="blk">Elternabend</div></div><div class="cl" style="background:#E0EFE5"></div><div class="dl" style="min-height:0;padding-top:8px">offen</div><div class="ft" style="background:#E3EAF6">3 · <b>1 üf.</b></div><div class="ft" style="background:#F5E6DB">5 · <b>1 üf.</b></div><div class="ft" style="background:#EEE3F4">2</div><div class="ft" style="background:#E0EFE5">1</div></div></div>
+        <div class="nav">
+          <div class="it"><svg><use href="#i-today"/></svg>Heute</div>
+          <div class="it on"><svg><use href="#i-fam"/></svg>Familie</div>
+          <div class="it"><div class="capq"><svg><use href="#i-mic"/></svg></div>Erfassen</div>
+          <div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div>
+          <div class="it"><svg><use href="#i-search"/></svg>Suchen</div>
+        </div>
+      </div></div>
+      <p class="cap"><b>Familie › Aufgaben.</b> Die Woche als Farbspuren je Person, heute dunkel markiert, Summen unten in der Spur.</p>
+    </div>
+  </div>
+</section>
+
+<section class="dir" id="a-ansichten">
+  <div class="dirhead">
+    <div>
+      <div class="eyebrow">Richtung A organisch · weitere Ansichten</div>
+      <h2>Die ganze App in einem Stil</h2>
+      <p>Dieselben Bausteine überall: weiche Flächen in Personenfarbe, gerundete Kacheln, ein dunkler Hauptknopf, gestrichelt heißt offen. Einkauf, Wochenplanung und Erfassen eines Einkaufs stehen auf der Seite <a href="https://claude.ai/artifact/J19LnQM2G9sgGHv16MxSRZ">Klickwege Küche</a>.</p>
+    </div>
+    <div style="font-size:14.5px">
+      <h3>Dunkel und große Schrift</h3><p>Im Dunkelmodus werden die Spuren zu tiefen Tönen derselben Farbe (Text darauf ≥ 11,3 : 1, Sekundärtext ≥ 6,0 : 1, Rot #FF9C8F ≥ 6,5 : 1), der Hauptknopf wird hell. Bei 200 % Schrift stapeln sich die Personenkacheln zu zwei Spalten, Datum rutscht unter den Wochentag, nichts wird abgeschnitten.</p>
+    </div>
+  </div>
+  <div class="phones">
+    <div><div class="phone"><div class="screen A2 "><div class="status"><span>9:41</span><span>●●● ▮</span></div><div class="day"><span class="dname">Demnächst</span><span class="dmeta">6 Wochen<br>bis 8. Januar</span></div><div class="body"><div class="wkh">Diese Woche · KW 48</div><div class="ur"><div class="dt"><small>So</small><b>29</b></div><div><div class="tt">Adventskranz holen</div></div><span class="dot" style="width:26px;height:26px;background:#A84B0C;font-size:12px">L</span></div><div class="ur"><div class="dt"><small>Mo</small><b>30</b></div><div><div class="tt">Elterngeld-Nachweis</div><div class="mm">bis Montag</div></div><span class="dot" style="width:26px;height:26px;background:#A84B0C;font-size:12px">L</span></div><div class="ur"><div class="dt"><small>Di</small><b>1</b></div><div><div class="tt">Elternabend Klasse 2b</div><div class="mm"><span class="tag">noch nicht bestätigt</span></div></div><span class="q">?</span></div><div class="wkh">Nächste Woche · KW 49</div><div class="ur"><div class="dt"><small>Do</small><b>3</b></div><div><div class="tt">Geburtstag Oma</div><div class="mm">Geschenk: Nils</div></div><span class="dot" style="width:26px;height:26px;background:#2F5DA8;font-size:12px">N</span></div><div class="ur"><div class="dt"><small>Fr</small><b>4</b></div><div><div class="tt">Zahnarzt Ben, 15:30</div><div class="mm">vorausgedacht aus Kalender</div></div><span class="dot" style="width:26px;height:26px;background:#A84B0C;font-size:12px">L</span></div><div class="wkh">KW 50</div><div class="ur"><div class="dt"><small>Mi</small><b>9</b></div><div><div class="tt">Weihnachtsfeier Kita</div></div><span class="q">?</span></div></div><div class="nav"><div class="it"><svg><use href="#i-today"/></svg>Heute</div><div class="it"><svg><use href="#i-fam"/></svg>Familie</div><div class="it"><div class="capq"><svg><use href="#i-mic"/></svg></div>Erfassen</div><div class="it on"><svg><use href="#i-cal"/></svg>Demnächst</div><div class="it"><svg><use href="#i-search"/></svg>Suchen</div></div></div></div><p class="cap"><b>Demnächst.</b> Datum als Kachel, Person rechts, offene Zuständigkeit als gestrichelter Kreis.</p></div>
+    <div><div class="phone"><div class="screen A2 "><div class="status"><span>9:41</span><span>●●● ▮</span></div><div class="day"><span class="dname">Familie</span><span class="dmeta">Rezepte<br>24 gespeichert</span></div><div class="tabs"><span>Aufgaben</span><span>Kontakte</span><span>Personen</span><span class="on">Rezepte</span><span>Einkauf</span></div><div class="body"><div class="fld"><svg style="width:16px;height:16px"><use href="#i-search"/></svg>Rezept suchen</div><div class="chips"><span class="on">Im Angebot</span><span>Saison</span><span>Unter 30 min</span><span>Kinder mögen’s</span></div><div class="rgrid"><div class="rc"><div class="img" style="background:#F5E6DB"></div><div class="t">Ofengemüse mit Feta</div><div class="w"><b>Paprika 1,29 €</b> · 35 min</div></div><div class="rc"><div class="img" style="background:#E0EFE5"></div><div class="t">Linsen-Dal</div><div class="w"><b>Linsen 0,89 €</b> · 30 min</div></div><div class="rc"><div class="img" style="background:#EEE3F4"></div><div class="t">Rotkohl-Pfanne</div><div class="w">Saison · 25 min</div></div><div class="rc"><div class="img" style="background:#E3EAF6"></div><div class="t">Pfannkuchen</div><div class="w">zuletzt vor 3 Wochen</div></div></div></div><div class="nav"><div class="it"><svg><use href="#i-today"/></svg>Heute</div><div class="it on"><svg><use href="#i-fam"/></svg>Familie</div><div class="it"><div class="capq"><svg><use href="#i-mic"/></svg></div>Erfassen</div><div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div><div class="it"><svg><use href="#i-search"/></svg>Suchen</div></div></div></div><p class="cap"><b>Familie › Rezepte.</b> Filter als Chips, Angebote grün mit Preis.</p></div>
+    <div><div class="phone"><div class="screen A2 "><div class="status"><span>9:41</span><span>●●● ▮</span></div><div class="day"><span class="dname">Familie</span><span class="dmeta">Personen<br>4 + Oma</span></div><div class="tabs"><span>Aufgaben</span><span>Kontakte</span><span class="on">Personen</span><span>Rezepte</span><span>Einkauf</span></div><div class="body"><div class="pt" style="background:#E3EAF6"><span class="dot" style="width:42px;height:42px;background:#2F5DA8;font-size:19px">N</span><div><div class="n">Nils (ich)</div><div class="s">Erwachsen · Pixel 10</div></div><div class="cnt"><b>3</b>offen</div></div><div class="pt" style="background:#F5E6DB"><span class="dot" style="width:42px;height:42px;background:#A84B0C;font-size:19px">L</span><div><div class="n">Lisa</div><div class="s">Erwachsen · eigenes Handy</div></div><div class="cnt"><b>5</b>offen</div></div><div class="pt" style="background:#EEE3F4"><span class="dot" style="width:42px;height:42px;background:#7B3FA0;font-size:19px">M</span><div><div class="n">Mia</div><div class="s">Kind · 2b, Grundschule am Park</div></div><div class="cnt"><b>2</b>offen</div></div><div class="pt" style="background:#E0EFE5"><span class="dot" style="width:42px;height:42px;background:#2C7A4B;font-size:19px">B</span><div><div class="n">Ben</div><div class="s">Kind · Kita Sonnenblume</div></div><div class="cnt"><b>1</b>offen</div></div><div class="pt add">+ Person hinzufügen</div></div><div class="nav"><div class="it"><svg><use href="#i-today"/></svg>Heute</div><div class="it on"><svg><use href="#i-fam"/></svg>Familie</div><div class="it"><div class="capq"><svg><use href="#i-mic"/></svg></div>Erfassen</div><div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div><div class="it"><svg><use href="#i-search"/></svg>Suchen</div></div></div></div><p class="cap"><b>Familie › Personen.</b> Jede Person als Fläche in ihrer Farbe, Tap öffnet das Portfolio.</p></div>
+    <div><div class="phone"><div class="screen A2 "><div class="status"><span>9:41</span><span>●●● ▮</span></div><div class="day"><span class="dname">Familie</span><span class="dmeta">Kontakte<br>18</span></div><div class="tabs"><span>Aufgaben</span><span class="on">Kontakte</span><span>Personen</span><span>Rezepte</span><span>Einkauf</span></div><div class="body"><div class="fld"><svg style="width:16px;height:16px"><use href="#i-search"/></svg>Kontakt suchen</div><div class="cg">Schule und Kita</div><div class="ct"><span class="ini">FW</span><div><div class="n">Frau Wagner</div><div class="r">Klassenlehrerin 2b · Mia</div></div><span class="call">Anrufen</span></div><div class="ct"><span class="ini">KS</span><div><div class="n">Kita Sonnenblume</div><div class="r">Gruppe Igel · Ben</div></div><span class="call">Anrufen</span></div><div class="cg">Ärzte</div><div class="ct"><span class="ini">DH</span><div><div class="n">Dr. Huber</div><div class="r">Zahnarzt · Ben, Mia</div></div><span class="call">Anrufen</span></div><div class="ct"><span class="ini">KP</span><div><div class="n">Praxis Kern</div><div class="r">Kinderärztin</div></div><span class="call">Anrufen</span></div><div class="cg">Handwerk</div><div class="ct"><span class="ini">WH</span><div><div class="n">Werkstatt Huber</div><div class="r">Reifen, Inspektion</div></div><span class="call">Anrufen</span></div></div><div class="nav"><div class="it"><svg><use href="#i-today"/></svg>Heute</div><div class="it on"><svg><use href="#i-fam"/></svg>Familie</div><div class="it"><div class="capq"><svg><use href="#i-mic"/></svg></div>Erfassen</div><div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div><div class="it"><svg><use href="#i-search"/></svg>Suchen</div></div></div></div><p class="cap"><b>Familie › Kontakte.</b> Nach Bereichen gruppiert, Anrufen mit einem Tap.</p></div>
+    <div><div class="phone"><div class="screen A2 "><div class="status"><span>9:41</span><span>●●● ▮</span></div><div class="day"><span class="dname">Suchen</span><span class="dmeta">in allem,<br>auch Erledigtem</span></div><div class="body"><div class="fld val"><svg style="width:16px;height:16px"><use href="#i-search"/></svg>zahnarzt</div><div class="cg">Kontakte · 1</div><div class="ct"><span class="ini">DH</span><div><div class="n">Dr. Huber</div><div class="r">Zahnarzt · Ben, Mia</div></div><span class="call">Anrufen</span></div><div class="cg">Einträge · 3</div><div class="res"><div class="tt">Zahnarzt Ben, 15:30</div><div class="mm"><span class="tag">offen</span>Fr 4.12.</div></div><div class="res"><div class="tt">Zahnarzt Mia Kontrolle</div><div class="mm"><span class="tag" style="background:#E0EFE5">erledigt von Lisa</span>12.10.</div></div><div class="res"><div class="tt">Zahnzusatzversicherung kündigen?</div><div class="mm"><span class="tag">im Eingang</span>vor 3 Tagen</div></div></div><div class="nav"><div class="it"><svg><use href="#i-today"/></svg>Heute</div><div class="it"><svg><use href="#i-fam"/></svg>Familie</div><div class="it"><div class="capq"><svg><use href="#i-mic"/></svg></div>Erfassen</div><div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div><div class="it on"><svg><use href="#i-search"/></svg>Suchen</div></div></div></div><p class="cap"><b>Suchen.</b> Kontakte zuerst, Einträge mit Stand und wer es erledigt hat.</p></div>
+    <div><div class="phone"><div class="screen A2 "><div class="status"><span>9:41</span><span>●●● ▮</span></div><div class="day"><span class="dname">Samstag</span><span class="dmeta">28. November<br>KW 48</span></div><div class="body"><div class="dim" style="position:absolute;inset:0;background:#1E233355"></div><div class="cap-sheet"><div class="grab" style="width:36px;height:4px;border-radius:2px;background:#D9DCE4"></div><div style="font-size:12.5px;color:#545A6B">Ich höre zu …</div><div class="live">Mia braucht bis Donnerstag <span>neue Hausschuhe</span></div><div class="pulse"><div><svg style="width:26px;height:26px"><use href="#i-mic"/></svg></div></div><div class="cap-opts"><span>Tippen</span><span class="mid">Foto</span><span>Abbrechen</span></div><div style="font-size:11.5px;color:#545A6B;text-align:center">Speichert von selbst, sobald du aufhörst. „Foto“ liegt genau unter dem Erfassen-Knopf.</div></div></div><div class="nav"><div class="it"><svg><use href="#i-today"/></svg>Heute</div><div class="it"><svg><use href="#i-fam"/></svg>Familie</div><div class="it"><div class="capq"><svg><use href="#i-mic"/></svg></div>Erfassen</div><div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div><div class="it"><svg><use href="#i-search"/></svg>Suchen</div></div></div></div><p class="cap"><b>Erfassen.</b> Sprache läuft sofort, der Text erscheint live, „Foto“ an derselben Stelle.</p></div>
+    <div><div class="phone"><div class="screen A2 dk"><div class="status"><span>9:41</span><span>●●● ▮</span></div><div class="day"><span class="dname">Samstag</span><span class="dmeta">28. November<br>KW 48</span></div><div class="body"><div class="ppl"><div class="pp" style="background:#1E2A40"><span class="nm"><span class="dot" style="width:16px;height:16px;background:#8FB0EC;font-size:7px">N</span>Nils</span><span class="num">3</span><span class="rd">1 überfällig</span></div><div class="pp" style="background:#3A2A20"><span class="nm"><span class="dot" style="width:16px;height:16px;background:#F0A06A;font-size:7px">L</span>Lisa</span><span class="num">5</span><span class="rd">1 überfällig</span></div><div class="pp" style="background:#33283D"><span class="nm"><span class="dot" style="width:16px;height:16px;background:#C9A0E6;font-size:7px">M</span>Mia</span><span class="num">2</span><span class="mm2">betrifft</span></div><div class="pp" style="background:#1F3328"><span class="nm"><span class="dot" style="width:16px;height:16px;background:#7FCB9B;font-size:7px">B</span>Ben</span><span class="num">1</span><span class="mm2">betrifft</span></div></div><div class="lab"><span>Gehört noch niemandem</span><span>3</span></div><div class="row open"><span class="q">?</span><div><div class="tt">Elternabend Klasse 2b, Di 19:30</div><div class="mm">Geteilt · betrifft Mia</div><div class="ask"><span class="y">Mach ich</span><span>Lisa</span><span class="del">Löschen</span></div></div></div><div class="lab"><span>Meins heute</span><span>3</span></div><div class="row"><span class="dot" style="width:26px;height:26px;background:#8FB0EC;font-size:12px">N</span><div><div class="tt">Hausschuhe für Mia kaufen</div><div class="mm"><span class="od">überfällig seit Do</span>betrifft Mia</div></div></div></div><div class="nav"><div class="it on"><svg><use href="#i-today"/></svg>Heute</div><div class="it"><svg><use href="#i-fam"/></svg>Familie</div><div class="it"><div class="capq"><svg><use href="#i-mic"/></svg></div>Erfassen</div><div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div><div class="it"><svg><use href="#i-search"/></svg>Suchen</div></div></div></div><p class="cap"><b>Heute, dunkel.</b> Gleiche Ordnung, tiefe Farbspuren, heller Hauptknopf.</p></div>
+    <div><div class="phone"><div class="screen A2  x2"><div class="status"><span>9:41</span><span>●●● ▮</span></div><div class="day"><span class="dname">Samstag</span><span class="dmeta">28. November<br>KW 48</span></div><div class="body"><div class="ppl"><div class="pp" style="background:#E3EAF6"><span class="nm"><span class="dot" style="width:16px;height:16px;background:#2F5DA8;font-size:7px">N</span>Nils</span><span class="num">3</span><span class="rd">1 überfällig</span></div><div class="pp" style="background:#F5E6DB"><span class="nm"><span class="dot" style="width:16px;height:16px;background:#A84B0C;font-size:7px">L</span>Lisa</span><span class="num">5</span><span class="rd">1 überfällig</span></div></div><div class="lab"><span>Gehört noch niemandem</span><span>3</span></div><div class="row open"><span class="q">?</span><div><div class="tt">Elternabend Klasse 2b, Di 19:30</div><div class="mm">Geteilt · betrifft Mia</div><div class="ask"><span class="y">Mach ich</span><span>Lisa</span><span class="del">Löschen</span></div></div></div></div><div class="nav"><div class="it on"><svg><use href="#i-today"/></svg>Heute</div><div class="it"><svg><use href="#i-fam"/></svg>Familie</div><div class="it"><div class="capq"><svg><use href="#i-mic"/></svg></div>Erfassen</div><div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div><div class="it"><svg><use href="#i-search"/></svg>Suchen</div></div></div></div><p class="cap"><b>Heute, 200 % Schrift.</b> Kacheln in zwei Spalten, Rest scrollt.</p></div>
+  </div>
+</section>
+
+<section class="grid2">
+  <div>
+    <div class="eyebrow">Ist-Stand, nachgebaut aus dem Code</div>
+    <div class="phone"><div class="screen ist">
+      <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="top"><span class="t">Heute</span><span class="dot" style="width:32px;height:32px;background:#2F5DA8;font-size:14px">N</span></div>
+      <div class="body">
+        <div class="card"><div class="h">Heute wichtig</div><div style="font-size:14px;margin-top:6px;font-weight:500">Hausschuhe für Mia kaufen</div><div style="font-size:12px;color:#B3261E">überfällig seit Donnerstag</div></div>
+        <div class="card"><div class="h">Essen heute</div><div class="s" style="font-size:13px;margin-top:4px">Kürbissuppe · 3 Essensvorschläge ansehen</div></div>
+        <div class="sec">Eingang <span class="badge">3</span></div>
+        <div class="card">
+          <div class="s">Geteilt · gestern</div>
+          <div style="font-size:16px;font-weight:500;margin-top:4px">Elternabend Klasse 2b am Dienstag, 19:30</div>
+          <div class="chips"><span class="chip s1"><span class="dot" style="width:16px;height:16px;background:#7B3FA0;font-size:8px;vertical-align:-3px">M</span> betrifft Mia</span><span class="chip">Wer kümmert sich?</span><span class="chip s1">bis Di 1.12.</span></div>
+          <div class="s">Regel: Absender Grundschule · Datum im Text</div>
+          <div class="btns" style="margin-top:8px"><span style="color:#5C5A55">Irrelevant</span><span class="bp">Mach ich</span></div>
+        </div>
+      </div>
+      <div class="nav">
+        <div class="it on"><svg><use href="#i-today"/></svg>Heute</div>
+        <div class="it"><svg><use href="#i-fam"/></svg>Familie</div>
+        <div class="it"><div class="fab"><svg><use href="#i-mic"/></svg></div>Erfassen</div>
+        <div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div>
+        <div class="it"><svg><use href="#i-search"/></svg>Suchen</div>
+      </div>
+    </div></div>
+    <p class="cap">Gleiche Maße, Farben und Texte wie im Code. Die Datenlage ist erfunden (Lisa, Mia, Ben, Oma wie in den Tests).</p>
+  </div>
+  <div class="prose">
+    <h2>Warum es generisch wirkt</h2>
+    <p>Gezählt nach dem Musterkatalog von pixelslop (Schweregrad 1 bis 3, ab 4 Punkten „schlampig“). Die App kommt auf <b>9 Punkte</b>. Kein einzelner Fehler ist schlimm, die Summe macht den Eindruck.</p>
+    <div class="tbl"><table>
+      <tr><th>Muster</th><th>Wo im Code</th><th>Pkt.</th></tr>
+      <tr><td>Karte um alles</td><td>Dringend, Hinweis, Essen, Eingang, Lastkarte, Personen: jede Fläche ist <code>clip(16.dp).background(card)</code></td><td class="n">2</td></tr>
+      <tr><td>Redundanter Erklärtext</td><td><code>family_load_hint</code>, <code>family_people_hint</code>, „Regel: …“ auf jeder Karte</td><td class="n">2</td></tr>
+      <tr><td>Gleichmäßiger Abstand, flache Skala</td><td>Schrift 12 · 13 · 14 · 15 · 17 · 18 sp, Sprünge um Faktor 1,1</td><td class="n">1</td></tr>
+      <tr><td>Standardschrift</td><td>Systemschrift (Roboto)</td><td class="n">1</td></tr>
+      <tr><td>Generischer Schatten</td><td>Erfassen-Knopf <code>shadow(6.dp)</code>, die einzige erhabene Fläche</td><td class="n">1</td></tr>
+      <tr><td>Bekannte Farbwelt</td><td>Creme-Grund mit Petrol-Akzent, die gängigste „geschmackvolle“ Voreinstellung</td><td class="n">1</td></tr>
+      <tr><td>Pillen überall</td><td>Tabs, Zähler, Chips, Knöpfe: alles 12 bis 16 dp rund</td><td class="n">1</td></tr>
+    </table></div>
+    <p style="margin-top:14px"><b>Gewichtiger als die Optik:</b> „Heute“ zeigt weder das Datum noch eine Reihenfolge nach Wichtigkeit. Eine Eingangskarte hat sechs Zeilen und vier gleich laute Bedienelemente (Gesetz von Hick, Nielsen-Heuristik 8 „ästhetisch und minimalistisch“). Personen sind nur 20-dp-Punkte, die Familie selbst ist kaum zu sehen, obwohl Transparenz der Kern ist.</p>
+  </div>
+</section>
+
+<section class="prose">
+  <h2>Grundsätze, an denen sich jede Richtung messen lässt</h2>
+  <ul>
+    <li><b>Ein Ordnungsprinzip pro Bildschirm.</b> Jeder Bildschirm beantwortet eine Frage („Was muss ich entscheiden?“, „Wer trägt was?“). Was nicht zur Frage gehört, rückt weg.</li>
+    <li><b>Hierarchie durch Schrift und Raum, nicht durch Kästen.</b> Größensprünge um Faktor 1,5 bis 2, Gruppen durch Abstand und Linien (Gestaltgesetze Nähe und gemeinsame Region). Eine Fläche bekommt nur, was ein eigenes Objekt ist.</li>
+    <li><b>Ein Primärknopf pro Ansicht.</b> „Passt“ ist laut, alles andere leise. Das senkt die Entscheidungszeit (Hick-Hyman) und passt zu „schnell rein, komplett später“.</li>
+    <li><b>Personen sind Material, nicht Dekor.</b> Die festen Personenfarben (D6) dürfen Flächen füllen. Wer was trägt, muss man aus zwei Metern erkennen.</li>
+    <li><b>Wiedererkennen statt Erinnern</b> (Nielsen 6): Datum, Wochentag und KW stehen immer oben. Offenes sieht immer gleich aus, egal auf welchem Bildschirm.</li>
+    <li><b>Die App erklärt nichts, was sie zeigen kann.</b> Hinweistexte werden zu Form (gestrichelt = offen, rot = überfällig, voll = erledigt), Regeln erscheinen erst beim Antippen.</li>
+    <li><b>Ruhe als Funktion.</b> Keine Konfetti, kein Glow, keine Verläufe. Abschluss sichtbar machen („Alles sortiert“) schließt offene Schleifen (Zeigarnik, Masicampo &amp; Baumeister 2011).</li>
+    <li><b>Zugänglich ohne Ausnahme.</b> WCAG 2.2 AA, 48 dp Ziele, 200 % Schrift, Status nie nur über Farbe. Eigene Schrift ist dabei kein Problem: Compose skaliert jede eingebundene Schrift über <code>sp</code>.</li>
+  </ul>
+  <p style="margin-top:12px;font-size:14.5px;color:var(--muted)">Fest bleibt in allen Richtungen: Navigation A mit Erfassen in der Mitte, keine Vibration, feste Farben, die fünf Familie-Tabs, die vier Personenfarben samt Initiale.</p>
+</section>
+
+<!-- ================= A ================= -->
+<section class="dir" id="a">
+  <div class="dirhead">
+    <div>
+      <div class="eyebrow">Richtung A · ordnet nach Personen</div>
+      <h2>Familienplaner</h2>
+      <p>Vorbild ist der Wandkalender in der Küche mit einer Spalte pro Person. Raster, Linien und schmale, kräftige Großbuchstaben. Die Personenfarben füllen ganze Flächen, sodass man auf einen Blick sieht, wer gerade wie viel trägt. Antwort auf die Mental-Load-Phase <i>überwachen und verteilen</i>.</p>
+      <p><span class="pill">Archivo (schmal und breit)</span><span class="pill">Tinte #14213D auf Weiß</span><span class="pill">eckig, keine Rundungen</span></p>
+    </div>
+    <div style="font-size:14.5px">
+      <h3>Stark</h3><ul><li>Transparenz wird zum Bild: die Lastkarte ist das Raster selbst.</li><li>Unverwechselbar, aus dem Familienalltag abgeleitet.</li><li>Tablet-Spalten (Variante C aus der Doku) sind schon angelegt.</li></ul>
+      <h3 style="margin-top:10px">Riskant</h3><ul><li>Vier Spalten sind auf schmalen Handys knapp; bei 200 % Schrift wird das Wochenraster zur Liste.</li><li>Viel Farbe, kann unruhig wirken, wenn viel offen ist.</li><li>Aufwand: hoch (neues Raster-Layout in Familie und Heute).</li></ul>
+    </div>
+  </div>
+  <div class="phones">
+    <div>
+      <div class="phone"><div class="screen A">
+        <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="day"><span class="dname">Samstag</span><span class="dmeta">28. November<br>KW 48</span></div>
+        <div class="body">
+          <div class="cols">
+            <div class="col"><span class="nm"><i class="sw" style="background:#2F5DA8"></i>Nils</span><span class="num">3</span><span class="rd">1 überfällig</span></div>
+            <div class="col"><span class="nm"><i class="sw" style="background:#A84B0C"></i>Lisa</span><span class="num">5</span><span class="rd">1 überfällig</span></div>
+            <div class="col"><span class="nm"><i class="sw" style="background:#7B3FA0"></i>Mia</span><span class="num">2</span><span class="mm">betrifft</span></div>
+            <div class="col"><span class="nm"><i class="sw" style="background:#2C7A4B"></i>Ben</span><span class="num">1</span><span class="mm">betrifft</span></div>
+          </div>
+          <div class="lab"><span>Gehört noch niemandem</span><span>3</span></div>
+          <div class="row"><div class="tab q">?</div><div class="cell"><span class="tt">Elternabend Klasse 2b, Di 19:30</span><span class="mm">Geteilt · betrifft Mia · bis Di 1.12.</span><div class="ask"><span class="y">Mach ich</span><span>Lisa</span><span>Löschen</span></div></div></div>
+          <div class="row"><div class="tab q">?</div><div class="cell"><span class="tt">Zahnarzt für Ben vereinbaren</span><span class="mm">Gesprochen · Vorschlag Lisa · Datum offen</span></div></div>
+          <div class="lab"><span>Meins heute</span><span>3</span></div>
+          <div class="row"><div class="tab" style="background:#2F5DA8">N</div><div class="cell"><span class="tt">Hausschuhe für Mia kaufen</span><span class="mm"><b>überfällig seit Do</b> · betrifft Mia</span></div></div>
+          <div class="row"><div class="tab" style="background:#2F5DA8">N</div><div class="cell"><span class="tt">Reifenwechsel, Termin 14:00</span><span class="mm">heute</span></div></div>
+        </div>
+        <div class="nav">
+          <div class="it on"><svg><use href="#i-today"/></svg>Heute</div>
+          <div class="it"><svg><use href="#i-fam"/></svg>Familie</div>
+          <div class="it"><div class="cap-btn"><svg><use href="#i-mic"/></svg></div>Erfassen</div>
+          <div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div>
+          <div class="it"><svg><use href="#i-search"/></svg>Suchen</div>
+        </div>
+      </div></div>
+      <p class="cap"><b>Heute.</b> Oben die Kopfzeile des Planers: jede Person mit offener Zahl. Offenes trägt das schraffierte Feld statt einer Person.</p>
+    </div>
+    <div>
+      <div class="phone"><div class="screen A">
+        <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="day"><span class="dname">Familie</span><span class="dmeta">Woche 48<br>23.–29.11.</span></div>
+        <div class="reg"><span class="on">Aufgaben</span><span>Kontakte</span><span>Personen</span><span>Rezepte</span><span>Einkauf</span></div>
+        <div class="body">
+          <div class="wk">
+            <div class="hd"></div>
+            <div class="hd"><i class="sw" style="width:8px;height:8px;background:#2F5DA8"></i>Nils</div>
+            <div class="hd"><i class="sw" style="width:8px;height:8px;background:#A84B0C"></i>Lisa</div>
+            <div class="hd"><i class="sw" style="width:8px;height:8px;background:#7B3FA0"></i>Mia</div>
+            <div class="hd"><i class="sw" style="width:8px;height:8px;background:#2C7A4B"></i>Ben</div>
+            <div class="dl">Do<br>26.</div><div><div class="blk od" style="background:#DCE6F6">Hausschuhe Mia</div></div><div><div class="blk od" style="background:#F6E2D4">Kita-Beitrag</div></div><div></div><div></div>
+            <div class="dl">Fr<br>27.</div><div></div><div><div class="blk" style="background:#F6E2D4">Rezept Oma</div></div><div><div class="blk" style="background:#ECDDF4">Turnbeutel</div></div><div></div>
+            <div class="dl today">Sa<br>28.</div><div><div class="blk" style="background:#DCE6F6">Reifen 14:00</div></div><div></div><div></div><div></div>
+            <div class="dl">So<br>29.</div><div></div><div><div class="blk" style="background:#F6E2D4">Adventskranz</div></div><div></div><div></div>
+            <div class="dl">Mo<br>30.</div><div></div><div><div class="blk" style="background:#F6E2D4">Elterngeld</div></div><div></div><div><div class="blk" style="background:#DDEFE3">Zahnarzt?</div></div>
+            <div class="dl">Di<br>1.</div><div><div class="blk" style="background:#DCE6F6">Geschenk Oma</div></div><div><div class="blk" style="background:#F6E2D4">Elternabend</div></div><div><div class="blk" style="background:#ECDDF4">Elternabend</div></div><div></div>
+          </div>
+          <div class="sum"><div>offen</div><div>3 · <span style="color:#B3261E">1 üf.</span></div><div>5 · <span style="color:#B3261E">1 üf.</span></div><div>2</div><div>1</div></div>
+        </div>
+        <div class="nav">
+          <div class="it"><svg><use href="#i-today"/></svg>Heute</div>
+          <div class="it on"><svg><use href="#i-fam"/></svg>Familie</div>
+          <div class="it"><div class="cap-btn"><svg><use href="#i-mic"/></svg></div>Erfassen</div>
+          <div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div>
+          <div class="it"><svg><use href="#i-search"/></svg>Suchen</div>
+        </div>
+      </div></div>
+      <p class="cap"><b>Familie › Aufgaben.</b> Die Lastkarte ist das Wochenraster: Spalte je Person, Überfälliges rot umrandet, Summen unten. Tabs als Karteireiter.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= B ================= -->
+<section class="dir" id="b">
+  <div class="dirhead">
+    <div>
+      <div class="eyebrow">Richtung B · ordnet nach Entscheidungen</div>
+      <h2>Eins nach dem anderen</h2>
+      <p>Die App spricht in einem Satz, was ansteht, und legt genau eine Entscheidung groß vor. Der Rest des Eingangs liegt sichtbar als Stapel darunter. Alles andere ist ruhige Liste ohne Kästen. Fehlende Angaben sind gelb markiert wie mit dem Textmarker. Antwort auf die Phase <i>entscheiden</i>, die der Eingang (HITL) abbildet.</p>
+      <p><span class="pill">Atkinson Hyperlegible Next</span><span class="pill">kühles Grau, Tinte, Marker-Gelb</span><span class="pill">eine Fläche pro Bildschirm</span></p>
+    </div>
+    <div style="font-size:14.5px">
+      <h3>Stark</h3><ul><li>Geringste Last im Kopf: eine Frage, ein lauter Knopf.</li><li>Schrift vom Braille Institute für Lesbarkeit entwickelt, passt zu 200 % Schrift und Müdigkeit am Abend.</li><li>Kleinster Umbau: Listen und Karten vereinfachen, Theme tauschen.</li></ul>
+      <h3 style="margin-top:10px">Riskant</h3><ul><li>Wer lieber alles auf einmal überblickt, muss den Stapel aufklappen.</li><li>Ruhig heißt auch: weniger Wiedererkennungswert als A.</li><li>Aufwand: mittel.</li></ul>
+    </div>
+  </div>
+  <div class="phones">
+    <div>
+      <div class="phone"><div class="screen B">
+        <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="body">
+          <div class="hdr"><div class="date">Samstag, 28. November · KW 48</div><div class="big">3 Dinge brauchen eine Entscheidung.</div></div>
+          <div class="stack"><div class="dc">
+            <div class="src">Geteilt aus Mail · Grundschule am Park · gestern</div>
+            <div class="ttl">Elternabend Klasse 2b am Dienstag, 19:30</div>
+            <div class="facts">
+              <div><span class="k">betrifft</span><span class="dot" style="width:20px;height:20px;background:#7B3FA0;font-size:10px">M</span>Mia</div>
+              <div><span class="k">kümmert sich</span><mark>Wer?</mark></div>
+              <div><span class="k">bis</span>Dienstag, 1.12.</div>
+            </div>
+            <div class="act"><span class="no">Löschen</span><span class="yes">Mach ich</span></div>
+          </div></div>
+          <div class="more">noch 2 dahinter</div>
+          <div class="sh"><span>Für dich heute</span><span>3</span></div>
+          <div class="li"><span class="ck"></span><div><div class="lt">Hausschuhe für Mia kaufen</div><div class="lm r">überfällig seit Donnerstag</div></div></div>
+          <div class="li"><span class="ck"></span><div><div class="lt">Reifenwechsel</div><div class="lm">heute 14:00</div></div></div>
+          <div class="li"><span class="ck"></span><div><div class="lt">Kürbissuppe kochen</div><div class="lm">Essen heute · 3 Vorschläge</div></div></div>
+        </div>
+        <div class="nav">
+          <div class="it on"><svg><use href="#i-today"/></svg>Heute</div>
+          <div class="it"><svg><use href="#i-fam"/></svg>Familie</div>
+          <div class="it"><div class="capb"><svg><use href="#i-mic"/></svg></div>Erfassen</div>
+          <div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div>
+          <div class="it"><svg><use href="#i-search"/></svg>Suchen</div>
+        </div>
+      </div></div>
+      <p class="cap"><b>Heute.</b> Ein Satz statt Überschrift mit Zähler. Die oberste Karte ist die einzige Fläche, die zwei darunter deuten den Stapel an.</p>
+    </div>
+    <div>
+      <div class="phone"><div class="screen B">
+        <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="seg"><span class="on">Aufgaben</span><span>Kontakte</span><span>Personen</span><span>Rezepte</span><span>Einkauf</span></div>
+        <div class="body">
+          <div class="lsent">Lisa trägt gerade 5 von 8 Fristen.</div>
+          <div class="bar"><div style="flex:5;background:#A84B0C">Lisa 5</div><div style="flex:3;background:#2F5DA8">Nils 3</div></div>
+          <div class="legend"><span><b>2 überfällig</b> (Lisa, Nils)</span><span>3 gehören niemandem</span></div>
+          <div class="ph"><span class="dot" style="width:28px;height:28px;background:#A84B0C;font-size:13px">L</span><span class="n">Lisa</span><span class="cnt">5 offen</span></div>
+          <div class="li"><span class="ck"></span><div style="flex:1"><div class="lt">Kita-Beitrag Dezember überweisen</div><div class="lm r">überfällig seit Donnerstag</div></div><span class="take">Übernehme ich</span></div>
+          <div class="li"><span class="ck"></span><div style="flex:1"><div class="lt">Elterngeld-Nachweis hochladen</div><div class="lm">bis Montag</div></div><span class="take">Übernehme ich</span></div>
+          <div class="ph"><span class="dot" style="width:28px;height:28px;background:#2F5DA8;font-size:13px">N</span><span class="n">Nils (ich)</span><span class="cnt">3 offen</span></div>
+          <div class="li"><span class="ck"></span><div style="flex:1"><div class="lt">Hausschuhe für Mia kaufen</div><div class="lm r">überfällig seit Donnerstag</div></div></div>
+        </div>
+        <div class="nav">
+          <div class="it"><svg><use href="#i-today"/></svg>Heute</div>
+          <div class="it on"><svg><use href="#i-fam"/></svg>Familie</div>
+          <div class="it"><div class="capb"><svg><use href="#i-mic"/></svg></div>Erfassen</div>
+          <div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div>
+          <div class="it"><svg><use href="#i-search"/></svg>Suchen</div>
+        </div>
+      </div></div>
+      <p class="cap"><b>Familie › Aufgaben.</b> Die Lastkarte wird ein Satz und ein geteilter Balken. Tabs als Textreiter mit Unterstrich, keine Pillen.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= C ================= -->
+<section class="dir" id="c">
+  <div class="dirhead">
+    <div>
+      <div class="eyebrow">Richtung C · ordnet nach Zeit</div>
+      <h2>Tageslauf</h2>
+      <p>Heute ist eine Zeitachse mit einer Jetzt-Linie. Überfälliges liegt sichtbar darüber im roten Band, was noch kommt, darunter. Was kein Datum hat, „schwebt“ oben als gestrichelter Zettel, bis es einen Platz in der Zeit bekommt. Familie zeigt je Person eine Spur über zwei Wochen. Antwort auf die Phase <i>vorausdenken</i>.</p>
+      <p><span class="pill">Instrument Sans, Ziffern tabellarisch</span><span class="pill">Graugrün, Signalblau</span><span class="pill">Achse statt Liste</span></p>
+    </div>
+    <div style="font-size:14.5px">
+      <h3>Stark</h3><ul><li>Zeit ist, was Familien jonglieren: die Achse macht Lücken und Engpässe sichtbar.</li><li>Ungeklärtes ist räumlich getrennt, ohne eigenen Bereich.</li><li>Passt zu später geplanten Kalender-Abos und Wetter.</li></ul>
+      <h3 style="margin-top:10px">Riskant</h3><ul><li>Die meisten Aufgaben haben keine Uhrzeit, nur einen Tag; die Achse ist dann dünn.</li><li>Spuren in Familie sind bei vielen Fristen schwer anzutippen (48 dp).</li><li>Aufwand: hoch, eigene Achsen-Komponente.</li></ul>
+    </div>
+  </div>
+  <div class="phones">
+    <div>
+      <div class="phone"><div class="screen C">
+        <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="hd"><span class="dd">Samstag<small>28.11.</small></span><span style="font-size:12.5px;color:#55605A">KW 48</span></div>
+        <div class="body">
+          <div class="float"><span class="lbl">Noch ohne Platz · 3</span><span class="fl">Elternabend 2b · wer?</span><span class="fl">Zahnarzt Ben · wann?</span><span class="fl">+1</span></div>
+          <div class="tl">
+            <div class="ev od"><span class="tm">Do</span><span class="pin" style="background:#2F5DA8">N</span><div class="et">Hausschuhe für Mia kaufen</div><div class="em">überfällig seit 2 Tagen</div></div>
+            <div class="ev"><span class="tm">8:00</span><span class="pin" style="background:#A84B0C">L</span><div class="et">Bäcker, Brötchen für den Brunch</div><div class="em">erledigt</div></div>
+            <div class="now"><span>9:41</span></div>
+            <div class="gap">bis 14:00 nichts geplant</div>
+            <div class="ev"><span class="tm">14:00</span><span class="pin" style="background:#2F5DA8">N</span><div class="et">Reifenwechsel</div><div class="em">Werkstatt Huber</div></div>
+            <div class="ev"><span class="tm">16:30</span><span class="pin" style="background:#7B3FA0">M</span><div class="et">Kindergeburtstag Emma</div><div class="em">Lisa bringt, Nils holt ab</div></div>
+            <div class="ev"><span class="tm">18:30</span><span class="pin" style="background:#A84B0C">L</span><div class="et">Kürbissuppe</div><div class="em">Essen heute</div></div>
+          </div>
+        </div>
+        <div class="nav">
+          <div class="it on"><svg><use href="#i-today"/></svg>Heute</div>
+          <div class="it"><svg><use href="#i-fam"/></svg>Familie</div>
+          <div class="it"><div class="capc"><svg style="width:18px;height:18px"><use href="#i-mic"/></svg>Erfassen</div></div>
+          <div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div>
+          <div class="it"><svg><use href="#i-search"/></svg>Suchen</div>
+        </div>
+      </div></div>
+      <p class="cap"><b>Heute.</b> Der Eingang ist die Zettelreihe oben. Erfassen trägt sein Wort im Knopf, weil das Symbol allein mehrdeutig ist.</p>
+    </div>
+    <div>
+      <div class="phone"><div class="screen C">
+        <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="hd"><span class="dd">Familie</span><span style="font-size:12.5px;color:#55605A">nächste 14 Tage</span></div>
+        <div class="tabs"><span class="on">Aufgaben</span><span>Kontakte</span><span>Personen</span><span>Rezepte</span><span>Einkauf</span></div>
+        <div class="body">
+          <div class="lanes">
+            <div class="axis"><span></span><div class="days"><span>Do</span><span style="color:#1F4FD1;font-weight:700">heute</span><span>Di</span><span>Fr</span><span>Mo</span><span>Do</span></div></div>
+            <div class="lane"><span class="who"><span class="dot" style="width:20px;height:20px;background:#A84B0C;font-size:10px">L</span>Lisa</span><div class="track"><span class="today"></span><span class="mk o" style="left:6%;background:#A84B0C"></span><span class="mk" style="left:30%;background:#A84B0C"></span><span class="mk" style="left:38%;background:#A84B0C"></span><span class="mk" style="left:47%;background:#A84B0C"></span><span class="mk" style="left:80%;background:#A84B0C"></span></div></div>
+            <div class="lsum">5 Fristen · <b>1 überfällig</b> · eng am Di</div>
+            <div class="lane"><span class="who"><span class="dot" style="width:20px;height:20px;background:#2F5DA8;font-size:10px">N</span>Nils</span><div class="track"><span class="today"></span><span class="mk o" style="left:6%;background:#2F5DA8"></span><span class="mk" style="left:23%;background:#2F5DA8"></span><span class="mk" style="left:40%;background:#2F5DA8"></span></div></div>
+            <div class="lsum">3 Fristen · <b>1 überfällig</b></div>
+            <div class="lane"><span class="who"><span class="dot" style="width:20px;height:20px;background:#7B3FA0;font-size:10px">M</span>Mia</span><div class="track"><span class="today"></span><span class="mk" style="left:14%;background:#7B3FA0"></span><span class="mk" style="left:38%;background:#7B3FA0"></span></div></div>
+            <div class="lane"><span class="who"><span class="dot" style="width:20px;height:20px;background:#2C7A4B;font-size:10px">B</span>Ben</span><div class="track"><span class="today"></span><span class="mk" style="left:33%;background:#2C7A4B;box-shadow:0 0 0 2px #F2F4F0,0 0 0 3.5px #55605A"></span></div></div>
+          </div>
+          <div class="next">
+            <div class="r"><span class="d">Do</span><span>Kita-Beitrag (Lisa)</span><span class="take">Übernehme ich</span></div>
+            <div class="r"><span class="d">Mo 30.</span><span>Elterngeld (Lisa)</span><span class="take">Übernehme ich</span></div>
+            <div class="r"><span class="d">Di 1.</span><span>Geschenk Oma (Nils)</span></div>
+          </div>
+        </div>
+        <div class="nav">
+          <div class="it"><svg><use href="#i-today"/></svg>Heute</div>
+          <div class="it on"><svg><use href="#i-fam"/></svg>Familie</div>
+          <div class="it"><div class="capc"><svg style="width:18px;height:18px"><use href="#i-mic"/></svg>Erfassen</div></div>
+          <div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div>
+          <div class="it"><svg><use href="#i-search"/></svg>Suchen</div>
+        </div>
+      </div></div>
+      <p class="cap"><b>Familie › Aufgaben.</b> Je Person eine Spur, Häufungen zeigen Engpässe („eng am Di“). Darunter die nächsten Fristen zum Übernehmen.</p>
+    </div>
+  </div>
+</section>
+
+<section class="prose">
+  <h2>Im Vergleich</h2>
+  <div class="tbl"><table>
+    <tr><th></th><th>A Familienplaner</th><th>B Eins nach dem anderen</th><th>C Tageslauf</th></tr>
+    <tr><td>Ordnet nach</td><td>Personen</td><td>Entscheidungen</td><td>Zeit</td></tr>
+    <tr><td>Mental-Load-Phase</td><td>überwachen, verteilen</td><td>entscheiden</td><td>vorausdenken</td></tr>
+    <tr><td>Wiedererkennung</td><td>sehr hoch</td><td>mittel</td><td>hoch</td></tr>
+    <tr><td>Last im Kopf</td><td>mittel bis hoch</td><td>niedrig</td><td>mittel</td></tr>
+    <tr><td>200 % Schrift</td><td>Raster wird Liste</td><td>problemlos</td><td>Achse bleibt, Spuren werden Liste</td></tr>
+    <tr><td>Umbau im Code</td><td>hoch</td><td>mittel</td><td>hoch</td></tr>
+    <tr><td>Kontrast (WCAG 2.2)</td><td class="n">Text 16,0 · weiß auf Personen ≥ 5,3</td><td class="n">Text 15,1 · Tinte auf Gelb 12,8</td><td class="n">Text 14,4 · Blau 6,1</td></tr>
+  </table></div>
+</section>
+
+<section class="reco prose">
+  <div class="eyebrow">Ursprüngliche Empfehlung (Nils hat am 28.11. A gewählt, siehe oben)</div>
+  <h2>B als Grundlage, die Familie-Ansicht aus A</h2>
+  <p>Der Eingang ist der Kern der App, und B macht ihn am leichtesten. B ist außerdem am robustesten bei großer Schrift und braucht den kleinsten Umbau. Für <b>Familie › Aufgaben</b> übernehmen wir das Wochenraster aus A, weil dort Transparenz die Frage ist und nicht Entscheidung. Die Zeitachse aus C passt später gut zu <b>Demnächst</b>.</p>
+  <p>Unabhängig von der Richtung lohnen sich sofort: Datum und KW oben auf Heute, Erklärtexte streichen, Regelbegründung erst beim Antippen, nur ein lauter Knopf pro Karte, eigene Schrift statt Systemschrift.</p>
+</section>
+
+<section class="prose">
+  <h2>Wie wir prüfen, ob es besser ist</h2>
+  <ul>
+    <li><b>Fünf-Sekunden-Test</b> mit fünf Personen pro Richtung: Bildschirm 5 s zeigen, dann fragen „Was musst du heute tun? Wer hat am meisten offen?“. Ziel: 4 von 5 richtig.</li>
+    <li><b>Erster Klick</b> für „Lisas Aufgabe übernehmen“ und „Elternabend bestätigen“ (Ziel aus der Gestaltungsdoku: 4 von 5 beim ersten Tap richtig).</li>
+    <li><b>Präferenz mit Begründung</b>: alle drei nebeneinander, Wahl plus ein Satz warum. Die Begründung zählt mehr als die Stimme.</li>
+    <li><b>Slop-Zählung</b> nach dem Umbau wiederholen. Ziel: höchstens 2 Punkte statt 9.</li>
+    <li><b>Automatisch</b>: Kontrast der neuen Tokens im Qualitätstor (<code>:shared:jvmTest</code> prüft Penpot-Tokens gegen <code>Theme.kt</code>), Bildschirmfotos bei 100 und 200 % Schrift aus dem Emulator-Lauf im CI.</li>
+  </ul>
+</section>
+
+<footer class="prose" style="font-size:13.5px;color:var(--muted)">
+  <h3 style="color:var(--fg)">Quellen</h3>
+  <ul>
+    <li>Anthropic, „Improving frontend design through skills“, 12.11.2025: <a href="https://claude.com/blog/improving-frontend-design-through-skills">claude.com/blog</a></li>
+    <li>pixelslop, AI Slop Pattern Catalog v0.3.8: <a href="https://cdn.jsdelivr.net/npm/pixelslop@0.3.8/dist/skill/resources/ai-slop-patterns.md">jsdelivr</a></li>
+    <li>Impeccable, Anti-Patterns: <a href="https://www.mintlify.com/pbakaus/impeccable/concepts/anti-patterns">mintlify.com</a></li>
+    <li>Nielsen (1994), 10 Usability Heuristics; Hick (1952), Hyman (1953); Gestaltgesetze nach Wertheimer; Daminger (2019), The Cognitive Dimension of Household Labor; Masicampo &amp; Baumeister (2011). Aus dem Gedächtnis, in dieser Sitzung nicht neu abgerufen.</li>
+    <li>Atkinson Hyperlegible: Braille Institute, frei unter SIL Open Font License. Archivo und Instrument Sans ebenfalls OFL.</li>
+  </ul>
+</footer>
+
+</div>

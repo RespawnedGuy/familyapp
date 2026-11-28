@@ -202,7 +202,6 @@ class AppModel(
         askForNotificationsOnce(item.id)
     }
 
-    fun irrelevant(item: Item) = show("Als irrelevant markiert.", repo.markIrrelevant(item.id))
 
     fun complete(item: Item) = show("Erledigt.", repo.complete(item.id))
 
