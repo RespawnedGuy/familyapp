@@ -142,11 +142,11 @@ class AccessibilityTest {
     fun feedbackIsAnnouncedByScreenReaders() = runComposeUiTest {
         val model = showApp()
         mainClock.autoAdvance = false
-        runOnIdle { model.irrelevant(model.repo.current.items.first { it.status == ItemStatus.INBOX }) }
+        runOnIdle { model.delete(model.repo.current.items.first { it.status == ItemStatus.INBOX }) }
         mainClock.advanceTimeBy(500)
         val live = onAllNodes(
             SemanticsMatcher.keyIsDefined(SemanticsProperties.LiveRegion) and
-                hasAnyDescendant(hasText("Als irrelevant markiert.", substring = true)),
+                hasAnyDescendant(hasText("Gelöscht.", substring = true)),
         )
         live.assertCountEquals(1)
     }

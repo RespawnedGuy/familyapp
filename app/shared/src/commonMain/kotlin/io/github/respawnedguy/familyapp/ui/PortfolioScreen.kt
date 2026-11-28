@@ -3,6 +3,7 @@ package io.github.respawnedguy.familyapp.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -104,7 +105,9 @@ internal fun PortfolioScreen(
         item { OpenHeader(member, data, model, nothingOpen = open.isEmpty() && waiting.isEmpty()) }
         items(open, key = { it.id }) { item ->
             val takeOver = item.assignee != data.selfId
-            TaskRow(item, data, model, photos, reducedMotion, showAssignee = true, takeOver = takeOver)
+            Box(if (reducedMotion) Modifier else Modifier.animateItem()) {
+                TaskRow(item, data, model, photos, showAssignee = true, takeOver = takeOver)
+            }
         }
         if (waiting.isNotEmpty()) {
             item {

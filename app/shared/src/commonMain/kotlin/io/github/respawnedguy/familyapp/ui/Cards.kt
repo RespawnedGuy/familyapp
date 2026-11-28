@@ -66,29 +66,23 @@ import io.github.respawnedguy.familyapp.resources.Res
 import io.github.respawnedguy.familyapp.resources.task_mark_done
 import org.jetbrains.compose.resources.stringResource
 
-/** Inbox card (design "Eingang: eine Karte, ein Tap"): at most three chips, reason line, two buttons. */
+/** Inbox card (design "Eingang: eine Karte, ein Tap"): at most three chips, reason line, two buttons, no swipe. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun InboxCard(item: Item, data: FamilyData, model: AppModel, photos: PhotoLoader?, reducedMotion: Boolean) {
+fun InboxCard(item: Item, data: FamilyData, model: AppModel, photos: PhotoLoader?) {
     val c = LocalFamilyColors.current
     val today = model.today()
     val confirmLabel = if (item.assignee == null) "Mach ich" else "Passt"
     var editing by remember { mutableStateOf(false) }
 
-    SwipeToDecide(
-        rightLabel = confirmLabel,
-        onRight = { model.confirm(item) },
-        leftLabel = "Irrelevant",
-        onLeft = { model.irrelevant(item) },
-        reducedMotion = reducedMotion,
-        modifier = Modifier.padding(vertical = 6.dp),
-    ) {
+    // Buttons only, no swipe gestures (Nils, 28.11.2026).
+    Box(Modifier.padding(vertical = 6.dp)) {
         Column(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.card)
                 .semantics {
                     customActions = listOf(
                         CustomAccessibilityAction(confirmLabel) { model.confirm(item); true },
-                        CustomAccessibilityAction("Irrelevant") { model.irrelevant(item); true },
+                        CustomAccessibilityAction("Löschen") { model.delete(item); true },
                     )
                 }
                 .padding(16.dp),
@@ -133,7 +127,7 @@ fun InboxCard(item: Item, data: FamilyData, model: AppModel, photos: PhotoLoader
                 Text("Regel: " + item.reasons.joinToString(" · "), color = c.textTertiary, fontSize = 12.sp)
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = { model.irrelevant(item) }) { Text("Irrelevant", color = c.textSecondary) }
+                TextButton(onClick = { model.delete(item) }) { Text("Löschen", color = c.textSecondary) }
                 Spacer(Modifier.width(8.dp))
                 Button(onClick = { model.confirm(item) }) { Text(confirmLabel) }
             }
@@ -270,21 +264,13 @@ fun TaskRow(
     data: FamilyData,
     model: AppModel,
     photos: PhotoLoader?,
-    reducedMotion: Boolean,
     showAssignee: Boolean,
     takeOver: Boolean,
 ) {
     val c = LocalFamilyColors.current
     val today = model.today()
     var editing by remember { mutableStateOf(false) }
-    SwipeToDecide(
-        rightLabel = "Erledigt",
-        onRight = { model.complete(item) },
-        leftLabel = null,
-        onLeft = null,
-        reducedMotion = reducedMotion,
-        modifier = Modifier.padding(vertical = 4.dp),
-    ) {
+    Box(Modifier.padding(vertical = 4.dp)) {
         Row(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.card)
                 .semantics { customActions = listOf(CustomAccessibilityAction("Erledigt") { model.complete(item); true }) }
@@ -368,7 +354,7 @@ fun StatusLabel(item: Item, data: FamilyData? = null) {
         ItemStatus.INBOX -> "im Eingang"
         ItemStatus.OPEN -> "offen"
         ItemStatus.DONE -> "erledigt$by"
-        ItemStatus.IRRELEVANT -> "irrelevant"
+        ItemStatus.IRRELEVANT -> "aussortiert"
     }
     Text(text, color = c.textTertiary, fontSize = 12.sp, modifier = Modifier.heightIn(min = 16.dp))
 }

@@ -1,6 +1,6 @@
 # Optik, Haptik und Klickwege
 
-- Status: Alle Fragen D1–D8 entschieden (Nils, 20.11.2026), dazu: keine Vibration.
+- Status: Alle Fragen D1–D8 entschieden (Nils, 20.11.2026), dazu: keine Vibration. Geändert 28.11.2026: keine Wischgesten mehr (D5), „Irrelevant“ heißt „Löschen“.
 - Datum: 2026-11-20
 - Klickbare Skizze: https://claude.ai/artifact/D46DuTRTcBt5pky1nVV32g (Variante A mit Tap-Zähler, Varianten B und C, Pairing, Benachrichtigungen)
 - Grundlage: [KONZEPT.md](../KONZEPT.md), [ADR 0003](../entscheidungen/0003-p2p-sync-im-selben-netz.md)
@@ -18,8 +18,8 @@ Die Häufigkeit ist geschätzt (eine Familie mit zwei Erwachsenen, zwei Kindern)
 | # | Aufgabe | Wer | Geschätzt pro Woche | Daraus folgt |
 | --- | --- | --- | --- | --- |
 | K1 | Erfassen (Sprache, Foto, Teilen, Text) | alle | 15–30 | Kürzester Weg der App, auch ohne die App zu öffnen |
-| K2 | Eingang abarbeiten (bestätigen, ändern, irrelevant) | alle | 15–30 | Ein Tap pro Karte, keine Dialoge |
-| K3 | Eigene Aufgaben abhaken | alle | 10–20 | Auf dem Startbildschirm, ein Tap oder Wischen |
+| K2 | Eingang abarbeiten (bestätigen, ändern, löschen) | alle | 15–30 | Ein Tap pro Karte, keine Dialoge |
+| K3 | Eigene Aufgaben abhaken | alle | 10–20 | Auf dem Startbildschirm, ein Tap |
 | K4 | Stapel der anderen ansehen, übernehmen | alle | 3–7 | Höchstens zwei Taps, Transparenz ist Prinzip |
 | K5 | Demnächst und Fristen ansehen | alle | 3–7 | Eigenes Ziel, ein Tap |
 | K6 | Auf Überfällig-Hinweis reagieren | Zuständige, dann alle | 0–3 | Direkt aus der Benachrichtigung |
@@ -36,7 +36,7 @@ Gezählt wird jeder Tap und jede Wischgeste, ab geöffneter App auf dem Startbil
 | K1 Foto erfassen | 3 (Erfassen, Foto, Auslöser) | **2** | 3 |
 | K2 Vorschlag bestätigen | **1** | **1** | 1, plus 1 je Sitzung für die Eingang-Spalte |
 | K2 Fehlende Person ergänzen | **2** | **2** | 2, plus Spaltenwechsel |
-| K2 Als irrelevant markieren | **1** | **1** | 1, plus Spaltenwechsel |
+| K2 Löschen | **1** | **1** | 1, plus Spaltenwechsel |
 | K3 Eigene Aufgabe abhaken | **1** | **1** | **1** |
 | K4 Lisas Stapel ansehen | 2 | **1** (Filter) | **1** (wischen) |
 | K4 Lisas Aufgabe übernehmen | **2** | **2** | **2** |
@@ -83,17 +83,17 @@ Anatomie einer Karte (von oben):
 2. Titel, eine bis zwei Zeilen
 3. **Höchstens drei Chips:** betrifft (Person), kümmert sich (Person), bis wann. Fehlendes erscheint gestrichelt als Frage („Wer kümmert sich?“).
 4. Begründung, klein: welche Regel gegriffen hat. Das hält die Automatik nachvollziehbar und macht falsche Regeln sichtbar.
-5. Rechts unten „Passt“, links daneben „Irrelevant“.
+5. Rechts unten „Passt“, links daneben „Löschen“.
 
 Verhalten:
 
 | Situation | Weg | Taps |
 | --- | --- | --- |
-| Vorschlag stimmt | „Passt“ oder nach rechts wischen | 1 |
+| Vorschlag stimmt | „Passt“ | 1 |
 | Person fehlt oder ist falsch | Chip antippen, Person wählen. Die Wahl ist die Bestätigung, sobald auch ein Datum (oder „Kein Datum“) feststeht. | 2 |
 | Datum fehlt oder ist falsch | Chip antippen, Schnellwahl (Heute, Morgen, Freitag, Nächste Woche, Kein Datum). Die Wahl ist die Bestätigung, sobald auch eine Person feststeht. | 2 |
 | Person und Datum fehlen | Erst das eine, dann das andere wählen; die zweite Wahl bestätigt | 4 |
-| Unwichtig | „Irrelevant“ oder nach links wischen | 1 |
+| Unwichtig | „Löschen“ (entfernt den Eintrag auf allen Geräten, Rückgängig 6 s) | 1 |
 | Daraus eine Regel machen | In der Rückmeldung nach dem Ändern: „Künftig immer so“ | +1, freiwillig |
 
 - **Rückgängig statt Nachfrage.** Kein Bestätigungsdialog, jede Aktion zeigt 6 s lang eine Rückmeldung mit „Rückgängig“ (Raskin 2000, „The Humane Interface“: Rückgängig schlägt Warndialoge, weil Warnungen weggeklickt werden; aus dem Gedächtnis, vor Zitat prüfen).
@@ -142,7 +142,7 @@ Alle Werte erfüllen WCAG 2.2 AA für Text (4,5:1), nachgerechnet mit der Formel
 
 ## Haptik
 
-**Entschieden (Nils, 20.11.2026): Die App vibriert nicht.** Keine haptische Rückmeldung bei Gesten, Bestätigen, Aufnahme oder Pairing, keine eigenen Vibrationsmuster für Benachrichtigungen. Rückmeldung kommt nur sichtbar: Bewegung der Karte, Farbwechsel an der Wisch-Schwelle, Hinweis unten mit Rückgängig. Benachrichtigungen folgen den Ton- und Vibrations-Einstellungen, die die Person im System für die App bzw. den Kanal festlegt; die App setzt dort nichts zusätzlich.
+**Entschieden (Nils, 20.11.2026): Die App vibriert nicht.** Keine haptische Rückmeldung bei Gesten, Bestätigen, Aufnahme oder Pairing, keine eigenen Vibrationsmuster für Benachrichtigungen. Rückmeldung kommt nur sichtbar: Bewegung der Karte, Hinweis unten mit Rückgängig. Benachrichtigungen folgen den Ton- und Vibrations-Einstellungen, die die Person im System für die App bzw. den Kanal festlegt; die App setzt dort nichts zusätzlich.
 
 Für die Umsetzung heißt das: kein `LocalHapticFeedback`, keine `HapticFeedbackConstants`, keine `UIFeedbackGenerator`. Android-Benachrichtigungskanäle bekommen kein eigenes Vibrationsmuster (kein `setVibrationPattern`); ob es vibriert, entscheidet die System-Einstellung der Person. Haptik, die das System selbst auslöst (z. B. die Tastatur), bleibt unberührt.
 
@@ -151,7 +151,6 @@ Für die Umsetzung heißt das: kein `LocalHapticFeedback`, keine `HapticFeedback
 | Moment | Dauer | Kurve (Material 3) |
 | --- | --- | --- |
 | Karte fliegt nach Bestätigen aus der Liste, Liste rückt nach | 200 ms | Standard `cubic-bezier(0.2, 0, 0, 1)` |
-| Karte schnappt zurück, wenn die Schwelle nicht erreicht ist | 200 ms | Standard |
 | Bottom Sheet „Erfassen“ öffnet | 250–400 ms | Emphasized decelerate `cubic-bezier(0.05, 0.7, 0.1, 1)` |
 | Rückmeldung unten erscheint | 250 ms | Standard |
 | Aufnahme läuft | Pulsieren 1,4 s, endlos | – |
@@ -195,7 +194,7 @@ Schnell rein: Die erste Person legt die Familie an, indem sie die App öffnet un
 ## Barrierefreiheit
 
 - Tippflächen mindestens 48 × 48 dp (Material 3) bzw. 44 × 44 pt (HIG), WCAG 2.2 verlangt 24 × 24 px als Untergrenze (2.5.8).
-- **Jede Wischgeste hat einen Knopf** (WCAG 2.5.1, Zeigergesten). Für TalkBack und VoiceOver werden „Passt“, „Irrelevant“ und „Erledigt“ zusätzlich als eigene Aktionen angeboten (Compose `semantics { customActions }`, iOS `accessibilityCustomActions`).
+- **Keine Wischgesten, nur Knöpfe** (Nils, 28.11.2026; erfüllt WCAG 2.5.1 von selbst). Für TalkBack und VoiceOver werden „Passt“, „Löschen“ und „Erledigt“ zusätzlich als eigene Aktionen angeboten (Compose `semantics { customActions }`, iOS `accessibilityCustomActions`).
 - Status nie nur über Farbe: „überfällig seit gestern“ als Text, Initialen in Personen-Punkten.
 
 ## Entscheidungen (Nils, 20.11.2026)
@@ -208,7 +207,7 @@ Nils: „Was nicht kommentiert wird, nehmen wir so.“ D2 und D5–D8 sind damit
 | D2 | Wo sitzt Erfassen? | **Mitte der Leiste**, beidhändig erreichbar | FAB unten rechts (Material-3-Standard) |
 | D3 | Was macht der Erfassen-Knopf? | **Tippen startet sofort Sprache; „Foto“ liegt im Blatt an derselben Stelle** (zweimal tippen = Kamera), Text daneben. Erste Aktion in den Einstellungen umstellbar | Langes Drücken für Kamera; erst Auswahl |
 | D4 | Bestätigt das Wählen im Chip die Karte? | **Ja, bei Person und bei Datum**, sobald beides feststeht (2 Taps statt 3) | Immer zusätzlich „Passt“ |
-| D5 | Wischgesten | **Rechts Passt/erledigt, links irrelevant**, immer mit Knopf und Rückgängig | Keine Gesten |
+| D5 | Wischgesten | **Keine Gesten, nur Knöpfe** mit Rückgängig (geändert 28.11.2026; vorher rechts Passt/erledigt, links irrelevant). „Irrelevant“ heißt jetzt „Löschen“ | Wischen mit Knopf |
 | D6 | Farbschema | **Feste App- und Personenfarben** | Material You auf Android |
 | D7 | Wiederherstellungscode | **Nach erstem Pairing bzw. 10 Einträgen anbieten** | Beim ersten Start |
 | D8 | Zielwert Erfassen | **Aufnahme läuft ≤ 2 s nach Entsperren, Speichern ohne Tap ≤ 1 s nach Sprechende** | „< 5 s gesamt“ wie im Konzept |

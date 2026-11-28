@@ -128,7 +128,9 @@ private fun FamilyTasks(data: FamilyData, model: AppModel, photos: PhotoLoader?,
             }
             items(open, key = { "f-${it.id}" }) { item ->
                 val takeOver = member.id != data.selfId
-                TaskRow(item, data, model, photos, reducedMotion, showAssignee = false, takeOver = takeOver)
+                Box(if (reducedMotion) Modifier else Modifier.animateItem()) {
+                    TaskRow(item, data, model, photos, showAssignee = false, takeOver = takeOver)
+                }
             }
         }
     }

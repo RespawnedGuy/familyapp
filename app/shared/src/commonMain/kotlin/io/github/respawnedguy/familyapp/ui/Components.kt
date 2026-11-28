@@ -2,21 +2,15 @@ package io.github.respawnedguy.familyapp.ui
 
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.heading
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.draggable
-import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -24,11 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,21 +26,16 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.respawnedguy.familyapp.domain.Member
 import io.github.respawnedguy.familyapp.domain.Source
-import kotlinx.coroutines.launch
-import kotlin.math.abs
 import kotlin.math.max
-import kotlin.math.roundToInt
 import io.github.respawnedguy.familyapp.domain.FamilyData
 import io.github.respawnedguy.familyapp.presentation.KitchenRoute
 import io.github.respawnedguy.familyapp.presentation.PeopleRoute
@@ -182,80 +166,6 @@ fun ago(thenMs: Long, nowMs: Long): String {
         min < 24 * 60 -> "vor ${min / 60} Std."
         min < 48 * 60 -> "gestern"
         else -> "vor ${min / (24 * 60)} Tagen"
-    }
-}
-
-/**
- * Horizontal swipe with visible feedback only (no vibration, decided 20.11.2026): the background
- * turns into the action colour once the threshold is passed. Every swipe also has a button (WCAG 2.5.1).
- */
-@Composable
-fun SwipeToDecide(
-    rightLabel: String,
-    onRight: () -> Unit,
-    leftLabel: String?,
-    onLeft: (() -> Unit)?,
-    reducedMotion: Boolean,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    val c = LocalFamilyColors.current
-    val scope = rememberCoroutineScope()
-    val offset = remember { Animatable(0f) }
-    var width by remember { mutableIntStateOf(1) }
-    val threshold = width * 0.35f
-    val spec = tween<Float>(Motion.SHORT_MS, easing = Motion.Standard)
-
-    Box(modifier.fillMaxWidth().onSizeChanged { width = max(1, it.width) }) {
-        val x = offset.value
-        if (x != 0f) {
-            val past = abs(x) > threshold
-            val bg = when {
-                past && x > 0 -> c.accent
-                past -> c.textSecondary
-                else -> c.outline
-            }
-            Box(
-                Modifier.matchParentSize().clip(RoundedCornerShape(16.dp)).background(bg).padding(horizontal = 24.dp),
-                contentAlignment = if (x > 0) Alignment.CenterStart else Alignment.CenterEnd,
-            ) {
-                Text(
-                    if (x > 0) rightLabel else leftLabel.orEmpty(),
-                    color = if (past) (if (x > 0) c.onAccent else c.background) else c.text,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-        }
-        Box(
-            Modifier
-                .offset { IntOffset(offset.value.roundToInt(), 0) }
-                .draggable(
-                    orientation = Orientation.Horizontal,
-                    state = rememberDraggableState { delta ->
-                        scope.launch {
-                            val next = offset.value + delta
-                            offset.snapTo(if (onLeft == null) max(0f, next) else next)
-                        }
-                    },
-                    onDragStopped = {
-                        val now = offset.value
-                        when {
-                            now > threshold -> {
-                                if (!reducedMotion) offset.animateTo(width.toFloat(), spec)
-                                onRight()
-                                offset.snapTo(0f)
-                            }
-                            now < -threshold && onLeft != null -> {
-                                if (!reducedMotion) offset.animateTo(-width.toFloat(), spec)
-                                onLeft()
-                                offset.snapTo(0f)
-                            }
-                            reducedMotion -> offset.snapTo(0f)
-                            else -> offset.animateTo(0f, spec)
-                        }
-                    },
-                ),
-        ) { content() }
     }
 }
 

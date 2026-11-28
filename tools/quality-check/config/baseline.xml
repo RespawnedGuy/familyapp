@@ -2,19 +2,17 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>CyclomaticComplexMethod:Components.kt$@Composable fun SwipeToDecide( rightLabel: String, onRight: () -&gt; Unit, leftLabel: String?, onLeft: (() -&gt; Unit)?, reducedMotion: Boolean, modifier: Modifier = Modifier, content: @Composable () -&gt; Unit, )</ID>
     <ID>CyclomaticComplexMethod:GermanDateParser.kt$GermanDateParser$fun find(text: String, today: LocalDate): List&lt;FoundDate&gt;</ID>
     <ID>CyclomaticComplexMethod:Screens.kt$@Composable fun FamilyScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reducedMotion: Boolean)</ID>
     <ID>CyclomaticComplexMethod:SettingsScreen.kt$@Composable fun SettingsScreen(data: FamilyData, model: AppModel, updates: UpdateController?, versionName: String)</ID>
     <ID>ForEachOnRange:Screens.kt$0 until PERSON_COLOR_COUNT</ID>
     <ID>FunctionNaming:MainViewController.kt$fun MainViewController(): UIViewController</ID>
-    <ID>LongMethod:Cards.kt$@OptIn(ExperimentalLayoutApi::class) @Composable fun InboxCard(item: Item, data: FamilyData, model: AppModel, photos: PhotoLoader?, reducedMotion: Boolean)</ID>
+    <ID>LongMethod:Cards.kt$@OptIn(ExperimentalLayoutApi::class) @Composable fun InboxCard(item: Item, data: FamilyData, model: AppModel, photos: PhotoLoader?)</ID>
     <ID>LongMethod:Screens.kt$@Composable fun FamilyScreen(data: FamilyData, model: AppModel, photos: PhotoLoader?, reducedMotion: Boolean)</ID>
     <ID>LongMethod:SettingsScreen.kt$@Composable fun SettingsScreen(data: FamilyData, model: AppModel, updates: UpdateController?, versionName: String)</ID>
     <ID>LongParameterList:App.kt$( data: FamilyData, model: AppModel, photos: PhotoLoader?, reducedMotion: Boolean, updates: UpdateController?, versionName: String, )</ID>
     <ID>LongParameterList:Cards.kt$( data: FamilyData, selectedId: String?, origin: Origin?, question: String, prefix: String?, allowNone: Boolean, onPick: (String?) -&gt; Unit, )</ID>
-    <ID>LongParameterList:Cards.kt$( item: Item, data: FamilyData, model: AppModel, photos: PhotoLoader?, reducedMotion: Boolean, showAssignee: Boolean, takeOver: Boolean, )</ID>
-    <ID>LongParameterList:Components.kt$( rightLabel: String, onRight: () -&gt; Unit, leftLabel: String?, onLeft: (() -&gt; Unit)?, reducedMotion: Boolean, modifier: Modifier = Modifier, content: @Composable () -&gt; Unit, )</ID>
+    <ID>LongParameterList:Cards.kt$( item: Item, data: FamilyData, model: AppModel, photos: PhotoLoader?, showAssignee: Boolean, takeOver: Boolean, )</ID>
     <ID>LongParameterList:FamilyRepository.kt$FamilyRepository$( private val store: TextStore, private val scope: CoroutineScope, private val ioDispatcher: CoroutineDispatcher, val now: () -&gt; Long, private val today: () -&gt; LocalDate, private val newId: () -&gt; String, private val rules: CaptureRules = CaptureRules(), )</ID>
     <ID>LongParameterList:PreviewData.kt$PreviewData$(id: String, title: String, who: Member, due: LocalDate?, concerns: Member? = null, ageMs: Long = 3 * DAY)</ID>
     <ID>MagicNumber:AndroidPhotoLoader.kt$AndroidPhotoLoader$180f</ID>
@@ -208,9 +206,6 @@
     <ID>MaxLineLength:Previews.kt$ComponentPreviews$@Preview(name = "Dunkel", widthDp = 411, showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES or Configuration.UI_MODE_TYPE_NORMAL)</ID>
     <ID>MaxLineLength:Previews.kt$DecisionChip("Nils", missing = false, suggested = false, onClick = {}, leading = { PersonDot(PreviewData.nils, size = 20.dp) })</ID>
     <ID>MaxLineLength:Previews.kt$PhonePreviews$@Preview(name = "Dunkel", widthDp = 411, heightDp = 891, showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES or Configuration.UI_MODE_TYPE_NORMAL)</ID>
-    <ID>MaxLineLength:Previews.kt$TaskRow(PreviewData.noDate, data, model, photos = null, reducedMotion = true, showAssignee = true, takeOver = true)</ID>
-    <ID>MaxLineLength:Previews.kt$TaskRow(PreviewData.overdue, data, model, photos = null, reducedMotion = true, showAssignee = false, takeOver = false)</ID>
-    <ID>MaxLineLength:Previews.kt$TaskRow(PreviewData.soon, data, model, photos = null, reducedMotion = true, showAssignee = true, takeOver = false)</ID>
     <ID>MaxLineLength:Previews.kt$private</ID>
     <ID>MaxLineLength:SafBackupFiles.kt$SafBackupFiles$?:</ID>
     <ID>MaxLineLength:SafBackupFiles.kt$SafBackupFiles$resolver.query(uri, arrayOf(Document.COLUMN_DOCUMENT_ID, Document.COLUMN_DISPLAY_NAME, Document.COLUMN_MIME_TYPE), null, null, null)</ID>
