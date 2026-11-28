@@ -1,0 +1,266 @@
+<title>Termine und Aufgaben</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;800&family=Rubik:wght@400;500;600;700&display=swap">
+<style>
+
+/* Layout: one reading column for the argument, phone frames in pairs per direction; phones keep their own fixed light palettes. */
+:root{
+  --bg:#F3F4F6; --fg:#16181D; --muted:#555B66; --line:#D5D8DE; --panel:#FFFFFF; --mark:#2B50C8;
+  --font-page:"Public Sans", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121418;--fg:#ECEDEF;--muted:#A6ABB5;--line:#30343C;--panel:#1B1E24;--mark:#8EA6FF;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121418;--fg:#ECEDEF;--muted:#A6ABB5;--line:#30343C;--panel:#1B1E24;--mark:#8EA6FF;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--font-page);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
+.prose{max-width:68ch}
+h1{font-size:clamp(30px,5vw,46px);line-height:1.08;font-weight:800;letter-spacing:-.02em;margin:0 0 12px;text-wrap:balance}
+h2{font-size:26px;line-height:1.2;font-weight:800;margin:0 0 10px;text-wrap:balance}
+h3{font-size:18px;margin:0 0 6px}
+p{margin:0 0 12px}
+.lede{font-size:18px;color:var(--muted)}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:6px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:24px;align-items:start}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font-weight:600;color:var(--muted);font-size:13px}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+ul{margin:0;padding-left:20px}
+li{margin-bottom:6px}
+a{color:var(--mark)}
+.dir{display:flex;flex-direction:column;gap:20px;border-top:2px solid var(--fg);padding-top:20px}
+.dirhead{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:24px}
+.phones{display:flex;flex-wrap:wrap;gap:28px;justify-content:flex-start}
+.cap{font-size:13px;color:var(--muted);margin-top:8px;max-width:320px}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.reco{border-left:0;background:var(--panel);border:2px solid var(--fg);border-radius:10px;padding:18px 20px}
+
+/* ---------- phone frame (fixed palettes, independent of page theme) ---------- */
+.phone{width:320px;max-width:100%;height:668px;border-radius:34px;padding:10px;background:#0E0F12;flex:none;box-shadow:0 1px 0 #0000}
+.screen{width:100%;height:100%;border-radius:26px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.status{height:28px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 20px;font:600 12px/1 system-ui,sans-serif}
+.body{flex:1;overflow:hidden;position:relative}
+.nav{flex:none;display:grid;grid-template-columns:repeat(5,1fr);align-items:end;padding:6px 4px 12px}
+.nav .it{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px}
+.nav svg{width:22px;height:22px}
+.ic{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+
+/* ---------- A2: Familienplaner, organisch ---------- */
+.A2{background:#FBFAF8;color:#1E2333;font-family:"Rubik",system-ui,sans-serif}
+.A2 .day{padding:6px 18px 12px;display:flex;align-items:flex-end;justify-content:space-between}
+.A2 .dname{font-size:32px;font-weight:700;line-height:1;letter-spacing:-.015em}
+.A2 .dmeta{font-size:12.5px;color:#545A6B;text-align:right;line-height:1.35}
+.A2 .ppl{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 12px}
+.A2 .pp{border-radius:18px 18px 14px 14px;padding:9px 6px 8px;display:flex;flex-direction:column;gap:1px}
+.A2 .pp .nm{font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px}
+.A2 .pp .num{font-size:26px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+.A2 .pp .rd{white-space:nowrap;font-size:10px;font-weight:600;color:#A3241C}
+.A2 .pp .mm2{font-size:10.5px;color:#545A6B}
+.A2 .lab{font-size:13px;font-weight:600;color:#545A6B;padding:16px 18px 6px;display:flex;justify-content:space-between}
+.A2 .row{display:flex;gap:10px;align-items:flex-start;margin:0 12px 6px;padding:10px 12px;border-radius:16px;background:#F0F1F5}
+.A2 .row.open{background:#fff;box-shadow:inset 0 0 0 1.5px #D9DCE4}
+.A2 .q{width:26px;height:26px;border-radius:50%;border:2px dashed #7A8090;display:grid;place-items:center;font-weight:700;font-size:12px;color:#545A6B;flex:none}
+.A2 .tt{font-size:14.5px;font-weight:600;line-height:1.25}
+.A2 .mm{font-size:11.5px;color:#545A6B;margin-top:1px}
+.A2 .od{display:inline-block;background:#FBE4E1;color:#A3241C;font-weight:600;border-radius:8px;padding:1px 6px;margin-right:4px}
+.A2 .ask{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.A2 .ask span{font-size:12px;font-weight:600;border-radius:12px;padding:6px 11px;background:#E6E8EE}
+.A2 .ask .y{background:#1E2333;color:#fff}
+.A2 .ask .del{background:transparent;color:#545A6B;padding-left:4px}
+.A2 .nav{background:#FBFAF8;color:#545A6B;padding-top:8px}
+.A2 .nav .on{color:#1E2333;font-weight:600}
+.A2 .nav .on svg{background:#E6E8EE;border-radius:12px;padding:2px 12px;box-sizing:content-box}
+.A2 .capq{width:58px;height:52px;border-radius:20px;background:#1E2333;color:#fff;display:grid;place-items:center;margin-top:-18px}
+.A2 .tabs{display:flex;gap:2px;padding:0 10px 10px;flex-wrap:wrap}
+.A2 .tabs span{font-size:11px;padding:7px 5px;border-radius:12px;color:#545A6B}
+.A2 .tabs .on{background:#1E2333;color:#fff;font-weight:600}
+.A2 .lanes{display:grid;grid-template-columns:36px repeat(4,1fr);gap:0 4px;padding:0 10px}
+.A2 .lh{font-size:11px;font-weight:600;padding:7px 4px 6px;border-radius:14px 14px 0 0;display:flex;align-items:center;gap:4px}
+.A2 .dl{font-size:11px;color:#545A6B;padding:6px 2px;line-height:1.15;min-height:42px}
+.A2 .dl.today{color:#1E2333;font-weight:700}
+.A2 .dl.today span{background:#1E2333;color:#fff;border-radius:10px;padding:1px 5px}
+.A2 .cl{min-height:42px;padding:3px 3px}
+.A2 .blk{font-size:10.5px;line-height:1.15;padding:4px 6px;font-weight:500;border-radius:10px;background:#fff;hyphens:auto;-webkit-hyphens:auto;margin-bottom:3px}
+.A2 .blk.odb{background:#FBE4E1;color:#A3241C;font-weight:600}
+.A2 .ft{font-size:11px;font-weight:600;padding:7px 4px 9px;border-radius:0 0 14px 14px}
+.A2 .ft b{color:#A3241C}
+
+/* ---------- A2 weitere Ansichten ---------- */
+.A2 .tabs span{padding:7px 4px;font-size:10.5px}
+.A2 .wkh{font-size:13px;font-weight:600;color:#545A6B;padding:12px 18px 6px}
+.A2 .ur{display:flex;align-items:center;gap:10px;margin:0 12px 6px;padding:8px 10px;border-radius:16px;background:#F0F1F5}
+.A2 .dt{width:40px;border-radius:12px;background:#fff;text-align:center;padding:4px 0;flex:none;line-height:1.1}
+.A2 .dt small{display:block;font-size:10px;color:#545A6B;font-weight:600}
+.A2 .dt b{font-size:16px}
+.A2 .ur .tt{font-size:14px}
+.A2 .ur .dot,.A2 .ur .q{margin-left:auto}
+.A2 .tag{display:inline-block;border-radius:8px;padding:1px 6px;font-size:11px;font-weight:600;background:#E6E8EE;color:#1E2333}
+.A2 .fld{margin:0 12px 10px;border-radius:14px;box-shadow:inset 0 0 0 1.5px #D9DCE4;background:#fff;padding:10px 12px;font-size:14px;color:#545A6B;display:flex;gap:8px;align-items:center}
+.A2 .fld.val{color:#1E2333}
+.A2 .chips{display:flex;gap:6px;padding:0 12px 10px;flex-wrap:wrap}
+.A2 .chips span{font-size:12px;font-weight:600;border-radius:12px;padding:6px 10px;background:#E6E8EE}
+.A2 .chips .on{background:#1E2333;color:#fff}
+.A2 .rgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 12px}
+.A2 .rc{border-radius:18px;background:#fff;box-shadow:inset 0 0 0 1.5px #E3E5EB;overflow:hidden}
+.A2 .rc .img{height:78px}
+.A2 .rc .t{font-size:13.5px;font-weight:600;padding:7px 9px 2px;line-height:1.2}
+.A2 .rc .w{font-size:11px;color:#545A6B;padding:0 9px 9px}
+.A2 .rc .w b{color:#2C7A4B;font-weight:600}
+.A2 .pt{display:flex;align-items:center;gap:12px;margin:0 12px 8px;padding:12px;border-radius:20px}
+.A2 .pt .n{font-size:16px;font-weight:600}
+.A2 .pt .s{font-size:12px;color:#545A6B}
+.A2 .pt .cnt{margin-left:auto;text-align:right;font-size:12px;color:#545A6B}
+.A2 .pt .cnt b{display:block;font-size:20px;color:#1E2333}
+.A2 .pt.add{background:transparent;box-shadow:inset 0 0 0 2px #D9DCE4;border-style:dashed;justify-content:center;font-weight:600;color:#545A6B;font-size:14px;outline:2px dashed #C3C7D1;outline-offset:-2px;box-shadow:none}
+.A2 .cg{font-size:13px;font-weight:600;color:#545A6B;padding:10px 18px 6px}
+.A2 .ct{display:flex;align-items:center;gap:10px;margin:0 12px 6px;padding:9px 10px;border-radius:16px;background:#F0F1F5}
+.A2 .ct .ini{width:34px;height:34px;border-radius:50%;background:#fff;display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+.A2 .ct .n{font-size:14px;font-weight:600}
+.A2 .ct .r{font-size:11.5px;color:#545A6B}
+.A2 .ct .call{margin-left:auto;font-size:12px;font-weight:600;background:#1E2333;color:#fff;border-radius:12px;padding:7px 10px}
+.A2 .res{margin:0 12px 6px;padding:10px 12px;border-radius:16px;background:#F0F1F5}
+.A2 .res .tt{font-size:14px}
+.A2 .res .mm{display:flex;gap:6px;align-items:center;margin-top:3px}
+.A2 .cap-sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:26px 26px 0 0;padding:12px 16px 16px;box-shadow:0 -8px 30px -10px #1E233340;display:flex;flex-direction:column;align-items:center;gap:10px}
+.A2 .live{font-size:19px;font-weight:600;line-height:1.3;text-align:center;min-height:52px}
+.A2 .live span{color:#9AA0AE}
+.A2 .pulse{width:78px;height:78px;border-radius:50%;background:#FBE4E1;display:grid;place-items:center}
+.A2 .pulse div{width:54px;height:54px;border-radius:50%;background:#A3241C;color:#fff;display:grid;place-items:center}
+.A2 .cap-opts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;width:100%}
+.A2 .cap-opts span{border-radius:16px;background:#F0F1F5;text-align:center;padding:10px 4px;font-size:12.5px;font-weight:600}
+.A2 .cap-opts .mid{background:#1E2333;color:#fff}
+
+
+.dot{display:inline-grid;place-items:center;border-radius:50%;color:#fff;font-weight:700;flex:none}
+.A2 .lens{display:flex;gap:4px;margin:0 12px 4px;padding:4px;border-radius:16px;background:#E6E8EE}
+.A2 .lens span{flex:1;text-align:center;font-size:12.5px;font-weight:600;padding:7px 2px;border-radius:12px;color:#545A6B}
+.A2 .lens .on{background:#fff;color:#1E2333;box-shadow:0 1px 2px #1E233322}
+.A2 .hint{font-size:11.5px;color:#545A6B;padding:2px 18px 4px}
+.A2 .kind{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#545A6B}
+.A2 .tm{display:flex;gap:10px;align-items:stretch;margin:0 12px 6px}
+.A2 .tm .time{width:44px;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;padding-top:9px;text-align:right;flex:none}
+.A2 .tm .blk2{flex:1;border-radius:14px;padding:8px 10px;display:flex;align-items:center;gap:8px}
+.A2 .tm .blk2 .tt{font-size:14px}
+.A2 .tm .blk2 .dot{margin-left:auto}
+.A2 .flag{display:inline-block;font-size:10.5px;font-weight:700;border-radius:7px;padding:1px 6px;background:#FBE4E1;color:#A3241C;margin-right:4px}
+.A2 .flag.soft{background:#E6E8EE;color:#1E2333}
+.A2 .flag.start{background:#E0EFE5;color:#1F5A37}
+.A2 .act{display:flex;gap:10px;align-items:center;margin:0 12px 6px;padding:9px 10px;border-radius:16px;background:#F0F1F5}
+.A2 .act .ck{width:22px;height:22px;border-radius:8px;box-shadow:inset 0 0 0 2px #1E2333;flex:none}
+.A2 .act .tt{font-size:14px}
+.A2 .act .r{margin-left:auto;display:flex;align-items:center;gap:6px;flex:none}
+.A2 .eff{font-size:10.5px;font-weight:600;border-radius:7px;padding:1px 6px;background:#fff;color:#545A6B;white-space:nowrap}
+.A2 .rout{display:inline-block;font-size:10.5px;font-weight:600;color:#545A6B}
+.A2 .filt{display:flex;gap:6px;padding:4px 12px 8px;flex-wrap:wrap}
+.A2 .filt span{font-size:11.5px;font-weight:600;border-radius:11px;padding:5px 9px;background:#E6E8EE}
+.A2 .filt .on{background:#1E2333;color:#fff}
+.A2 .big2{font-size:21px;font-weight:700;line-height:1.2;padding:2px 18px 8px}
+.A2 .mon{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:0 12px 6px;text-align:center;font-size:11px}
+.A2 .mon .h{color:#545A6B;font-weight:600;font-size:10px}
+.A2 .mon .c{border-radius:10px;padding:5px 0 4px;position:relative;font-variant-numeric:tabular-nums}
+.A2 .mon .c.t{background:#1E2333;color:#fff;font-weight:700}
+.A2 .mon .c.sel{box-shadow:inset 0 0 0 2px #1E2333;font-weight:700}
+.A2 .mon .c i{position:absolute;left:50%;bottom:1px;transform:translateX(-50%);display:flex;gap:2px}
+.A2 .mon .c i b{width:4px;height:4px;border-radius:50%;display:block}
+.A2 .agh{font-size:12.5px;font-weight:600;color:#545A6B;padding:8px 18px 4px}
+.A2 .free{margin:0 12px 6px;border-radius:14px;padding:8px 10px;font-size:12px;color:#545A6B;outline:1.5px dashed #C3C7D1;outline-offset:-1.5px}
+.A2 .avs{display:flex;gap:8px;padding:2px 12px 8px;overflow:hidden}
+.A2 .av{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:6px 6px 5px;border-radius:16px;min-width:58px}
+.A2 .av .c2{font-size:10.5px;font-weight:600;color:#545A6B}
+.A2 .av .c2 b{color:#A3241C}
+.A2 .av.on{background:#1E2333;color:#fff}.A2 .av.on .c2{color:#C9CDD6}
+.A2 .photo{width:36px;height:36px;border-radius:50%;background:repeating-linear-gradient(45deg,#C9B49A 0 4px,#B79F82 4px 8px);box-shadow:0 0 0 2px #A84B0C;display:grid;place-items:center;font-size:8px;color:#fff;font-weight:700}
+.A2 .win{margin:0 12px 6px;border-radius:16px;background:#E0EFE5;padding:9px 10px}
+.A2 .win .wt{font-size:12px;font-weight:700;color:#1F5A37;margin-bottom:5px}
+.A2 .win .act{margin:0 0 4px;background:#fff}
+.A2 .cls{display:flex;gap:6px;margin-bottom:8px}
+.A2 .cls span{flex:1;text-align:center;border-radius:12px;padding:8px 4px;font-size:12.5px;font-weight:600;background:#F0F1F5}
+.A2 .cls .on{background:#1E2333;color:#fff}
+.A2 .kv{display:flex;gap:8px;font-size:13.5px;padding:5px 0;border-bottom:1px solid #EEF0F4}
+.A2 .kv .k{width:84px;color:#545A6B;font-size:12.5px;flex:none}
+
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-today" viewBox="0 0 24 24"><path class="ic" d="M4 11.5 12 5l8 6.5V20H4z"/><path class="ic" d="M10 20v-5h4v5"/></symbol>
+  <symbol id="i-fam" viewBox="0 0 24 24"><circle class="ic" cx="8" cy="8" r="3"/><circle class="ic" cx="16.5" cy="9" r="2.5"/><path class="ic" d="M3 19c.6-3.3 2.6-5 5-5s4.4 1.7 5 5M13.5 19c.4-2.4 1.5-3.8 3-3.8s2.6 1.4 3 3.8"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect class="ic" x="9" y="3.5" width="6" height="11" rx="3"/><path class="ic" d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect class="ic" x="3.5" y="5" width="17" height="15" rx="2"/><path class="ic" d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle class="ic" cx="10.5" cy="10.5" r="6"/><path class="ic" d="m15 15 5 5"/></symbol>
+</svg>
+<div class="wrap" lang="de">
+<header class="prose">
+  <div class="eyebrow">FamilyApp · Konzept · 28.11.2026 · aus Nils' Kommentar</div>
+  <h1>Ein Kalender für Termine, ein Stapel für Handlungen</h1>
+  <p class="lede">Bisher zeigten Demnächst und das Wochenraster in Familie dieselben Dinge zweimal, und beide mischten Termine mit Aufgaben. Hier ist das Modell mit zwei Arten von Einträgen, die Frage, die jede Ansicht beantwortet, und drei Konzepte, wie die App in der richtigen Lage das Richtige zeigt.</p>
+  <div class="box" style="font-size:14.5px"><b>Was dieser Vorschlag anders macht:</b> Er geht von Nils' drei Alltagslagen aus (morgens, zu Hause mit Zeit, beim Zahnarzt) und prüft jedes Konzept daran, wie viele Taps es in jeder Lage braucht. Er hält sich an die Grundregel der App: alles deterministisch und ohne KI, die Art eines Eintrags erkennt eine Regel (Uhrzeit, Frist, Wiederholung), unsicher heißt Rückfrage. Und er sagt, was sich im Datenmodell ändern muss, denn heute kennt ein Eintrag nur ein Datum ohne Uhrzeit.</div>
+</header>
+
+<section class="prose">
+  <h2>Zwei Arten, vier Merkmale</h2>
+  <div class="tbl"><table>
+    <tr><th></th><th>1 · Termin, Frist, Start</th><th>2 · Handlung, Aufgabe, Routine</th></tr>
+    <tr><td>Kern</td><td>fester Zeitpunkt, kommt meist von außen, endet an einem Punkt</td><td>wird getan, wenn Zeit oder Gelegenheit ist</td></tr>
+    <tr><td>Beispiele</td><td>Zahnarzt Fr 15:30 · Elternabend Di 19:30 · Anmeldung Schwimmkurs ab 9.12.</td><td>Müll rausbringen ↻ · Kaffee alle 2 Wochen · Winterschuhe · Herbarium bis Fr</td></tr>
+    <tr><td>Frage</td><td>„Woran muss ich bald denken, wann ist was?“</td><td>„Was kann ich jetzt erledigen?“</td></tr>
+    <tr><td>Ansicht</td><td>Kalender, Ablauf</td><td>Stapel, sortiert nach Dringlichkeit</td></tr>
+    <tr><td>Erkennung (Regel)</td><td>Uhrzeit oder Wort wie „Termin“ → Termin; „ab“, „Start“ → Start</td><td>sonst Handlung; „bis …“ gibt ihr eine Frist; „jeden“, „alle 2 Wochen“ macht sie zur Routine</td></tr>
+  </table></div>
+  <p style="margin-top:12px"><b>Die Brücke ist die Frist.</b> Eine Handlung mit Frist („Überweisung bis Freitag“) lebt im Stapel. Im Kalender erscheint sie nur als kleine Fahne am Fristtag, nicht als zweiter Eintrag. So sieht man beim Planen, dass Freitag voll ist, ohne dass die Aufgabe doppelt geführt wird.</p>
+  <div class="tbl"><table>
+    <tr><th>Lage</th><th>Was Nils sehen will</th><th>Was nicht</th></tr>
+    <tr><td>Morgens, „was liegt heute an?“</td><td>Termine heute und fällige Handlungen</td><td>Handlungen ohne Datum</td></tr>
+    <tr><td>Zu Hause, Zeit frei</td><td>Handlungen, die jetzt gehen (Überweisung)</td><td>Zahnarzttermin morgen</td></tr>
+    <tr><td>Beim Zahnarzt, Folgetermin</td><td>nächste Termine, freie Tage, Fristen-Fahnen</td><td>Überweisung, Routinen</td></tr>
+  </table></div>
+</section>
+
+<section class="dir">
+  <div class="dirhead">
+    <div><div class="eyebrow">Konzept 1 · empfohlen</div><h2>Feste Orte plus Linse auf Heute</h2>
+      <p><b>Demnächst</b> wird der eine Kalender: nur Termine, Starts und Fristen-Fahnen. <b>Familie › Aufgaben</b> wird der Stapel aller Handlungen, ohne Spalten, Personen als Farbe, Initiale oder Foto. <b>Heute</b> bekommt eine Linse mit drei Stellungen: Überblick (beides für heute), Erledigen (nur Handlungen), Planen (springt nach Demnächst). Die App wählt die Stellung selbst: bis 10 Uhr Überblick, danach Erledigen, solange in den nächsten 2 Stunden kein Termin ansteht. Ein Tap ändert sie.</p></div>
+    <div style="font-size:14.5px"><h3>Taps je Lage</h3><ul><li>Morgens: 0 (App öffnen)</li><li>Zu Hause mit Zeit: 0, außer man hat morgens geöffnet: 1</li><li>Beim Zahnarzt: 1 (Demnächst)</li></ul><h3 style="margin-top:8px">Aufwand</h3><p>Mittel. Neues Feld Art, Uhrzeit und Wiederholung im Modell, Regeln im Datums-Parser, Linse auf Heute, Kalender in Demnächst, Liste in Familie.</p></div>
+  </div>
+  <div class="phones">
+    <div><div class="phone"><div class="screen A2"><div class="status"><span>7:12</span><span>●●● ▮</span></div><div class="day"><span class="dname">Samstag</span><span class="dmeta">28. November<br>KW 48</span></div><div class="lens"><span class="on">Überblick</span><span>Erledigen</span><span>Planen</span></div><div class="hint">Morgens automatisch: alles, was heute zählt</div><div class="body"><div class="lab"><span>Termine heute</span><span>2</span></div><div class="tm"><span class="time">14:00</span><div class="blk2" style="background:#E3EAF6"><div><div class="tt">Reifenwechsel</div><div class="mm">Werkstatt Huber</div></div><span class="dot" style="width:22px;height:22px;background:#2F5DA8;font-size:10px">N</span></div></div><div class="tm"><span class="time">16:30</span><div class="blk2" style="background:#EEE3F4"><div><div class="tt">Kindergeburtstag Emma</div><div class="mm">Lisa bringt, Nils holt ab</div></div><span class="dot" style="width:22px;height:22px;background:#7B3FA0;font-size:10px">M</span></div></div><div class="lab"><span>Heute dran</span><span>3</span></div><div class="act"><span class="ck"></span><div><div class="tt">Überweisung Kita-Beitrag</div><div class="mm"><span class="flag">Frist heute</span></div></div><span class="r"><span class="eff">5 min</span><span class="dot" style="width:22px;height:22px;background:#A84B0C;font-size:10px">L</span></span></div><div class="act"><span class="ck"></span><div><div class="tt">Hausschuhe für Mia</div><div class="mm"><span class="flag">überfällig seit Do</span></div></div><span class="r"><span class="eff">unterwegs</span><span class="dot" style="width:22px;height:22px;background:#2F5DA8;font-size:10px">N</span></span></div><div class="act"><span class="ck"></span><div><div class="tt">Müll rausbringen</div><div class="mm"><span class="rout">↻ jeden Sa</span></div></div><span class="r"><span class="eff">5 min</span><span class="dot" style="width:22px;height:22px;background:#2F5DA8;font-size:10px">N</span></span></div></div><div class="nav"><div class="it on"><svg><use href="#i-today"/></svg>Heute</div><div class="it"><svg><use href="#i-fam"/></svg>Familie</div><div class="it"><div class="capq"><svg><use href="#i-mic"/></svg></div>Erfassen</div><div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div><div class="it"><svg><use href="#i-search"/></svg>Suchen</div></div></div></div><p class="cap"><b>Heute, 7:12, Überblick.</b> Termine mit Uhrzeit oben, darunter was heute dran ist. Routinen tragen ↻.</p></div>
+    <div><div class="phone"><div class="screen A2"><div class="status"><span>17:48</span><span>●●● ▮</span></div><div class="day"><span class="dname">Samstag</span><span class="dmeta">28. November<br>KW 48</span></div><div class="lens"><span>Überblick</span><span class="on">Erledigen</span><span>Planen</span></div><div class="hint">Ab Nachmittag automatisch, wenn in den nächsten 2 Std. kein Termin ansteht</div><div class="body"><div class="filt"><span class="on">Meins</span><span>Alle</span><span>zu Hause</span><span>unter 15 min</span></div><div class="act"><span class="ck"></span><div><div class="tt">Überweisung Kita-Beitrag</div><div class="mm"><span class="flag">Frist heute</span></div></div><span class="r"><span class="eff">5 min</span><span class="dot" style="width:22px;height:22px;background:#2F5DA8;font-size:10px">N</span></span></div><div class="act"><span class="ck"></span><div><div class="tt">Herbarium für Bens Bio</div><div class="mm"><span class="flag soft">bis Fr 4.12.</span>betrifft Ben</div></div><span class="r"><span class="eff">1 Std</span><span class="dot" style="width:22px;height:22px;background:#2F5DA8;font-size:10px">N</span></span></div><div class="act"><span class="ck"></span><div><div class="tt">Winterschuhe für Ben aussuchen</div><div class="mm">ohne Datum</div></div><span class="r"><span class="eff">30 min</span><span class="dot" style="width:22px;height:22px;background:#2F5DA8;font-size:10px">N</span></span></div><div class="act"><span class="ck"></span><div><div class="tt">Kaffee kaufen</div><div class="mm"><span class="rout">↻ alle 2 Wochen · wieder fällig</span></div></div><span class="r"><span class="eff">unterwegs</span><span class="dot" style="width:22px;height:22px;background:#2F5DA8;font-size:10px">N</span></span></div><div class="free">Termine siehst du hier nicht. Der nächste: morgen 10:00 Brunch bei Oma.</div></div><div class="nav"><div class="it on"><svg><use href="#i-today"/></svg>Heute</div><div class="it"><svg><use href="#i-fam"/></svg>Familie</div><div class="it"><div class="capq"><svg><use href="#i-mic"/></svg></div>Erfassen</div><div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div><div class="it"><svg><use href="#i-search"/></svg>Suchen</div></div></div></div><p class="cap"><b>Heute, 17:48, Erledigen.</b> Nur Handlungen, mit Aufwand. Der Hinweis unten sagt, warum Termine fehlen.</p></div>
+    <div><div class="phone"><div class="screen A2"><div class="status"><span>15:52</span><span>●●● ▮</span></div><div class="day"><span class="dname">Demnächst</span><span class="dmeta">Termine und Fristen<br>ein Kalender</span></div><div class="body"><div class="mon"><div class="h">Mo</div><div class="h">Di</div><div class="h">Mi</div><div class="h">Do</div><div class="h">Fr</div><div class="h">Sa</div><div class="h">So</div><div class="c ">23<i></i></div><div class="c ">24<i></i></div><div class="c ">25<i></i></div><div class="c ">26<i><b style="background:#A3241C"></b></i></div><div class="c ">27<i></i></div><div class="c t">28<i><b style="background:#2F5DA8"></b><b style="background:#7B3FA0"></b></i></div><div class="c ">29<i><b style="background:#A84B0C"></b></i></div><div class="c ">30<i><b style="background:#A84B0C"></b></i></div><div class="c ">1<i><b style="background:#7B3FA0"></b><b style="background:#A84B0C"></b></i></div><div class="c ">2<i></i></div><div class="c ">3<i><b style="background:#2F5DA8"></b></i></div><div class="c ">4<i><b style="background:#2C7A4B"></b></i></div><div class="c ">5<i></i></div><div class="c ">6<i></i></div><div class="c ">7<i></i></div><div class="c ">8<i></i></div><div class="c ">9<i><b style="background:#2C7A4B"></b></i></div><div class="c ">10<i></i></div><div class="c sel">11<i></i></div><div class="c ">12<i></i></div><div class="c ">13<i></i></div></div><div class="filt"><span class="on">Ben</span><span>Alle</span><span>nur Termine</span></div><div class="agh">Fr 4.12. · Ben</div><div class="tm"><span class="time">15:30</span><div class="blk2" style="background:#E0EFE5"><div><div class="tt">Zahnarzt Ben</div><div class="mm">Dr. Huber · Folgetermin?</div></div><span class="dot" style="width:22px;height:22px;background:#2C7A4B;font-size:10px">B</span></div></div><div class="agh">Fr 11.12. · ausgewählt</div><div class="free">Frei bei allen. Antippen: Folgetermin hier eintragen</div><div class="agh">Mi 9.12.</div><div class="tm"><span class="time">ab</span><div class="blk2" style="background:#E0EFE5"><div><div class="tt">Anmeldung Schwimmkurs</div><div class="mm"><span class="flag start">Start</span>betrifft Ben</div></div><span class="dot" style="width:22px;height:22px;background:#2C7A4B;font-size:10px">B</span></div></div></div><div class="nav"><div class="it"><svg><use href="#i-today"/></svg>Heute</div><div class="it"><svg><use href="#i-fam"/></svg>Familie</div><div class="it"><div class="capq"><svg><use href="#i-mic"/></svg></div>Erfassen</div><div class="it on"><svg><use href="#i-cal"/></svg>Demnächst</div><div class="it"><svg><use href="#i-search"/></svg>Suchen</div></div></div></div><p class="cap"><b>Demnächst beim Zahnarzt.</b> Monat mit Punkten je Person, Filter Ben, freier Tag zum Eintragen.</p></div>
+    <div><div class="phone"><div class="screen A2"><div class="status"><span>19:20</span><span>●●● ▮</span></div><div class="day"><span class="dname">Familie</span><span class="dmeta">Aufgaben<br>wer trägt was</span></div><div class="tabs"><span class="on">Aufgaben</span><span>Kontakte</span><span>Personen</span><span>Rezepte</span><span>Einkauf</span></div><div class="body"><div class="avs"><div class="av" style="background:#E3EAF6"><span class="dot" style="width:36px;height:36px;background:#2F5DA8;font-size:16px">N</span>Nils<span class="c2">3 offen<br><b>1 überfällig</b></span></div><div class="av" style="background:#F5E6DB"><span class="photo">Foto</span>Lisa<span class="c2">5 offen<br><b>1 überfällig</b></span></div><div class="av" style="background:#EEE3F4"><span class="dot" style="width:36px;height:36px;background:#7B3FA0;font-size:16px">M</span>Mia<span class="c2">2 offen</span></div><div class="av" style="background:#E0EFE5"><span class="dot" style="width:36px;height:36px;background:#2C7A4B;font-size:16px">B</span>Ben<span class="c2">1 offen</span></div></div><div class="lab"><span>Dran, nach Dringlichkeit</span><span>11</span></div><div class="act"><span class="ck"></span><div><div class="tt">Überweisung Kita-Beitrag</div><div class="mm"><span class="flag">Frist heute</span>Lisa · Übernehme ich</div></div><span class="r"><span class="eff">5 min</span><span class="dot" style="width:22px;height:22px;background:#A84B0C;font-size:10px">L</span></span></div><div class="act"><span class="ck"></span><div><div class="tt">Hausschuhe für Mia</div><div class="mm"><span class="flag">überfällig seit Do</span></div></div><span class="r"><span class="eff">unterwegs</span><span class="dot" style="width:22px;height:22px;background:#2F5DA8;font-size:10px">N</span></span></div><div class="act"><span class="ck"></span><div><div class="tt">Elterngeld-Nachweis</div><div class="mm"><span class="flag soft">bis Mo</span>Lisa</div></div><span class="r"><span class="eff">15 min</span><span class="dot" style="width:22px;height:22px;background:#A84B0C;font-size:10px">L</span></span></div><div class="act"><span class="ck"></span><div><div class="tt">Herbarium für Bens Bio</div><div class="mm"><span class="flag soft">bis Fr</span></div></div><span class="r"><span class="eff">1 Std</span><span class="dot" style="width:22px;height:22px;background:#2F5DA8;font-size:10px">N</span></span></div><div class="act"><span class="ck"></span><div><div class="tt">Kaffee kaufen</div><div class="mm"><span class="rout">↻ alle 2 Wochen</span></div></div><span class="r"><span class="eff">unterwegs</span><span class="dot" style="width:22px;height:22px;background:#A84B0C;font-size:10px">L</span></span></div></div><div class="nav"><div class="it"><svg><use href="#i-today"/></svg>Heute</div><div class="it on"><svg><use href="#i-fam"/></svg>Familie</div><div class="it"><div class="capq"><svg><use href="#i-mic"/></svg></div>Erfassen</div><div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div><div class="it"><svg><use href="#i-search"/></svg>Suchen</div></div></div></div><p class="cap"><b>Familie › Aufgaben ohne Spalten.</b> Oben Personen als Farbe, Initiale oder Foto (Lisa), darunter ein Stapel.</p></div>
+    <div><div class="phone"><div class="screen A2"><div class="status"><span>9:41</span><span>●●● ▮</span></div><div class="day"><span class="dname">Samstag</span><span class="dmeta">28. November<br>KW 48</span></div><div class="body"><div class="dim" style="position:absolute;inset:0;background:#1E233355"></div><div class="sheet" style="position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:24px 24px 0 0;padding:12px 14px 14px"><div style="width:36px;height:4px;border-radius:2px;background:#D9DCE4;margin:0 auto 10px"></div><div style="font-size:19px;font-weight:600;line-height:1.3;margin-bottom:10px">„Zahnarzt Ben Freitag halb vier“</div><div class="cls"><span class="on">Termin</span><span>Aufgabe</span></div><div class="kv"><span class="k">wann</span>Fr 4.12., 15:30</div><div class="kv"><span class="k">betrifft</span><span class="dot" style="width:20px;height:20px;background:#2C7A4B;font-size:9px">B</span>&nbsp;Ben</div><div class="kv"><span class="k">kümmert sich</span><span style="color:#545A6B">Wer? (Vorschlag Lisa)</span></div><div class="kv" style="border:0"><span class="k">Regel</span><span style="font-size:12px;color:#545A6B">Uhrzeit erkannt → Termin</span></div><div style="font-size:11.5px;color:#545A6B;margin-top:8px">„Überweisung bis Freitag“ würde eine Aufgabe mit Frist. Ohne Uhrzeit und ohne Frist: Aufgabe ohne Datum.</div></div></div><div class="nav"><div class="it"><svg><use href="#i-today"/></svg>Heute</div><div class="it"><svg><use href="#i-fam"/></svg>Familie</div><div class="it"><div class="capq"><svg><use href="#i-mic"/></svg></div>Erfassen</div><div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div><div class="it"><svg><use href="#i-search"/></svg>Suchen</div></div></div></div><p class="cap"><b>Erfassen.</b> Die Regel schlägt die Art vor, ein Tap ändert sie.</p></div>
+  </div>
+</section>
+
+<section class="dir">
+  <div class="dirhead">
+    <div><div class="eyebrow">Konzept 2</div><h2>Nur feste Orte, keine Linse</h2>
+      <p>Wie Konzept 1, aber Heute zeigt immer den Überblick. Wer Zeit hat, geht in Familie › Aufgaben auf „Meins“. Einfacher zu bauen und zu erklären, kein automatischer Wechsel, der überraschen könnte.</p></div>
+    <div style="font-size:14.5px"><h3>Taps je Lage</h3><ul><li>Morgens: 0</li><li>Zu Hause mit Zeit: 2 (Familie, Meins)</li><li>Beim Zahnarzt: 1</li></ul><p>Aufwand: niedrig bis mittel.</p></div>
+  </div>
+</section>
+
+<section class="dir">
+  <div class="dirhead">
+    <div><div class="eyebrow">Konzept 3 · später</div><h2>Zeitfenster: Handlungen füllen die Lücken</h2>
+      <p>Heute ist ein Tagesablauf. Zwischen den Terminen stehen freie Fenster („Jetzt frei bis 16:30 · 85 min“), gefüllt mit Handlungen, die hineinpassen. Braucht eine grobe Dauer je Handlung (5 min, 30 min, 1 Std, unterwegs) und Termine mit Ende.</p></div>
+    <div style="font-size:14.5px"><h3>Taps je Lage</h3><ul><li>Morgens: 0</li><li>Zu Hause mit Zeit: 0</li><li>Beim Zahnarzt: 1</li></ul><p>Aufwand: hoch. Gut als Ausbau von Konzept 1, sobald Dauer und Termin-Ende gepflegt sind.</p></div>
+  </div>
+  <div class="phones"><div><div class="phone"><div class="screen A2"><div class="status"><span>15:05</span><span>●●● ▮</span></div><div class="day"><span class="dname">Samstag</span><span class="dmeta">28. November<br>KW 48</span></div><div class="body"><div class="tm"><span class="time">14:00</span><div class="blk2" style="background:#F0F1F5"><div><div class="tt">Reifenwechsel</div><div class="mm">erledigt</div></div><span class="dot" style="width:22px;height:22px;background:#2F5DA8;font-size:10px">N</span></div></div><div class="win"><div class="wt">Jetzt frei bis 16:30 · 85 min</div><div class="act"><span class="ck"></span><div><div class="tt">Überweisung Kita-Beitrag</div><div class="mm"><span class="flag">Frist heute</span></div></div><span class="r"><span class="eff">5 min</span><span class="dot" style="width:22px;height:22px;background:#2F5DA8;font-size:10px">N</span></span></div><div class="act"><span class="ck"></span><div><div class="tt">Herbarium für Bens Bio</div><div class="mm"><span class="flag soft">bis Fr</span></div></div><span class="r"><span class="eff">1 Std</span><span class="dot" style="width:22px;height:22px;background:#2F5DA8;font-size:10px">N</span></span></div></div><div class="tm"><span class="time">16:30</span><div class="blk2" style="background:#EEE3F4"><div><div class="tt">Kindergeburtstag Emma</div><div class="mm">Nils holt ab 18:30</div></div><span class="dot" style="width:22px;height:22px;background:#7B3FA0;font-size:10px">M</span></div></div><div class="win"><div class="wt">Abends frei ab 19:00</div><div class="act"><span class="ck"></span><div><div class="tt">Winterschuhe für Ben aussuchen</div><div class="mm">ohne Datum</div></div><span class="r"><span class="eff">30 min</span><span class="dot" style="width:22px;height:22px;background:#2F5DA8;font-size:10px">N</span></span></div></div></div><div class="nav"><div class="it on"><svg><use href="#i-today"/></svg>Heute</div><div class="it"><svg><use href="#i-fam"/></svg>Familie</div><div class="it"><div class="capq"><svg><use href="#i-mic"/></svg></div>Erfassen</div><div class="it"><svg><use href="#i-cal"/></svg>Demnächst</div><div class="it"><svg><use href="#i-search"/></svg>Suchen</div></div></div></div><p class="cap"><b>Heute, 15:05.</b> Grünes Fenster zwischen zwei Terminen, darin was in 85 Minuten passt.</p></div></div>
+</section>
+
+<section class="reco prose">
+  <div class="eyebrow">Empfehlung und Entscheidungen</div>
+  <h2>Konzept 1, Konzept 3 als Ausbau</h2>
+  <div class="tbl"><table>
+    <tr><th>#</th><th>Frage</th><th>Vorschlag</th></tr>
+    <tr><td>T1</td><td>Zwei Arten im Modell</td><td>Ja: Termin (mit Uhrzeit, optional Ende), Start, Handlung (optional Frist, Wiederholung, Aufwand)</td></tr>
+    <tr><td>T2</td><td>Demnächst</td><td>der einzige Kalender: Termine, Starts, Fristen als Fahne</td></tr>
+    <tr><td>T3</td><td>Familie › Aufgaben</td><td>Stapel ohne Spalten; Personen als Farbe, Initiale, optional Foto; Lastkarte als Personenreihe oben</td></tr>
+    <tr><td>T4</td><td>Heute</td><td>Linse Überblick · Erledigen · Planen, Vorwahl nach Uhrzeit und nächstem Termin</td></tr>
+    <tr><td>T5</td><td>Erkennung</td><td>Regel: Uhrzeit → Termin, „ab/Start“ → Start, „bis“ → Frist, „jeden/alle …“ → Routine; unsicher fragt die Karte</td></tr>
+  </table></div>
+  <p style="margin-top:10px">Bestehende Einträge: ein Datum ohne Uhrzeit wird zur Handlung mit Frist, nichts geht verloren. Die Lastkarte zählt weiter nur feste Fristen und Termine (Entscheidung vom 20.11.).</p>
+</section>
+</div>
