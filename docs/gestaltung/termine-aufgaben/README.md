@@ -2,7 +2,7 @@
 
 - Status: Konzept, wartet auf Nils' Wahl (T1–T5)
 - Datum: 2026-11-28
-- Ansicht mit Mockups: [termine-aufgaben.html](termine-aufgaben.html), Bilder [konzept1.png](konzept1.png), [konzept3.png](konzept3.png)
+- Ansicht mit Mockups: [termine-aufgaben.html](termine-aufgaben.html), Bilder [demnaechst.png](demnaechst.png), [konzept1.png](konzept1.png), [konzept3.png](konzept3.png)
 - Anlass: Nils' Kommentare auf der Optik-Seite (28.11.2026): „Wir haben damit 2 Kalender … doppelt als auch redundant“ und „Statt Spalten, die viel zu eng sind, nutzen wir Farben, Buchstaben und Profilbilder (optional).“
 
 ## Modell
@@ -14,9 +14,21 @@
 | Ansicht | Kalender (Demnächst) | Stapel (Familie › Aufgaben, Heute › Erledigen) |
 | Regel | Uhrzeit/„Termin“ → Termin; „ab“, „Start“ → Start | sonst Handlung; „bis …“ → Frist; „jeden“, „alle 2 Wochen“ → Routine |
 
-Brücke: Eine Handlung mit Frist lebt im Stapel und erscheint im Kalender nur als Fahne am Fristtag.
+Brücke: Eine Handlung mit Frist lebt im Stapel und steht im Kalender am Fristtag als eigene Zeile „Frist“ mit Titel.
 
 Heute kennt ein Eintrag nur `due: LocalDate` (`domain/Model.kt`). Neu nötig: Art, Uhrzeit (optional Ende), Startdatum, Wiederholung, grober Aufwand. Bestehende Einträge mit Datum werden Handlungen mit Frist.
+
+
+## Demnächst: Liste oder Kacheln (Nils, 28.11.2026)
+
+Nils: „Der Kalender mit Fähnchen funktioniert nicht. Ich möchte Termine direkt sehen.“ Daher keine Fähnchen und keine Monatsübersicht, die erst Antippen verlangt. Oben ein Umschalter, die App merkt sich die Wahl.
+
+- **Liste:** alle Termine, Tage als Überschrift (Heute, Morgen, Wochentag), darunter nach Uhrzeit.
+- **Kacheln:** die nächsten 7 Tage in zwei Spalten groß, bis 5 Einträge je Tag, sonst „+x weitere“. Danach bis Monatsende drei Spalten, je 3 Einträge, sonst „+x weitere“.
+- Jeder Eintrag: Zeile 1 Uhrzeit (oder „ganztags“, „Frist“ rot, „Start“ grün) und alle Beteiligten als Farbpunkt mit Initiale, überlappend; Zeile 2 Titel, bis zu zwei Zeilen, nicht abgeschnitten.
+- Sortierung je Tag: ganztägig, Frist und Start zuerst, dann nach Uhrzeit.
+- Tippen auf eine Kachel öffnet den Tag als Liste.
+- Schriftgrößen in der App: Kacheln mindestens 12 sp (groß) und 11 sp (klein); ab 130 % Systemschrift nur eine Spalte. Im Mockup ist die Schrift wegen des Rahmens kleiner.
 
 ## Konzepte
 
@@ -29,7 +41,7 @@ Heute kennt ein Eintrag nur `due: LocalDate` (`domain/Model.kt`). Neu nötig: Ar
 | # | Frage | Vorschlag |
 | --- | --- | --- |
 | T1 | Zwei Arten im Modell | ja |
-| T2 | Demnächst | einziger Kalender, Fristen als Fahne |
+| T2 | Demnächst | einziger Kalender: Liste oder Kacheln, Termine ohne Antippen lesbar |
 | T3 | Familie › Aufgaben | Stapel ohne Spalten, Personenreihe oben (Lastkarte) |
 | T4 | Heute | Linse mit Vorwahl nach Uhrzeit und nächstem Termin |
 | T5 | Erkennung | deterministische Regel, unsicher fragt die Karte |
